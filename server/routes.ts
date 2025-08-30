@@ -1,0 +1,267 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import {
+  insertGroupSchema,
+  insertEventSchema,
+  insertRsvpSchema,
+  insertSuggestionSchema,
+  insertMessageSchema,
+  insertGroupMemberSchema,
+} from "@shared/schema";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Group routes
+  app.post('/api/groups', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groupData = insertGroupSchema.parse({
+        ...req.body,
+        adminId: userId,
+      });
+      
+      const group = await storage.createGroup(groupData);
+      res.status(201).json(group);
+    } catch (error) {
+      console.error("Error creating group:", error);
+      res.status(400).json({ message: "Failed to create group" });
+    }
+  });
+
+  app.get('/api/groups', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groups = await storage.getUserGroups(userId);
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      res.status(500).json({ message: "Failed to fetch groups" });
+    }
+  });
+
+  app.get('/api/groups/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const group = await storage.getGroup(req.params.id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      res.json(group);
+    } catch (error) {
+      console.error("Error fetching group:", error);
+      res.status(500).json({ message: "Failed to fetch group" });
+    }
+  });
+
+  app.get('/api/groups/:id/members', isAuthenticated, async (req: any, res) => {
+    try {
+      const members = await storage.getGroupMembers(req.params.id);
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching group members:", error);
+      res.status(500).json({ message: "Failed to fetch group members" });
+    }
+  });
+
+  app.post('/api/groups/:id/members', isAuthenticated, async (req: any, res) => {
+    try {
+      const memberData = insertGroupMemberSchema.parse({
+        groupId: req.params.id,
+        userId: req.body.userId,
+        role: req.body.role || 'member',
+      });
+      
+      const member = await storage.addGroupMember(memberData);
+      res.status(201).json(member);
+    } catch (error) {
+      console.error("Error adding group member:", error);
+      res.status(400).json({ message: "Failed to add group member" });
+    }
+  });
+
+  app.delete('/api/groups/:id/members/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.removeGroupMember(req.params.id, req.params.userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ message: "Failed to remove group member" });
+    }
+  });
+
+  // Event routes
+  app.post('/api/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const eventData = insertEventSchema.parse({
+        ...req.body,
+        createdBy: userId,
+      });
+      
+      const event = await storage.createEvent(eventData);
+      res.status(201).json(event);
+    } catch (error) {
+      console.error("Error creating event:", error);
+      res.status(400).json({ message: "Failed to create event" });
+    }
+  });
+
+  app.get('/api/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const events = await storage.getUserEvents(userId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  app.get('/api/events/upcoming', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const events = await storage.getUpcomingEvents(userId);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching upcoming events:", error);
+      res.status(500).json({ message: "Failed to fetch upcoming events" });
+    }
+  });
+
+  app.get('/api/events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      res.json(event);
+    } catch (error) {
+      console.error("Error fetching event:", error);
+      res.status(500).json({ message: "Failed to fetch event" });
+    }
+  });
+
+  app.get('/api/groups/:id/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const events = await storage.getGroupEvents(req.params.id);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching group events:", error);
+      res.status(500).json({ message: "Failed to fetch group events" });
+    }
+  });
+
+  // RSVP routes
+  app.post('/api/events/:id/rsvp', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const rsvpData = insertRsvpSchema.parse({
+        eventId: req.params.id,
+        userId: userId,
+        status: req.body.status,
+      });
+      
+      const rsvp = await storage.upsertRsvp(rsvpData);
+      res.json(rsvp);
+    } catch (error) {
+      console.error("Error updating RSVP:", error);
+      res.status(400).json({ message: "Failed to update RSVP" });
+    }
+  });
+
+  app.get('/api/events/:id/rsvps', isAuthenticated, async (req: any, res) => {
+    try {
+      const rsvps = await storage.getEventRsvps(req.params.id);
+      res.json(rsvps);
+    } catch (error) {
+      console.error("Error fetching event RSVPs:", error);
+      res.status(500).json({ message: "Failed to fetch event RSVPs" });
+    }
+  });
+
+  // Restaurant suggestion routes
+  app.post('/api/events/:id/suggestions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const suggestionData = insertSuggestionSchema.parse({
+        eventId: req.params.id,
+        userId: userId,
+        ...req.body,
+      });
+      
+      const suggestion = await storage.createSuggestion(suggestionData);
+      res.status(201).json(suggestion);
+    } catch (error) {
+      console.error("Error creating suggestion:", error);
+      res.status(400).json({ message: "Failed to create suggestion" });
+    }
+  });
+
+  app.get('/api/events/:id/suggestions', isAuthenticated, async (req: any, res) => {
+    try {
+      const suggestions = await storage.getEventSuggestions(req.params.id);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      res.status(500).json({ message: "Failed to fetch suggestions" });
+    }
+  });
+
+  // Message routes
+  app.post('/api/events/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageData = insertMessageSchema.parse({
+        eventId: req.params.id,
+        userId: userId,
+        content: req.body.content,
+      });
+      
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating message:", error);
+      res.status(400).json({ message: "Failed to create message" });
+    }
+  });
+
+  app.get('/api/events/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const messages = await storage.getEventMessages(req.params.id);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Dashboard stats
+  app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getUserStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
