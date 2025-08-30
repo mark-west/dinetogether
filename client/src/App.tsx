@@ -10,12 +10,15 @@ import Dashboard from "@/pages/dashboard";
 import Groups from "@/pages/groups";
 import Events from "@/pages/events";
 import Chat from "@/pages/chat";
+import InvitePage from "@/pages/invite";
+import EventDetails from "@/pages/event-details";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <Switch>
+      <Route path="/invite/:inviteCode" component={InvitePage} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
@@ -23,6 +26,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/groups" component={Groups} />
           <Route path="/events" component={Events} />
+          <Route path="/events/:eventId" component={EventDetails} />
           <Route path="/chat/:eventId?" component={Chat} />
         </>
       )}
@@ -35,8 +39,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
         <Router />
+        <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -9,7 +9,9 @@ import {
   insertSuggestionSchema,
   insertMessageSchema,
   insertGroupMemberSchema,
+  insertGroupInviteSchema,
 } from "@shared/schema";
+import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -259,6 +261,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Group invite routes
+  app.post('/api/groups/:id/invites', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groupId = req.params.id;
+      
+      // Check if user is admin of the group
+      const group = await storage.getGroup(groupId);
+      if (!group || group.adminId !== userId) {
+        return res.status(403).json({ message: "Only group admins can create invites" });
+      }
+      
+      const inviteCode = nanoid(12);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+      
+      const inviteData = insertGroupInviteSchema.parse({
+        groupId,
+        invitedBy: userId,
+        inviteCode,
+        invitedEmail: req.body.email,
+        expiresAt,
+      });
+      
+      const invite = await storage.createGroupInvite(inviteData);
+      res.status(201).json(invite);
+    } catch (error) {
+      console.error("Error creating invite:", error);
+      res.status(400).json({ message: "Failed to create invite" });
+    }
+  });
+
+  app.get('/api/groups/:id/invites', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groupId = req.params.id;
+      
+      // Check if user is admin of the group
+      const group = await storage.getGroup(groupId);
+      if (!group || group.adminId !== userId) {
+        return res.status(403).json({ message: "Only group admins can view invites" });
+      }
+      
+      const invites = await storage.getGroupInvites(groupId);
+      res.json(invites);
+    } catch (error) {
+      console.error("Error fetching invites:", error);
+      res.status(500).json({ message: "Failed to fetch invites" });
+    }
+  });
+
+  app.post('/api/invites/:code/accept', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const inviteCode = req.params.code;
+      
+      const member = await storage.acceptGroupInvite(inviteCode, userId);
+      res.json(member);
+    } catch (error) {
+      console.error("Error accepting invite:", error);
+      const message = error instanceof Error ? error.message : "Failed to accept invite";
+      res.status(400).json({ message });
+    }
+  });
+
+  app.get('/api/invites/:code', async (req: any, res) => {
+    try {
+      const inviteCode = req.params.code;
+      const invite = await storage.getGroupInviteByCode(inviteCode);
+      
+      if (!invite) {
+        return res.status(404).json({ message: "Invite not found or expired" });
+      }
+      
+      const group = await storage.getGroup(invite.groupId);
+      res.json({ invite, group });
+    } catch (error) {
+      console.error("Error fetching invite:", error);
+      res.status(500).json({ message: "Failed to fetch invite" });
     }
   });
 

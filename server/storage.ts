@@ -6,6 +6,7 @@ import {
   eventRsvps,
   restaurantSuggestions,
   messages,
+  groupInvites,
   type User,
   type UpsertUser,
   type Group,
@@ -20,6 +21,8 @@ import {
   type InsertMessage,
   type GroupMember,
   type InsertGroupMember,
+  type GroupInvite,
+  type InsertGroupInvite,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -64,6 +67,13 @@ export interface IStorage {
     attendedCount: number;
     averageRating: number;
   }>;
+  
+  // Group invite operations
+  createGroupInvite(invite: InsertGroupInvite): Promise<GroupInvite>;
+  getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | undefined>;
+  getGroupInvites(groupId: string): Promise<Array<GroupInvite & { inviter: User }>>;
+  acceptGroupInvite(inviteCode: string, userId: string): Promise<GroupMember>;
+  expireInvite(inviteId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -319,6 +329,82 @@ export class DatabaseStorage implements IStorage {
       attendedCount: stats.attendedCount,
       averageRating: 4.8, // Mock for now
     };
+  }
+
+  // Group invite operations
+  async createGroupInvite(inviteData: InsertGroupInvite): Promise<GroupInvite> {
+    const [invite] = await db.insert(groupInvites).values(inviteData).returning();
+    return invite;
+  }
+
+  async getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | undefined> {
+    const [invite] = await db
+      .select()
+      .from(groupInvites)
+      .where(and(
+        eq(groupInvites.inviteCode, inviteCode),
+        eq(groupInvites.status, 'pending'),
+        sql`${groupInvites.expiresAt} > now()`
+      ));
+    return invite;
+  }
+
+  async getGroupInvites(groupId: string): Promise<Array<GroupInvite & { inviter: User }>> {
+    const result = await db
+      .select()
+      .from(groupInvites)
+      .innerJoin(users, eq(groupInvites.invitedBy, users.id))
+      .where(eq(groupInvites.groupId, groupId))
+      .orderBy(desc(groupInvites.createdAt));
+    
+    return result.map(row => ({
+      ...row.group_invites,
+      inviter: row.users,
+    }));
+  }
+
+  async acceptGroupInvite(inviteCode: string, userId: string): Promise<GroupMember> {
+    const invite = await this.getGroupInviteByCode(inviteCode);
+    if (!invite) {
+      throw new Error('Invalid or expired invite code');
+    }
+
+    // Check if user is already a member
+    const existingMember = await db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, invite.groupId), eq(groupMembers.userId, userId)))
+      .limit(1);
+
+    if (existingMember.length > 0) {
+      throw new Error('You are already a member of this group');
+    }
+
+    // Add user as group member
+    const [member] = await db.insert(groupMembers).values({
+      groupId: invite.groupId,
+      userId: userId,
+      role: 'member',
+    }).returning();
+
+    // Mark invite as accepted
+    await db
+      .update(groupInvites)
+      .set({
+        status: 'accepted',
+        acceptedAt: new Date(),
+        acceptedBy: userId,
+      })
+      .where(eq(groupInvites.id, invite.id));
+
+    return member;
+  }
+
+  async expireInvite(inviteId: string): Promise<void> {
+    await db
+      .update(groupInvites)
+      .set({ status: 'expired' })
+      .where(eq(groupInvites.id, inviteId));
   }
 }
 

@@ -7,6 +7,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import CreateGroupModal from "@/components/CreateGroupModal";
+import InviteModal from "@/components/InviteModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ export default function Groups() {
   const { isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState<{ groupId: string; groupName: string } | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -30,7 +32,7 @@ export default function Groups() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: groups, isLoading: groupsLoading } = useQuery({
+  const { data: groups, isLoading: groupsLoading } = useQuery<any[]>({
     queryKey: ["/api/groups"],
     retry: false,
     enabled: isAuthenticated,
@@ -96,7 +98,7 @@ export default function Groups() {
                 <Skeleton key={i} className="h-48" />
               ))}
             </div>
-          ) : groups && groups.length > 0 ? (
+          ) : groups && Array.isArray(groups) && groups.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {groups.map((group: any) => (
                 <Card key={group.id} className="hover:shadow-md transition-shadow" data-testid={`card-group-${group.id}`}>
@@ -144,15 +146,17 @@ export default function Groups() {
                         <i className="fas fa-eye mr-2"></i>
                         View
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        data-testid={`button-chat-group-${group.id}`}
-                      >
-                        <i className="fas fa-comments mr-2"></i>
-                        Chat
-                      </Button>
+                      {group.role === 'admin' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowInviteModal({ groupId: group.id, groupName: group.name })}
+                          data-testid={`button-invite-${group.id}`}
+                        >
+                          <i className="fas fa-user-plus mr-2"></i>
+                          Invite
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -184,6 +188,14 @@ export default function Groups() {
       
       {showCreateModal && (
         <CreateGroupModal onClose={() => setShowCreateModal(false)} />
+      )}
+      
+      {showInviteModal && (
+        <InviteModal 
+          groupId={showInviteModal.groupId}
+          groupName={showInviteModal.groupName}
+          onClose={() => setShowInviteModal(null)} 
+        />
       )}
     </div>
   );

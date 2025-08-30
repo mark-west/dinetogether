@@ -64,6 +64,9 @@ export const events = pgTable("events", {
   restaurantName: varchar("restaurant_name", { length: 255 }),
   restaurantAddress: text("restaurant_address"),
   restaurantImageUrl: varchar("restaurant_image_url"),
+  restaurantPlaceId: varchar("restaurant_place_id"),
+  restaurantLat: varchar("restaurant_lat"),
+  restaurantLng: varchar("restaurant_lng"),
   dateTime: timestamp("date_time").notNull(),
   createdBy: varchar("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -101,6 +104,20 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Group invites table
+export const groupInvites = pgTable("group_invites", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: uuid("group_id").notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  invitedBy: varchar("invited_by").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  inviteCode: varchar("invite_code", { length: 100 }).notNull().unique(),
+  invitedEmail: varchar("invited_email"),
+  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'accepted', 'expired'
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedAt: timestamp("accepted_at"),
+  acceptedBy: varchar("accepted_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   adminGroups: many(groups),
@@ -109,6 +126,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   eventRsvps: many(eventRsvps),
   restaurantSuggestions: many(restaurantSuggestions),
   messages: many(messages),
+  sentInvites: many(groupInvites, { relationName: 'sentInvites' }),
+  acceptedInvites: many(groupInvites, { relationName: 'acceptedInvites' }),
 }));
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({
@@ -118,6 +137,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   }),
   members: many(groupMembers),
   events: many(events),
+  invites: many(groupInvites),
 }));
 
 export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
@@ -178,6 +198,23 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   }),
 }));
 
+export const groupInvitesRelations = relations(groupInvites, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupInvites.groupId],
+    references: [groups.id],
+  }),
+  inviter: one(users, {
+    fields: [groupInvites.invitedBy],
+    references: [users.id],
+    relationName: 'sentInvites',
+  }),
+  acceptedByUser: one(users, {
+    fields: [groupInvites.acceptedBy],
+    references: [users.id],
+    relationName: 'acceptedInvites',
+  }),
+}));
+
 // Zod schemas for validation
 export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
@@ -212,6 +249,14 @@ export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({
   joinedAt: true,
 });
 
+export const insertGroupInviteSchema = createInsertSchema(groupInvites).omit({
+  id: true,
+  status: true,
+  acceptedAt: true,
+  acceptedBy: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -227,3 +272,5 @@ export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type GroupMember = typeof groupMembers.$inferSelect;
 export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
+export type GroupInvite = typeof groupInvites.$inferSelect;
+export type InsertGroupInvite = z.infer<typeof insertGroupInviteSchema>;

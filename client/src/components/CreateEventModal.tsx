@@ -31,12 +31,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import RestaurantSearch from "@/components/RestaurantSearch";
+import GoogleMapComponent from "@/components/GoogleMapComponent";
+import CalendarActions from "@/components/CalendarActions";
 
 const createEventSchema = z.object({
   groupId: z.string().min(1, "Please select a group"),
   name: z.string().min(1, "Event name is required"),
   restaurantName: z.string().optional(),
   restaurantAddress: z.string().optional(),
+  restaurantImageUrl: z.string().optional(),
+  restaurantPlaceId: z.string().optional(),
+  restaurantLat: z.number().optional(),
+  restaurantLng: z.number().optional(),
   dateTime: z.string().min(1, "Date and time are required"),
   description: z.string().optional(),
 });
@@ -51,6 +58,8 @@ interface CreateEventModalProps {
 export default function CreateEventModal({ onClose, groups }: CreateEventModalProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
@@ -59,6 +68,10 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
       name: "",
       restaurantName: "",
       restaurantAddress: "",
+      restaurantImageUrl: "",
+      restaurantPlaceId: "",
+      restaurantLat: undefined,
+      restaurantLng: undefined,
       dateTime: "",
       description: "",
     },
@@ -72,6 +85,10 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
       await apiRequest("POST", "/api/events", {
         ...data,
         dateTime,
+        restaurantLat: selectedRestaurant?.location?.lat,
+        restaurantLng: selectedRestaurant?.location?.lng,
+        restaurantImageUrl: selectedRestaurant?.photoUrl,
+        restaurantPlaceId: selectedRestaurant?.placeId,
       });
     },
     onSuccess: () => {
@@ -169,41 +186,89 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="restaurantName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Restaurant (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Restaurant name" 
-                      {...field} 
-                      data-testid="input-restaurant-name"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Restaurant (Optional)
+                </label>
+                <div className="mt-1">
+                  <RestaurantSearch
+                    onSelect={(restaurant) => {
+                      setSelectedRestaurant(restaurant);
+                      form.setValue('restaurantName', restaurant.name);
+                      form.setValue('restaurantAddress', restaurant.address);
+                      setShowMap(true);
+                    }}
+                    placeholder="Search for restaurants..."
+                    initialValue={form.getValues('restaurantName')}
+                  />
+                </div>
+              </div>
+              
+              {selectedRestaurant && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <i className="fas fa-utensils text-primary"></i>
+                    <div>
+                      <p className="font-medium text-sm" data-testid="text-selected-restaurant">
+                        {selectedRestaurant.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground" data-testid="text-selected-address">
+                        {selectedRestaurant.address}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedRestaurant.rating && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <i className="fas fa-star text-yellow-500"></i>
+                      <span>{selectedRestaurant.rating}/5</span>
+                      {selectedRestaurant.priceLevel && (
+                        <span className="ml-2">
+                          {'$'.repeat(selectedRestaurant.priceLevel)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowMap(!showMap)}
+                      data-testid="button-toggle-map"
+                    >
+                      <i className={`fas fa-map${showMap ? '-minus' : '-plus'} mr-1`}></i>
+                      {showMap ? 'Hide' : 'Show'} Map
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedRestaurant.address)}`;
+                        window.open(url, '_blank');
+                      }}
+                      data-testid="button-directions"
+                    >
+                      <i className="fas fa-directions mr-1"></i>
+                      Directions
+                    </Button>
+                  </div>
+                </div>
               )}
-            />
-
-            <FormField
-              control={form.control}
-              name="restaurantAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Restaurant address or area" 
-                      {...field} 
-                      data-testid="input-restaurant-location"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              
+              {showMap && selectedRestaurant?.location && (
+                <GoogleMapComponent
+                  center={selectedRestaurant.location}
+                  markers={[{
+                    position: selectedRestaurant.location,
+                    title: selectedRestaurant.name,
+                    info: `<div><strong>${selectedRestaurant.name}</strong><br/>${selectedRestaurant.address}</div>`
+                  }]}
+                  className="w-full h-48 rounded-lg"
+                />
               )}
-            />
+            </div>
 
             <FormField
               control={form.control}
