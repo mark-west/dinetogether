@@ -303,11 +303,11 @@ export default function Chat() {
                               <Button
                                 key={group.id}
                                 variant={selectedChatType === 'group' && selectedChatId === group.id ? "secondary" : "ghost"}
-                                className="w-full justify-start p-4 h-auto"
+                                className="w-full justify-between p-4 h-auto text-left"
                                 onClick={() => handleChatSelect('group', group.id)}
                                 data-testid={`button-group-chat-${group.id}`}
                               >
-                                <div className="text-left flex-1">
+                                <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate" data-testid={`text-group-name-${group.id}`}>
                                     {group.name}
                                   </p>
@@ -315,7 +315,7 @@ export default function Chat() {
                                     {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
                                   </p>
                                 </div>
-                                <i className="fas fa-users text-muted-foreground"></i>
+                                <i className="fas fa-users text-muted-foreground flex-shrink-0 ml-2"></i>
                               </Button>
                             ))}
                           </div>
@@ -341,11 +341,11 @@ export default function Chat() {
                               <Button
                                 key={evt.id}
                                 variant={selectedChatType === 'event' && selectedChatId === evt.id ? "secondary" : "ghost"}
-                                className="w-full justify-start p-4 h-auto"
+                                className="w-full justify-between p-4 h-auto text-left"
                                 onClick={() => handleChatSelect('event', evt.id)}
                                 data-testid={`button-event-chat-${evt.id}`}
                               >
-                                <div className="text-left flex-1">
+                                <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate" data-testid={`text-event-name-${evt.id}`}>
                                     {evt.name}
                                   </p>
@@ -356,7 +356,7 @@ export default function Chat() {
                                     {format(new Date(evt.dateTime), 'MMM d, h:mm a')}
                                   </p>
                                 </div>
-                                <i className="fas fa-calendar text-muted-foreground"></i>
+                                <i className="fas fa-calendar text-muted-foreground flex-shrink-0 ml-2"></i>
                               </Button>
                             ))}
                           </div>
@@ -378,23 +378,23 @@ export default function Chat() {
                 <Card className="h-full flex flex-col">
                   <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         {/* Back button for mobile */}
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="lg:hidden"
+                          className="lg:hidden flex-shrink-0"
                           onClick={handleBackToChats}
                           data-testid="button-back-to-chats"
                         >
                           <i className="fas fa-arrow-left"></i>
                         </Button>
-                        <div>
-                          <CardTitle data-testid="text-chat-title">
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="truncate" data-testid="text-chat-title">
                             {currentChat?.name || 'Chat'}
                           </CardTitle>
                           {currentChat && (
-                            <p className="text-sm text-muted-foreground" data-testid="text-chat-details">
+                            <p className="text-sm text-muted-foreground truncate" data-testid="text-chat-details">
                               {selectedChatType === 'group' 
                                 ? `Group Chat`
                                 : `${currentChat.group?.name} • ${format(new Date(currentChat.dateTime), 'MMM d, h:mm a')}`
@@ -406,6 +406,7 @@ export default function Chat() {
                       <Button 
                         variant="outline" 
                         size="sm" 
+                        className="flex-shrink-0"
                         onClick={() => {
                           const detailsPath = selectedChatType === 'group' 
                             ? `/groups/${selectedChatId}`
@@ -474,21 +475,30 @@ export default function Chat() {
                     
                     {/* Message Input */}
                     <div className="border-t border-border p-4">
-                      <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <Input
-                          id="message-input"
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          placeholder={replyTo ? "Type your reply..." : "Type your message..."}
-                          disabled={sendMessageMutation.isPending}
-                          data-testid="input-message"
-                        />
+                      <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Input
+                            id="message-input"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder={replyTo ? "Type your reply..." : "Type your message..."}
+                            disabled={sendMessageMutation.isPending}
+                            data-testid="input-message"
+                            className="w-full"
+                          />
+                        </div>
                         <Button 
                           type="submit" 
+                          size="sm"
                           disabled={!message.trim() || sendMessageMutation.isPending}
                           data-testid="button-send-message"
+                          className="flex-shrink-0"
                         >
-                          <i className="fas fa-paper-plane"></i>
+                          {sendMessageMutation.isPending ? (
+                            <i className="fas fa-spinner fa-spin"></i>
+                          ) : (
+                            <i className="fas fa-paper-plane"></i>
+                          )}
                         </Button>
                       </form>
                     </div>

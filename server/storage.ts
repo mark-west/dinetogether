@@ -542,28 +542,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserUnreadCount(userId: string): Promise<number> {
-    // Count unread messages across all groups the user is a member of
-    const [result] = await db
+    // Count unread group messages
+    const [groupResult] = await db
       .select({
-        unreadCount: sql<number>`
-          count(distinct gm.id) + count(distinct em.id)
-        `,
+        count: sql<number>`count(*)`
       })
-      .from(groupMembers)
-      .leftJoin(groupMessages, sql`${groupMessages.groupId} = ${groupMembers.groupId}`)
-      .leftJoin(sql`${groupMessages} as gm`, sql`gm.id = ${groupMessages.id} AND gm.user_id != ${userId}`)
-      .leftJoin(groupMessageReads, sql`${groupMessageReads.groupMessageId} = gm.id AND ${groupMessageReads.userId} = ${userId}`)
-      .leftJoin(events, sql`${events.groupId} = ${groupMembers.groupId}`)
-      .leftJoin(sql`${messages} as em`, sql`em.event_id = ${events.id} AND em.user_id != ${userId}`)
-      .leftJoin(messageReads, sql`${messageReads.messageId} = em.id AND ${messageReads.userId} = ${userId}`)
+      .from(groupMessages)
+      .innerJoin(groupMembers, eq(groupMessages.groupId, groupMembers.groupId))
+      .leftJoin(groupMessageReads, and(
+        eq(groupMessageReads.groupMessageId, groupMessages.id),
+        eq(groupMessageReads.userId, userId)
+      ))
       .where(
         and(
           eq(groupMembers.userId, userId),
-          sql`(gm.id IS NOT NULL AND ${groupMessageReads.id} IS NULL) OR (em.id IS NOT NULL AND ${messageReads.id} IS NULL)`
+          ne(groupMessages.userId, userId), // Not sent by current user
+          isNull(groupMessageReads.id) // Not marked as read
         )
       );
 
-    return result?.unreadCount || 0;
+    // Count unread event messages
+    const [eventResult] = await db
+      .select({
+        count: sql<number>`count(*)`
+      })
+      .from(messages)
+      .innerJoin(events, eq(messages.eventId, events.id))
+      .innerJoin(groupMembers, eq(events.groupId, groupMembers.groupId))
+      .leftJoin(messageReads, and(
+        eq(messageReads.messageId, messages.id),
+        eq(messageReads.userId, userId)
+      ))
+      .where(
+        and(
+          eq(groupMembers.userId, userId),
+          ne(messages.userId, userId), // Not sent by current user
+          isNull(messageReads.id) // Not marked as read
+        )
+      );
+
+    const groupCount = groupResult?.count || 0;
+    const eventCount = eventResult?.count || 0;
+    
+    return groupCount + eventCount;
   }
 
   // Dashboard/stats operations
