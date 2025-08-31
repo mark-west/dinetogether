@@ -37,7 +37,7 @@ export default function Sidebar() {
         
         {/* User Profile */}
         <div 
-          className="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:hover-bg transition-colors"
+          className="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:bg-hover transition-colors"
           onClick={() => window.location.href = '/profile'}
           data-testid="button-profile"
         >
@@ -73,7 +73,7 @@ export default function Sidebar() {
           <Button
             key={item.path}
             variant={location === item.path ? "default" : "ghost"}
-            className="w-full justify-start"
+            className="w-full justify-start hover:bg-hover"
             onClick={() => window.location.href = item.path}
             data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
           >
@@ -101,7 +101,7 @@ export default function Sidebar() {
           {groups?.slice(0, 3).map((group: any) => (
             <div 
               key={group.id} 
-              className="flex items-center gap-3 p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
+              className="flex items-center gap-3 p-2 hover:bg-hover rounded-lg transition-colors cursor-pointer"
               onClick={() => window.location.href = `/groups/${group.id}`}
               data-testid={`sidebar-group-${group.id}`}
             >
@@ -127,7 +127,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-border">
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-hover"
           onClick={() => window.location.href = '/api/logout'}
           data-testid="button-logout"
         >

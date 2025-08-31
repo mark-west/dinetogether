@@ -140,13 +140,6 @@
   background: linear-gradient(135deg, hsl(295, 30%, 85%) 0%, hsl(324, 30%, 90%) 100%);
 }
 
-.hover-bg {
-  background-color: hsl(0, 100%, 89%);
-}
-
-.hover\:hover-bg:hover {
-  background-color: hsl(0, 100%, 89%);
-}
 
 .text-gradient {
   background: linear-gradient(135deg, hsl(318, 50%, 15%) 0%, hsl(324, 60%, 50%) 100%);
