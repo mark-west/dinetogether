@@ -7,61 +7,60 @@ export default function Landing() {
   
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
+      <Card className="w-full max-w-lg shadow-2xl border-0">
         <CardHeader className="text-center pb-8 pt-12">
-          {/* Large prominent logo */}
-          <div className="w-32 h-32 gradient-bg rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl ring-4 ring-white/20">
-            <i className="fas fa-utensils text-white text-6xl"></i>
+          {/* Your actual DineTogether logo */}
+          <div className="mx-auto mb-8">
+            <img 
+              src="/attached_assets/fulllogo_1756675026225.png" 
+              alt="DineTogether Logo" 
+              className="w-48 h-48 mx-auto object-contain"
+            />
           </div>
           
-          {/* Brand name with elegant typography */}
-          <CardTitle className="text-5xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent mb-4 tracking-tight">
-            DineTogether
-          </CardTitle>
-          
-          {/* Elegant tagline */}
-          <CardDescription className="text-xl text-muted-foreground leading-relaxed max-w-md mx-auto">
-            Where every meal becomes a memorable gathering with friends
+          {/* Tagline from your logo */}
+          <CardDescription className="text-xl text-muted-foreground leading-relaxed max-w-md mx-auto font-medium">
+            GATHER. FEAST. REPEAT.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 px-8 pb-12">
-          {/* Enhanced feature highlights */}
+          {/* Feature highlights using consistent site colors */}
           <div className="space-y-4">
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                <i className="fas fa-users text-white text-lg"></i>
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <i className="fas fa-users text-primary-foreground text-lg"></i>
               </div>
               <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100">Private Groups</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Create invite-only dining circles</div>
+                <div className="font-medium">Private Groups</div>
+                <div className="text-sm text-muted-foreground">Create invite-only dining circles</div>
               </div>
             </div>
             
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                <i className="fas fa-calendar text-white text-lg"></i>
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                <i className="fas fa-calendar text-secondary-foreground text-lg"></i>
               </div>
               <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100">Smart Planning</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Coordinate events with easy RSVP</div>
+                <div className="font-medium">Smart Planning</div>
+                <div className="text-sm text-muted-foreground">Coordinate events with easy RSVP</div>
               </div>
             </div>
             
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
-              <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                <i className="fas fa-comments text-white text-lg"></i>
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                <i className="fas fa-comments text-accent-foreground text-lg"></i>
               </div>
               <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100">Live Chat</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Share ideas and restaurant picks</div>
+                <div className="font-medium">Live Chat</div>
+                <div className="text-sm text-muted-foreground">Share ideas and restaurant picks</div>
               </div>
             </div>
           </div>
           
-          {/* Enhanced login buttons */}
+          {/* Enhanced login buttons using site's existing primary colors */}
           <div className="space-y-4">
             <Button 
-              className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-xl transition-all duration-200" 
+              className="w-full h-12 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200" 
               onClick={() => navigateWithLoading('/api/login')}
               disabled={isLoading('/api/login')}
               data-testid="button-login"
@@ -81,7 +80,7 @@ export default function Landing() {
             
             <Button 
               variant="outline"
-              className="w-full h-11 text-base border-2 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200" 
+              className="w-full h-11 text-base transition-colors duration-200" 
               onClick={() => navigateWithLoading('/api/login?force=true')}
               disabled={isLoading('/api/login?force=true')}
               data-testid="button-login-different-user"
