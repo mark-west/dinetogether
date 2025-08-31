@@ -17,6 +17,7 @@
   --muted-foreground: hsl(295, 15%, 50%);
   --accent: hsl(324, 50%, 75%);
   --accent-foreground: hsl(295, 25%, 20%);
+  --hover: hsl(0, 100%, 89%);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(324, 40%, 95%);
   --border: hsl(324, 20%, 88%);
@@ -66,6 +67,7 @@
   --muted-foreground: hsl(324, 15%, 60%);
   --accent: hsl(324, 60%, 70%);
   --accent-foreground: hsl(295, 80%, 8%);
+  --hover: hsl(0, 100%, 89%);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(324, 40%, 92%);
   --border: hsl(295, 20%, 20%);
@@ -136,6 +138,14 @@
 
 .subtle-gradient {
   background: linear-gradient(135deg, hsl(295, 30%, 85%) 0%, hsl(324, 30%, 90%) 100%);
+}
+
+.hover-bg {
+  background-color: hsl(0, 100%, 89%);
+}
+
+.hover\:hover-bg:hover {
+  background-color: hsl(0, 100%, 89%);
 }
 
 .text-gradient {

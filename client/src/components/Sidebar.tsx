@@ -37,7 +37,7 @@ export default function Sidebar() {
         
         {/* User Profile */}
         <div 
-          className="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+          className="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:hover-bg transition-colors"
           onClick={() => window.location.href = '/profile'}
           data-testid="button-profile"
         >
