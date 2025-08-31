@@ -1,5 +1,13 @@
 export async function loadGoogleMapsScript(): Promise<void> {
-  if (window.google || document.getElementById('google-maps-script')) {
+  // Remove any existing Google Maps script to force reload with new API key
+  const existingScript = document.getElementById('google-maps-script');
+  if (existingScript) {
+    existingScript.remove();
+    window.googleMapsLoaded = false;
+    delete window.google;
+  }
+  
+  if (window.google && window.googleMapsLoaded) {
     return;
   }
 
