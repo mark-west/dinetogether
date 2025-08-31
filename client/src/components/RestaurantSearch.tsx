@@ -24,10 +24,10 @@ interface RestaurantSearchProps {
 export default function RestaurantSearch({ onSelect, placeholder = "Search for restaurants...", initialValue = "" }: RestaurantSearchProps) {
   const [query, setQuery] = useState(initialValue);
   
-  // Sync internal state with external initialValue changes
+  // Sync internal state with external initialValue changes only on mount
   useEffect(() => {
     setQuery(initialValue);
-  }, [initialValue]);
+  }, []); // Empty dependency array - only run on mount
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -47,7 +47,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
           // Continue without location - search will still work but without proximity sorting
         });
     }
-  }, [isLoaded]); // Removed getUserLocation dependency to prevent re-runs
+  }, [isLoaded, getUserLocation]); // Keep getUserLocation but memoize it in the hook
 
   useEffect(() => {
     if (!isLoaded || !query.trim() || query.length < 3) {
@@ -81,7 +81,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [query, isLoaded, autocompleteRestaurants, userLocation]);
+  }, [query, isLoaded, userLocation]); // Removed autocompleteRestaurants to prevent re-runs
 
   const handleSelectRestaurant = async (prediction: any) => {
     // Use the restaurant name instead of the full description for cleaner display

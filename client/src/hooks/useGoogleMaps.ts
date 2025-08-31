@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { loadGoogleMapsScript } from '@/utils/loadGoogleMaps';
 
 declare global {
@@ -73,7 +73,7 @@ export function useGooglePlaces() {
     }
   }, [isLoaded, placesService, autocompleteService]); // Added services to dependencies to prevent re-initialization
 
-  const searchPlaces = (query: string, location?: { lat: number; lng: number }) => {
+  const searchPlaces = useCallback((query: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
       if (!placesService) {
         reject(new Error('Places service not available'));
@@ -101,9 +101,9 @@ export function useGooglePlaces() {
         }
       });
     });
-  };
+  }, [placesService]);
 
-  const getPlaceDetails = (placeId: string) => {
+  const getPlaceDetails = useCallback((placeId: string) => {
     return new Promise((resolve, reject) => {
       if (!placesService) {
         reject(new Error('Places service not available'));
@@ -124,9 +124,9 @@ export function useGooglePlaces() {
         }
       );
     });
-  };
+  }, [placesService]);
 
-  const autocompleteRestaurants = (input: string, location?: { lat: number; lng: number }) => {
+  const autocompleteRestaurants = useCallback((input: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
       if (!autocompleteService) {
         reject(new Error('Autocomplete service not available'));
@@ -159,9 +159,9 @@ export function useGooglePlaces() {
         }
       );
     });
-  };
+  }, [autocompleteService]);
 
-  const getUserLocation = () => {
+  const getUserLocation = useCallback(() => {
     return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Geolocation is not supported by this browser'));
@@ -185,7 +185,7 @@ export function useGooglePlaces() {
         }
       );
     });
-  };
+  }, []);
 
   return {
     isLoaded,
