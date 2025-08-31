@@ -24,8 +24,27 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails } = useGooglePlaces();
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle');
+  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Request location when Google search is enabled
+  useEffect(() => {
+    if (useGoogleSearch && isLoaded && !userLocation && locationStatus === 'idle') {
+      setLocationStatus('requesting');
+      getUserLocation()
+        .then((location) => {
+          console.log('Location detected:', location);
+          setUserLocation(location);
+          setLocationStatus('granted');
+        })
+        .catch((error) => {
+          console.error('Location error:', error);
+          setLocationStatus('denied');
+        });
+    }
+  }, [useGoogleSearch, isLoaded, userLocation, locationStatus, getUserLocation]);
 
   // Simple debounced search
   useEffect(() => {
@@ -42,7 +61,8 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     setIsSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        const results = await autocompleteRestaurants(inputValue);
+        // Pass location if available for better results
+        const results = await autocompleteRestaurants(inputValue, userLocation || undefined);
         setSuggestions(results as any[]);
         setShowSuggestions(true);
       } catch (error) {
@@ -57,7 +77,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [inputValue, useGoogleSearch, isLoaded, error, autocompleteRestaurants]);
+  }, [inputValue, useGoogleSearch, isLoaded, error, autocompleteRestaurants, userLocation]);
 
   const handleManualSubmit = () => {
     const value = inputValue.trim();
@@ -127,6 +147,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
           data-testid="button-google-search"
         >
           Search Google
+          {userLocation && <span className="ml-1">📍</span>}
         </Button>
       </div>
 
@@ -203,9 +224,26 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       )}
       
       {useGoogleSearch && !error && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Type at least 3 characters to search for restaurants
-        </p>
+        <div className="space-y-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Type at least 3 characters to search for restaurants
+          </p>
+          {locationStatus === 'requesting' && (
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              🔄 Requesting your location for better results...
+            </p>
+          )}
+          {locationStatus === 'granted' && userLocation && (
+            <p className="text-sm text-green-600 dark:text-green-400">
+              📍 Using your location for nearby results ({userLocation.lat.toFixed(3)}, {userLocation.lng.toFixed(3)})
+            </p>
+          )}
+          {locationStatus === 'denied' && (
+            <p className="text-sm text-yellow-600 dark:text-yellow-400">
+              ⚠️ Location access denied. Results may be less accurate.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
