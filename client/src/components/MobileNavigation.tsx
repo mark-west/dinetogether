@@ -42,13 +42,13 @@ export default function MobileNavigation() {
             ) : (
               <div className="relative">
                 <i className={`${item.icon} text-lg`}></i>
-                {item.path === '/chat' && unreadData?.count > 0 && (
+                {item.path === '/chat' && (unreadData as any)?.count > 0 && (
                   <Badge 
                     variant="destructive" 
                     className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs flex items-center justify-center"
                     data-testid="badge-mobile-unread"
                   >
-                    {unreadData.count > 9 ? '9+' : unreadData.count}
+                    {(unreadData as any).count > 9 ? '9+' : (unreadData as any).count}
                   </Badge>
                 )}
               </div>

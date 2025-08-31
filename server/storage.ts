@@ -87,7 +87,11 @@ export interface IStorage {
   createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
   getGroupMessages(groupId: string): Promise<Array<GroupMessage & { user: User; replies?: Array<GroupMessage & { user: User }> }>>;
   markGroupMessageAsRead(messageId: string, userId: string): Promise<void>;
+  markAllGroupMessagesAsRead(groupId: string, userId: string): Promise<void>;
+  markAllEventMessagesAsRead(eventId: string, userId: string): Promise<void>;
   getUserUnreadCount(userId: string): Promise<number>;
+  getGroupUnreadCount(groupId: string, userId: string): Promise<number>;
+  getEventUnreadCount(eventId: string, userId: string): Promise<number>;
   
   // Dashboard/stats operations
   getUserStats(userId: string): Promise<{
@@ -541,6 +545,42 @@ export class DatabaseStorage implements IStorage {
       .onConflictDoNothing();
   }
 
+  async markAllGroupMessagesAsRead(groupId: string, userId: string): Promise<void> {
+    // Get all group messages not sent by the user
+    const messages = await db
+      .select({ id: groupMessages.id })
+      .from(groupMessages)
+      .where(and(eq(groupMessages.groupId, groupId), ne(groupMessages.userId, userId)));
+
+    // Mark all as read
+    for (const message of messages) {
+      await db.insert(groupMessageReads)
+        .values({
+          groupMessageId: message.id,
+          userId: userId,
+        })
+        .onConflictDoNothing();
+    }
+  }
+
+  async markAllEventMessagesAsRead(eventId: string, userId: string): Promise<void> {
+    // Get all event messages not sent by the user
+    const eventMessages = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(and(eq(messages.eventId, eventId), ne(messages.userId, userId)));
+
+    // Mark all as read
+    for (const message of eventMessages) {
+      await db.insert(messageReads)
+        .values({
+          messageId: message.id,
+          userId: userId,
+        })
+        .onConflictDoNothing();
+    }
+  }
+
   async getUserUnreadCount(userId: string): Promise<number> {
     // Count unread group messages
     const [groupResult] = await db
@@ -585,6 +625,48 @@ export class DatabaseStorage implements IStorage {
     const eventCount = eventResult?.count || 0;
     
     return groupCount + eventCount;
+  }
+
+  async getGroupUnreadCount(groupId: string, userId: string): Promise<number> {
+    const [result] = await db
+      .select({
+        count: sql<number>`count(*)`
+      })
+      .from(groupMessages)
+      .leftJoin(groupMessageReads, and(
+        eq(groupMessageReads.groupMessageId, groupMessages.id),
+        eq(groupMessageReads.userId, userId)
+      ))
+      .where(
+        and(
+          eq(groupMessages.groupId, groupId),
+          ne(groupMessages.userId, userId), // Not sent by current user
+          isNull(groupMessageReads.id) // Not marked as read
+        )
+      );
+
+    return result?.count || 0;
+  }
+
+  async getEventUnreadCount(eventId: string, userId: string): Promise<number> {
+    const [result] = await db
+      .select({
+        count: sql<number>`count(*)`
+      })
+      .from(messages)
+      .leftJoin(messageReads, and(
+        eq(messageReads.messageId, messages.id),
+        eq(messageReads.userId, userId)
+      ))
+      .where(
+        and(
+          eq(messages.eventId, eventId),
+          ne(messages.userId, userId), // Not sent by current user
+          isNull(messageReads.id) // Not marked as read
+        )
+      );
+
+    return result?.count || 0;
   }
 
   // Dashboard/stats operations
@@ -647,6 +729,44 @@ export class DatabaseStorage implements IStorage {
     }).returning();
 
     return member;
+  }
+
+  // Mark all messages in a group as read
+  async markAllGroupMessagesAsRead(groupId: string, userId: string): Promise<void> {
+    // Get all group messages not sent by the user
+    const messages = await db
+      .select({ id: groupMessages.id })
+      .from(groupMessages)
+      .where(and(eq(groupMessages.groupId, groupId), ne(groupMessages.userId, userId)));
+
+    // Mark all as read
+    for (const message of messages) {
+      await db.insert(groupMessageReads)
+        .values({
+          messageId: message.id,
+          userId: userId,
+        })
+        .onConflictDoNothing();
+    }
+  }
+
+  // Mark all messages in an event as read
+  async markAllEventMessagesAsRead(eventId: string, userId: string): Promise<void> {
+    // Get all event messages not sent by the user
+    const messages = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(and(eq(messages.eventId, eventId), ne(messages.userId, userId)));
+
+    // Mark all as read
+    for (const message of messages) {
+      await db.insert(messageReads)
+        .values({
+          messageId: message.id,
+          userId: userId,
+        })
+        .onConflictDoNothing();
+    }
   }
 }
 

@@ -94,9 +94,9 @@ export default function Sidebar() {
             )}
             <div className="flex items-center justify-between w-full">
               <span>{item.label}</span>
-              {item.path === '/chat' && unreadData?.count > 0 && (
+              {item.path === '/chat' && (unreadData as any)?.count > 0 && (
                 <Badge variant="destructive" className="ml-2" data-testid="badge-sidebar-unread">
-                  {unreadData.count}
+                  {(unreadData as any).count}
                 </Badge>
               )}
             </div>

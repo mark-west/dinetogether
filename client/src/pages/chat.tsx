@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { format } from "date-fns";
@@ -100,6 +100,20 @@ export default function Chat() {
     refetchInterval: 5000, // Poll every 5 seconds for unread count
   });
 
+  // Fetch all unread counts in a single query
+  const { data: allUnreadCounts } = useQuery({
+    queryKey: ["/api/chats/all-unread-counts"],
+    retry: false,
+    enabled: isAuthenticated,
+    refetchInterval: 5000,
+  });
+
+  // Helper function to get unread count from the single query
+  const getUnreadCount = (chatType: ChatType, chatId: string) => {
+    const key = `${chatType}:${chatId}`;
+    return (allUnreadCounts as any)?.[key] || 0;
+  };
+
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!selectedChatId) throw new Error("No chat selected");
@@ -148,11 +162,28 @@ export default function Chat() {
     sendMessageMutation.mutate(message.trim());
   };
 
+  const markAsReadMutation = useMutation({
+    mutationFn: async (payload: { chatType: ChatType; chatId: string }) => {
+      const endpoint = payload.chatType === 'group' 
+        ? `/api/groups/${payload.chatId}/messages/mark-read`
+        : `/api/events/${payload.chatId}/messages/mark-read`;
+      await apiRequest("POST", endpoint, {});
+    },
+    onSuccess: () => {
+      // Invalidate all unread count queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["/api/chats/all-unread-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
+    },
+  });
+
   const handleChatSelect = (type: ChatType, id: string) => {
     setSelectedChatType(type);
     setSelectedChatId(id);
     setReplyTo(null);
     window.history.pushState({}, '', `/chat/${type}/${id}`);
+    
+    // Mark messages as read when entering a chat
+    markAsReadMutation.mutate({ chatType: type, chatId: id });
   };
 
   const handleBackToChats = () => {
@@ -299,25 +330,35 @@ export default function Chat() {
                           </div>
                         ) : groups && groups.length > 0 ? (
                           <div className="space-y-1">
-                            {groups.map((group: any) => (
-                              <Button
-                                key={group.id}
-                                variant={selectedChatType === 'group' && selectedChatId === group.id ? "secondary" : "ghost"}
-                                className="w-full justify-between p-4 h-auto text-left"
-                                onClick={() => handleChatSelect('group', group.id)}
-                                data-testid={`button-group-chat-${group.id}`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate" data-testid={`text-group-name-${group.id}`}>
-                                    {group.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate" data-testid={`text-group-members-${group.id}`}>
-                                    {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
-                                  </p>
-                                </div>
-                                <i className="fas fa-users text-muted-foreground flex-shrink-0 ml-2"></i>
-                              </Button>
-                            ))}
+                            {groups.map((group: any) => {
+                              const unreadCount = getUnreadCount('group', group.id);
+                              return (
+                                <Button
+                                  key={group.id}
+                                  variant={selectedChatType === 'group' && selectedChatId === group.id ? "secondary" : "ghost"}
+                                  className="w-full justify-between p-4 h-auto text-left"
+                                  onClick={() => handleChatSelect('group', group.id)}
+                                  data-testid={`button-group-chat-${group.id}`}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`truncate ${unreadCount > 0 ? 'font-bold' : 'font-medium'}`} data-testid={`text-group-name-${group.id}`}>
+                                      {group.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate" data-testid={`text-group-members-${group.id}`}>
+                                      {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {unreadCount > 0 && (
+                                      <Badge variant="destructive" className="text-xs" data-testid={`badge-group-unread-${group.id}`}>
+                                        {unreadCount}
+                                      </Badge>
+                                    )}
+                                    <i className="fas fa-users text-muted-foreground"></i>
+                                  </div>
+                                </Button>
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="p-4 text-center text-muted-foreground">
@@ -337,28 +378,38 @@ export default function Chat() {
                           </div>
                         ) : events && events.length > 0 ? (
                           <div className="space-y-1">
-                            {events.map((evt: any) => (
-                              <Button
-                                key={evt.id}
-                                variant={selectedChatType === 'event' && selectedChatId === evt.id ? "secondary" : "ghost"}
-                                className="w-full justify-between p-4 h-auto text-left"
-                                onClick={() => handleChatSelect('event', evt.id)}
-                                data-testid={`button-event-chat-${evt.id}`}
-                              >
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate" data-testid={`text-event-name-${evt.id}`}>
-                                    {evt.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate" data-testid={`text-event-group-${evt.id}`}>
-                                    {evt.group?.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground" data-testid={`text-event-date-${evt.id}`}>
-                                    {format(new Date(evt.dateTime), 'MMM d, h:mm a')}
-                                  </p>
-                                </div>
-                                <i className="fas fa-calendar text-muted-foreground flex-shrink-0 ml-2"></i>
-                              </Button>
-                            ))}
+                            {events.map((evt: any) => {
+                              const unreadCount = getUnreadCount('event', evt.id);
+                              return (
+                                <Button
+                                  key={evt.id}
+                                  variant={selectedChatType === 'event' && selectedChatId === evt.id ? "secondary" : "ghost"}
+                                  className="w-full justify-between p-4 h-auto text-left"
+                                  onClick={() => handleChatSelect('event', evt.id)}
+                                  data-testid={`button-event-chat-${evt.id}`}
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`truncate ${unreadCount > 0 ? 'font-bold' : 'font-medium'}`} data-testid={`text-event-name-${evt.id}`}>
+                                      {evt.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate" data-testid={`text-event-group-${evt.id}`}>
+                                      {evt.group?.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground" data-testid={`text-event-date-${evt.id}`}>
+                                      {format(new Date(evt.dateTime), 'MMM d, h:mm a')}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {unreadCount > 0 && (
+                                      <Badge variant="destructive" className="text-xs" data-testid={`badge-event-unread-${evt.id}`}>
+                                        {unreadCount}
+                                      </Badge>
+                                    )}
+                                    <i className="fas fa-calendar text-muted-foreground"></i>
+                                  </div>
+                                </Button>
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="p-4 text-center text-muted-foreground">

@@ -581,6 +581,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all unread counts for user's chats
+  app.get('/api/chats/all-unread-counts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get all groups user is a member of
+      const userGroups = await storage.getUserGroups(userId);
+      const groupCounts: Record<string, number> = {};
+      
+      for (const group of userGroups) {
+        const count = await storage.getGroupUnreadCount(group.id, userId);
+        groupCounts[`group:${group.id}`] = count;
+      }
+      
+      // Get all events user has RSVP'd to
+      const userEvents = await storage.getUserEvents(userId);
+      const eventCounts: Record<string, number> = {};
+      
+      for (const event of userEvents) {
+        const count = await storage.getEventUnreadCount(event.id, userId);
+        eventCounts[`event:${event.id}`] = count;
+      }
+      
+      res.json({ ...groupCounts, ...eventCounts });
+    } catch (error) {
+      console.error("Error fetching all unread counts:", error);
+      res.status(500).json({ message: "Failed to fetch unread counts" });
+    }
+  });
+
+  // Mark all messages in a group as read
+  app.post('/api/groups/:id/messages/mark-read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groupId = req.params.id;
+      await storage.markAllGroupMessagesAsRead(groupId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error marking group messages as read:", error);
+      res.status(500).json({ message: "Failed to mark group messages as read" });
+    }
+  });
+
+  // Mark all messages in an event as read
+  app.post('/api/events/:id/messages/mark-read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const eventId = req.params.id;
+      await storage.markAllEventMessagesAsRead(eventId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error marking event messages as read:", error);
+      res.status(500).json({ message: "Failed to mark event messages as read" });
+    }
+  });
+
+  // Get unread count for specific group
+  app.get('/api/groups/:id/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groupId = req.params.id;
+      const count = await storage.getGroupUnreadCount(groupId, userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching group unread count:", error);
+      res.status(500).json({ message: "Failed to fetch group unread count" });
+    }
+  });
+
+  // Get unread count for specific event
+  app.get('/api/events/:id/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const eventId = req.params.id;
+      const count = await storage.getEventUnreadCount(eventId, userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching event unread count:", error);
+      res.status(500).json({ message: "Failed to fetch event unread count" });
+    }
+  });
+
+  // Get all unread counts for user's chats
+  app.get('/api/chats/all-unread-counts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get all groups user is a member of
+      const userGroups = await storage.getUserGroups(userId);
+      const groupCounts: Record<string, number> = {};
+      
+      for (const group of userGroups) {
+        const count = await storage.getGroupUnreadCount(group.id, userId);
+        groupCounts[`group:${group.id}`] = count;
+      }
+      
+      // Get all events user has RSVP'd to
+      const userEvents = await storage.getUserEvents(userId);
+      const eventCounts: Record<string, number> = {};
+      
+      for (const event of userEvents) {
+        const count = await storage.getEventUnreadCount(event.id, userId);
+        eventCounts[`event:${event.id}`] = count;
+      }
+      
+      res.json({ ...groupCounts, ...eventCounts });
+    } catch (error) {
+      console.error("Error fetching all unread counts:", error);
+      res.status(500).json({ message: "Failed to fetch unread counts" });
+    }
+  });
+
   // Dashboard stats
   app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
     try {
