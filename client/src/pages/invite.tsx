@@ -14,6 +14,7 @@ export default function InvitePage() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
+  const [hasError, setHasError] = useState(false);
   
   // Get invite code from URL params
   const inviteCode = params.inviteCode;
@@ -21,8 +22,24 @@ export default function InvitePage() {
   const { data: inviteData, isLoading: inviteLoading, error } = useQuery<{invite: any; group: any}>({
     queryKey: [`/api/invites/${inviteCode}`],
     retry: false,
-    enabled: !!inviteCode,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: !!inviteCode && !hasError,
+    throwOnError: false,
+    gcTime: 0, // Don't cache failed queries
+    onError: (error: any) => {
+      console.error("Invite query error:", error);
+      setHasError(true);
+    },
   });
+
+  // Set error state when there's an error to prevent further requests
+  useEffect(() => {
+    if (error) {
+      setHasError(true);
+    }
+  }, [error]);
 
   const acceptInviteMutation = useMutation({
     mutationFn: async () => {
@@ -98,7 +115,7 @@ export default function InvitePage() {
     );
   }
 
-  if (error || !inviteData) {
+  if (error || hasError || (!inviteLoading && !inviteData)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
