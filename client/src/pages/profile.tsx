@@ -7,8 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { User } from "@shared/schema";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
+import PhotoUploader from "@/components/PhotoUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ type UpdateProfileData = z.infer<typeof updateProfileSchema>;
 export default function Profile() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [showPhotoUploader, setShowPhotoUploader] = useState(false);
 
   const form = useForm<UpdateProfileData>({
     resolver: zodResolver(updateProfileSchema),
@@ -42,11 +45,12 @@ export default function Profile() {
   // Set form values when user data loads
   useEffect(() => {
     if (user) {
+      const userData = user as User;
       form.reset({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        phoneNumber: user.phoneNumber || "",
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+        email: userData.email || "",
+        phoneNumber: userData.phoneNumber || "",
       });
     }
   }, [user, form]);
@@ -96,8 +100,43 @@ export default function Profile() {
     },
   });
 
+  const updatePhotoMutation = useMutation({
+    mutationFn: async (photoUrl: string) => {
+      return await apiRequest("PUT", "/api/profile/photo", { photoUrl });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Profile photo updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update profile photo",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: UpdateProfileData) => {
     updateProfileMutation.mutate(data);
+  };
+
+  const handlePhotoSelect = (photoUrl: string) => {
+    updatePhotoMutation.mutate(photoUrl);
   };
 
   if (isLoading) {
@@ -166,27 +205,32 @@ export default function Profile() {
                 {/* Profile Photo Section */}
                 <div className="flex items-center gap-6">
                   <div className="relative">
-                    {user?.profileImageUrl ? (
+                    {(user as User)?.profileImageUrl ? (
                       <img 
-                        src={user.profileImageUrl} 
+                        src={(user as User).profileImageUrl!} 
                         alt="Profile photo" 
                         className="w-20 h-20 rounded-full object-cover border-4 border-border"
                         data-testid="img-profile-photo"
                       />
                     ) : (
                       <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-border">
-                        {(user?.firstName?.[0] || user?.email?.[0] || '?').toUpperCase()}
+                        {((user as User)?.firstName?.[0] || (user as User)?.email?.[0] || '?').toUpperCase()}
                       </div>
                     )}
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">Profile Photo</h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Your profile photo is synced from your account
+                      Upload a custom profile photo
                     </p>
-                    <Button variant="outline" size="sm" disabled>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowPhotoUploader(true)}
+                      data-testid="button-change-photo"
+                    >
                       <i className="fas fa-camera mr-2"></i>
-                      Coming Soon
+                      {(user as User)?.profileImageUrl ? 'Change Photo' : 'Upload Photo'}
                     </Button>
                   </div>
                 </div>
@@ -338,7 +382,7 @@ export default function Profile() {
                   <div>
                     <h4 className="font-medium text-foreground">Member Since</h4>
                     <p className="text-sm text-muted-foreground">
-                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                      {(user as User)?.createdAt ? new Date((user as User).createdAt!).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -353,6 +397,16 @@ export default function Profile() {
       </div>
 
       <MobileNavigation />
+      
+      {/* Photo Uploader Modal */}
+      <PhotoUploader
+        isOpen={showPhotoUploader}
+        onClose={() => setShowPhotoUploader(false)}
+        onPhotoSelect={handlePhotoSelect}
+        currentPhotoUrl={(user as User)?.profileImageUrl || ""}
+        title="Update Profile Photo"
+        description="Upload a new profile photo that will be displayed across the app"
+      />
     </div>
   );
 }

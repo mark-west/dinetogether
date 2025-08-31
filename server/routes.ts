@@ -51,6 +51,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/profile/photo', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { photoUrl } = req.body;
+      
+      const updateData = {
+        profileImageUrl: photoUrl || null,
+        updatedAt: new Date(),
+      };
+      
+      const updatedUser = await storage.updateUser(userId, updateData);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile photo:", error);
+      res.status(500).json({ message: "Failed to update profile photo" });
+    }
+  });
+
 
   // Group routes
   app.post('/api/groups', isAuthenticated, async (req: any, res) => {
@@ -126,6 +144,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing group member:", error);
       res.status(500).json({ message: "Failed to remove group member" });
+    }
+  });
+
+  app.put('/api/groups/:id/photo', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { photoUrl } = req.body;
+      
+      // Check if user is admin of the group
+      const group = await storage.getGroup(req.params.id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      if (group.adminId !== userId) {
+        return res.status(403).json({ message: "Only group admin can update group photo" });
+      }
+      
+      const updateData = {
+        photoUrl: photoUrl || null,
+        updatedAt: new Date(),
+      };
+      
+      const updatedGroup = await storage.updateGroup(req.params.id, updateData);
+      res.json(updatedGroup);
+    } catch (error) {
+      console.error("Error updating group photo:", error);
+      res.status(500).json({ message: "Failed to update group photo" });
     }
   });
 

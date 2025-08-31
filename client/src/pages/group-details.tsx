@@ -6,9 +6,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Group } from "@shared/schema";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import InviteModal from "@/components/InviteModal";
+import PhotoUploader from "@/components/PhotoUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +22,7 @@ export default function GroupDetails() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showPhotoUploader, setShowPhotoUploader] = useState(false);
   const [activeTab, setActiveTab] = useState('events');
   
   // Check URL parameters for auto-opening invite modal
@@ -71,6 +74,42 @@ export default function GroupDetails() {
     retry: false,
     enabled: isAuthenticated && !!groupId,
   });
+
+  // Group photo update mutation
+  const updateGroupPhotoMutation = useMutation({
+    mutationFn: async (photoUrl: string) => {
+      return await apiRequest("PUT", `/api/groups/${groupId}/photo`, { photoUrl });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Group photo updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update group photo",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGroupPhotoSelect = (photoUrl: string) => {
+    updateGroupPhotoMutation.mutate(photoUrl);
+  };
 
   if (isLoading || groupLoading) {
     return (
@@ -141,22 +180,64 @@ export default function GroupDetails() {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
-                <div className="w-24 h-24 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-2xl">
-                  {group.name.charAt(0).toUpperCase()}
+                <div className="relative">
+                  {(group as Group)?.photoUrl ? (
+                    <img 
+                      src={(group as Group).photoUrl!} 
+                      alt={`${(group as Group).name} photo`}
+                      className="w-24 h-24 rounded-lg object-cover"
+                      data-testid="img-group-photo"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-2xl">
+                      {(group as Group).name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  {/* Show edit button if user is admin */}
+                  {(group as Group).adminId === user?.id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                      onClick={() => setShowPhotoUploader(true)}
+                      data-testid="button-edit-group-photo"
+                    >
+                      <i className="fas fa-camera text-xs"></i>
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-group-name">
-                        {group?.name}
+                        {(group as Group)?.name}
                       </h1>
-                      {group?.description && (
+                      {(group as Group)?.description ? (
                         <p className="text-muted-foreground" data-testid="text-group-description">
-                          {group.description}
+                          {(group as Group).description}
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground italic">
+                          No description provided
                         </p>
                       )}
                     </div>
+                    
+                    {/* Admin actions */}
+                    {(group as Group).adminId === user?.id && (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowInviteModal(true)}
+                          data-testid="button-invite-members"
+                        >
+                          <i className="fas fa-user-plus mr-2"></i>
+                          Invite
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
@@ -168,7 +249,7 @@ export default function GroupDetails() {
                     </div>
                     <div className="flex items-center gap-2">
                       <i className="fas fa-calendar"></i>
-                      <span>Created {group?.createdAt ? format(new Date(group.createdAt), 'MMM d, yyyy') : 'Unknown'}</span>
+                      <span>Created {(group as Group)?.createdAt ? format(new Date((group as Group).createdAt!), 'MMM d, yyyy') : 'Unknown'}</span>
                     </div>
                   </div>
                 </div>
@@ -343,6 +424,16 @@ export default function GroupDetails() {
           onClose={() => setShowInviteModal(false)} 
         />
       )}
+      
+      {/* Group Photo Uploader Modal */}
+      <PhotoUploader
+        isOpen={showPhotoUploader}
+        onClose={() => setShowPhotoUploader(false)}
+        onPhotoSelect={handleGroupPhotoSelect}
+        currentPhotoUrl={(group as Group)?.photoUrl || ""}
+        title="Update Group Photo"
+        description="Upload a photo that represents your group"
+      />
     </div>
   );
 }

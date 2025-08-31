@@ -43,6 +43,7 @@ export const groups = pgTable("groups", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  photoUrl: varchar("photo_url"),
   adminId: varchar("admin_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
