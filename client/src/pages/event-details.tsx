@@ -347,8 +347,8 @@ export default function EventDetails() {
             </CardContent>
           </Card>
 
-          {/* Map */}
-          {mapMarkers.length > 0 && (
+          {/* Location */}
+          {(event.restaurantName || event.restaurantAddress) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -357,25 +357,44 @@ export default function EventDetails() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <GoogleMapComponent
-                  center={mapMarkers[0].position}
-                  markers={mapMarkers}
-                  zoom={15}
-                  className="w-full h-64 rounded-lg"
-                />
-                {event.restaurantAddress && (
+                {/* Map Display - show map if API works, fallback if not */}
+                {mapMarkers.length > 0 ? (
+                  <GoogleMapComponent
+                    center={mapMarkers[0].position}
+                    markers={mapMarkers}
+                    zoom={15}
+                    className="w-full h-64 rounded-lg"
+                  />
+                ) : (
+                  <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="text-center p-6">
+                      <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
+                      <p className="text-sm text-muted-foreground">Map unavailable</p>
+                      <p className="text-xs text-muted-foreground mt-1">Location details below</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Restaurant Info */}
+                {(event.restaurantName || event.restaurantAddress) && (
                   <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <div className="flex-1">
-                      <p className="font-medium">{event.restaurantName}</p>
-                      <p className="text-sm text-muted-foreground">{event.restaurantAddress}</p>
+                      {event.restaurantName && (
+                        <p className="font-medium" data-testid="text-restaurant-name">{event.restaurantName}</p>
+                      )}
+                      {event.restaurantAddress && (
+                        <p className="text-sm text-muted-foreground" data-testid="text-restaurant-address">{event.restaurantAddress}</p>
+                      )}
                     </div>
-                    <DirectionsButton 
-                      address={event.restaurantAddress}
-                      restaurantName={event.restaurantName}
-                      lat={event.restaurantLat}
-                      lng={event.restaurantLng}
-                      size="sm"
-                    />
+                    {event.restaurantAddress && (
+                      <DirectionsButton 
+                        address={event.restaurantAddress}
+                        restaurantName={event.restaurantName}
+                        lat={event.restaurantLat}
+                        lng={event.restaurantLng}
+                        size="sm"
+                      />
+                    )}
                   </div>
                 )}
               </CardContent>
