@@ -50,78 +50,80 @@ export function GroupCard({
   if (variant === 'detailed') {
     return (
       <Card 
-        className={`hover:shadow-md transition-shadow cursor-pointer ${className}`}
+        className={`hover:shadow-lg transition-all duration-200 cursor-pointer border-border/60 hover:border-primary/20 ${className}`}
         onClick={handleCardClick}
         data-testid={`card-group-${group.id}`}
       >
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
+        <CardHeader className="p-4 pb-3">
+          <div className="flex items-start gap-3">
             {/* Group Photo */}
-            <div className="w-full sm:w-auto flex justify-center sm:justify-start">
+            <div className="shrink-0">
               {group.photoUrl ? (
                 <img 
                   src={group.photoUrl} 
                   alt={`${group.name} photo`}
-                  className="w-20 h-20 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0"
+                  className="w-12 h-12 rounded-lg object-cover"
                   data-testid={`img-group-photo-${group.id}`}
                 />
               ) : (
-                <div className="w-20 h-20 sm:w-16 sm:h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
                   {group.name.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
             
-            <div className="flex-1 min-w-0 w-full text-center sm:text-left">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
-                <CardTitle className="text-lg leading-tight" data-testid={`text-group-name-${group.id}`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <CardTitle className="text-base font-semibold leading-tight truncate" data-testid={`text-group-name-${group.id}`}>
                   {group.name}
                 </CardTitle>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0 mx-auto sm:mx-0 ${
-                  group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap shrink-0 ${
+                  group.role === 'admin' 
+                    ? 'bg-primary/10 text-primary border border-primary/20' 
+                    : 'bg-green-50 text-green-700 border border-green-200'
                 }`} data-testid={`text-role-${group.id}`}>
                   {group.role === 'admin' ? 'Admin' : 'Member'}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground" data-testid={`text-member-count-${group.id}`}>
+              <p className="text-xs text-muted-foreground" data-testid={`text-member-count-${group.id}`}>
                 {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 pt-0 space-y-3">
           {group.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${group.id}`}>
+            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed" data-testid={`text-description-${group.id}`}>
               {group.description}
             </p>
           )}
           
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             <span>Created {format(new Date(group.createdAt), 'MMM d, yyyy')}</span>
           </div>
           
           {showActions && (
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <div className="flex gap-2 pt-1">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 text-xs w-full"
+                className="flex-1 text-xs h-8 font-medium"
                 onClick={(e) => handleActionClick(e, 'view')}
                 data-testid={`button-view-group-${group.id}`}
               >
-                <EyeIcon className="mr-1" size="xs" />
+                <EyeIcon className="mr-1.5 w-3 h-3" />
                 View
               </Button>
               {group.role === 'admin' && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1 text-xs w-full"
+                  className="flex-1 text-xs h-8 font-medium"
                   onClick={(e) => handleActionClick(e, 'invite')}
                   data-testid={`button-invite-${group.id}`}
                 >
-                  <UserPlusIcon className="mr-1" size="xs" />
+                  <UserPlusIcon className="mr-1.5 w-3 h-3" />
                   Invite
                 </Button>
               )}

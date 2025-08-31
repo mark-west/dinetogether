@@ -76,15 +76,15 @@ export default function Groups() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">My Groups</h2>
-              <p className="text-muted-foreground">Manage your restaurant groups and memberships</p>
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="space-y-1">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">My Groups</h2>
+              <p className="text-sm sm:text-base text-muted-foreground">Manage your restaurant groups and memberships</p>
             </div>
             <Button 
               onClick={() => setShowCreateModal(true)}
-              className="hidden md:flex"
+              className="hidden md:flex shrink-0"
               data-testid="button-create-group"
             >
               <PlusIcon className="mr-2" />
@@ -93,13 +93,13 @@ export default function Groups() {
           </div>
 
           {groupsLoading ? (
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-48" />
+                <Skeleton key={i} className="h-44 sm:h-48" />
               ))}
             </div>
           ) : groups && Array.isArray(groups) && groups.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {groups.map((group: any) => (
                 <GroupCard
                   key={group.id}
