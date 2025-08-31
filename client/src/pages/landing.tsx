@@ -7,9 +7,9 @@ export default function Landing() {
   const { navigateWithLoading, isLoading } = useLoadingNavigation();
   
   return (
-    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-2">
       <Card className="w-full max-w-lg shadow-2xl border-0">
-        <CardHeader className="text-center pb-3 pt-4">
+        <CardHeader className="text-center pb-3 pt-2">
           {/* Your actual DineTogether logo - large as content width */}
           <div className="mx-auto mb-3 bg-white rounded-lg p-3">
             <img 
