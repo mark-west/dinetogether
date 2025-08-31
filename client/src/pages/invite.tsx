@@ -1,72 +1,137 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface InviteData {
+  invite: {
+    inviteCode: string;
+    groupId: string;
+    status: string;
+  };
+  group: {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt: string;
+  };
+}
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+}
+
 export default function InvitePage() {
   const params = useParams();
   const { toast } = useToast();
-  const [isAccepting, setIsAccepting] = useState(false);
-  const [hasError, setHasError] = useState(false);
-  const [needsAuth, setNeedsAuth] = useState(false);
   
-  // Get invite code from URL params
+  const [inviteData, setInviteData] = useState<InviteData | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [inviteLoading, setInviteLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAccepting, setIsAccepting] = useState(false);
+  
   const inviteCode = params.inviteCode;
 
-  const { data: inviteData, isLoading: inviteLoading, error } = useQuery<{invite: any; group: any}>({
-    queryKey: [`/api/invites/${inviteCode}`],
-    retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    enabled: !!inviteCode && !hasError,
-    throwOnError: false,
-    gcTime: 0, // Don't cache failed queries
-  });
-
-  // Only load auth AFTER we have valid invite data
-  const { data: user, isLoading: authLoading } = useQuery({
-    queryKey: ["/api/auth/user"],
-    retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    enabled: !!inviteData && !hasError,
-    throwOnError: false,
-    gcTime: 0,
-  });
-
-  const isAuthenticated = !!user;
-  const isLoading = authLoading;
-
-  // Set error state when there's an error to prevent further requests
+  // Load invite data first
   useEffect(() => {
-    if (error) {
-      setHasError(true);
+    if (!inviteCode) {
+      setError("No invite code provided");
+      setInviteLoading(false);
+      return;
     }
-  }, [error]);
 
-  const acceptInviteMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", `/api/invites/${inviteCode}/accept`, {});
-    },
-    onSuccess: () => {
+    let isCancelled = false;
+    
+    const loadInvite = async () => {
+      try {
+        const response = await fetch(`/api/invites/${inviteCode}`, {
+          credentials: 'include'
+        });
+        
+        if (isCancelled) return;
+        
+        if (!response.ok) {
+          throw new Error("Invite not found or expired");
+        }
+        
+        const data = await response.json();
+        setInviteData(data);
+        setInviteLoading(false);
+        
+        // Now load auth if invite is valid
+        setAuthLoading(true);
+        
+        const authResponse = await fetch('/api/auth/user', {
+          credentials: 'include'
+        });
+        
+        if (isCancelled) return;
+        
+        if (authResponse.ok) {
+          const userData = await authResponse.json();
+          setUser(userData);
+        }
+        
+        setAuthLoading(false);
+        setIsLoading(false);
+        
+      } catch (err) {
+        if (isCancelled) return;
+        console.error("Error loading invite:", err);
+        setError(err instanceof Error ? err.message : "Failed to load invite");
+        setInviteLoading(false);
+        setIsLoading(false);
+      }
+    };
+
+    loadInvite();
+    
+    return () => {
+      isCancelled = true;
+    };
+  }, [inviteCode]);
+
+  const handleAcceptInvite = async () => {
+    if (!inviteCode) return;
+    
+    setIsAccepting(true);
+    
+    try {
+      const response = await fetch(`/api/invites/${inviteCode}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to accept invite");
+      }
+      
       toast({
         title: "Success!",
         description: "You've joined the group successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      
       setTimeout(() => {
         window.location.href = "/groups";
       }, 1500);
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to accept invite";
+      
+      if (errorMessage.includes("Unauthorized")) {
         toast({
           title: "Please log in",
           description: "You need to log in to accept this invite",
@@ -78,22 +143,16 @@ export default function InvitePage() {
         return;
       }
       
-      const errorMessage = (error as Error).message;
       toast({
         title: "Error",
         description: errorMessage.includes("already a member") 
           ? "You're already a member of this group!"
-          : "Failed to accept invite",
+          : errorMessage,
         variant: "destructive",
       });
-    },
-  });
-
-  // Removed automatic auth redirect to prevent infinite loops
-
-  const handleAcceptInvite = () => {
-    setIsAccepting(true);
-    acceptInviteMutation.mutate();
+    } finally {
+      setIsAccepting(false);
+    }
   };
 
   if (isLoading || inviteLoading) {
@@ -113,7 +172,7 @@ export default function InvitePage() {
     );
   }
 
-  if (error || hasError || (!inviteLoading && !inviteData)) {
+  if (error || !inviteData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -138,7 +197,8 @@ export default function InvitePage() {
     );
   }
 
-  const { invite, group } = inviteData as {invite: any; group: any};
+  const { invite, group } = inviteData;
+  const isAuthenticated = !!user;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -175,23 +235,23 @@ export default function InvitePage() {
           {isAuthenticated && user && (
             <div className="bg-muted/50 rounded-lg p-4">
               <div className="flex items-center gap-3">
-                {(user as any).profileImageUrl ? (
+                {user.profileImageUrl ? (
                   <img 
-                    src={(user as any).profileImageUrl} 
+                    src={user.profileImageUrl} 
                     alt="Your avatar"
                     className="w-10 h-10 rounded-full object-cover"
                     data-testid="img-user-avatar"
                   />
                 ) : (
                   <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-medium">
-                    {((user as any).firstName?.[0] || (user as any).email?.[0] || '?').toUpperCase()}
+                    {(user.firstName?.[0] || user.email?.[0] || '?').toUpperCase()}
                   </div>
                 )}
                 <div>
                   <p className="font-medium text-sm" data-testid="text-user-name">
-                    {(user as any).firstName && (user as any).lastName 
-                      ? `${(user as any).firstName} ${(user as any).lastName}`
-                      : (user as any).email
+                    {user.firstName && user.lastName 
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.email
                     }
                   </p>
                   <p className="text-xs text-muted-foreground">Ready to join</p>
@@ -204,11 +264,11 @@ export default function InvitePage() {
           <div className="space-y-3">
             <Button 
               onClick={handleAcceptInvite}
-              disabled={isAccepting || acceptInviteMutation.isPending || !isAuthenticated}
+              disabled={isAccepting || !isAuthenticated}
               className="w-full"
               data-testid="button-accept-invite"
             >
-              {isAccepting || acceptInviteMutation.isPending ? (
+              {isAccepting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                   Joining...
@@ -233,7 +293,7 @@ export default function InvitePage() {
           </div>
 
           {/* Login prompt for unauthenticated users */}
-          {!isAuthenticated && (
+          {!isAuthenticated && !authLoading && (
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-muted-foreground mb-3">
                 You need to log in to accept this invite
