@@ -76,7 +76,7 @@ export default function Landing() {
             
             {/* Clear messaging about authentication process */}
             <div className="text-center text-xs text-muted-foreground px-4">
-              You'll receive a secure email link to access your account
+              Sign in with your Google, GitHub, or other social accounts to get started
             </div>
           </div>
         </CardContent>
