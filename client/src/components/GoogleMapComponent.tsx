@@ -50,7 +50,7 @@ export default function GoogleMapComponent({
       
       // Add error listener for map loading issues
       mapInstanceRef.current.addListener('error', (error: any) => {
-        console.error('Google Maps API Error - likely billing/quota issue:', error);
+        // Silently handle Google Maps API errors
       });
       
       // Force a resize after initialization to ensure proper rendering
@@ -74,7 +74,7 @@ export default function GoogleMapComponent({
 
       isInitializedRef.current = true;
     } catch (error) {
-      console.error('Error initializing Google Map:', error);
+      // Silently handle map initialization errors
     }
   }, [isLoaded]);
 

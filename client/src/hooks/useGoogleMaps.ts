@@ -42,14 +42,12 @@ export function useGoogleMaps() {
     // Set up a timeout to detect if Google Maps fails to load
     const loadTimeout = setTimeout(() => {
       if (!window.googleMapsLoaded && !window.google) {
-        console.warn('Google Maps loading timeout - API key may be invalid');
         setError('Google Maps API key is invalid or lacks permissions');
       }
     }, 15000); // 15 second timeout (longer for slower connections)
 
     // Load the Google Maps script
     loadGoogleMapsScript().catch((error) => {
-      console.error('Failed to load Google Maps script:', error);
       setError('Failed to load Google Maps');
       clearTimeout(loadTimeout);
     });
@@ -89,7 +87,7 @@ export function useGooglePlaces() {
       setPlacesService(placesServiceInstance);
       setAutocompleteService(autocompleteServiceInstance);
     } catch (error) {
-      console.error('Error initializing Google Places services:', error);
+      // Silently handle Places service initialization errors
     }
   }, [isLoaded, placesService, autocompleteService]); // Added services to dependencies to prevent re-initialization
 
