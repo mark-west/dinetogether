@@ -7,7 +7,6 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import CreateGroupModal from "@/components/CreateGroupModal";
-import InviteModal from "@/components/InviteModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +15,6 @@ export default function Groups() {
   const { isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState<{ groupId: string; groupName: string } | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -156,7 +154,10 @@ export default function Groups() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => setShowInviteModal({ groupId: group.id, groupName: group.name })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = `/groups/${group.id}?tab=members&invite=true`;
+                          }}
                           data-testid={`button-invite-${group.id}`}
                         >
                           <i className="fas fa-user-plus mr-2"></i>
@@ -194,14 +195,6 @@ export default function Groups() {
       
       {showCreateModal && (
         <CreateGroupModal onClose={() => setShowCreateModal(false)} />
-      )}
-      
-      {showInviteModal && (
-        <InviteModal 
-          groupId={showInviteModal.groupId}
-          groupName={showInviteModal.groupName}
-          onClose={() => setShowInviteModal(null)} 
-        />
       )}
     </div>
   );

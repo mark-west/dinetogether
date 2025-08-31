@@ -20,6 +20,25 @@ export default function GroupDetails() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('events');
+  
+  // Check URL parameters for auto-opening invite modal
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const inviteParam = urlParams.get('invite');
+    
+    if (tabParam === 'members') {
+      setActiveTab('members');
+    }
+    
+    if (inviteParam === 'true') {
+      setShowInviteModal(true);
+      // Clean up URL parameters
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -158,7 +177,7 @@ export default function GroupDetails() {
           </Card>
 
           {/* Content Tabs */}
-          <Tabs defaultValue="events" className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="events">Events</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
