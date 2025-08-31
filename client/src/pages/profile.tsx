@@ -401,7 +401,10 @@ export default function Profile() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => window.location.href = '/api/login?force=true'}
+                    onClick={() => {
+                      // First log out the current user, then redirect to login
+                      window.location.href = '/api/logout';
+                    }}
                     data-testid="button-switch-account"
                   >
                     <i className="fas fa-user-plus mr-2"></i>
