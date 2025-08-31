@@ -22,13 +22,19 @@ export async function loadGoogleMapsScript(): Promise<void> {
     
     window.initGoogleMaps = function() {
       console.log('Google Maps script loaded successfully');
+      console.log('Google Maps available:', !!window.google);
+      console.log('Places API available:', !!window.google?.maps?.places);
       window.googleMapsLoaded = true;
       window.dispatchEvent(new Event('googleMapsLoaded'));
     };
     
     script.onerror = function(error) {
       console.error('Failed to load Google Maps script:', error);
-      console.error('Check API key permissions and billing status');
+      console.error('This usually means:');
+      console.error('1. Invalid API key');
+      console.error('2. API key lacks Places API permissions');
+      console.error('3. Billing not enabled for the project');
+      console.error('4. Domain restrictions on the API key');
     };
     
     document.head.appendChild(script);

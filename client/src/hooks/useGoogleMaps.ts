@@ -20,7 +20,12 @@ export function useGoogleMaps() {
     }
 
     const handleLoad = () => {
-      setIsLoaded(true);
+      // Check if Google Maps actually loaded properly
+      if (window.google?.maps) {
+        setIsLoaded(true);
+      } else {
+        setError('Google Maps API failed to load properly');
+      }
     };
 
     const handleError = () => {
@@ -30,14 +35,22 @@ export function useGoogleMaps() {
     // Check if API key exists
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      setError('Google Maps API key not found - Google Maps features will be disabled');
+      setError('Google Maps API key not found');
       return;
     }
+
+    // Set up a timeout to detect if Google Maps fails to load
+    const loadTimeout = setTimeout(() => {
+      if (!window.googleMapsLoaded) {
+        setError('Google Maps API key is invalid or lacks permissions');
+      }
+    }, 10000); // 10 second timeout
 
     // Load the Google Maps script
     loadGoogleMapsScript().catch((error) => {
       console.error('Failed to load Google Maps script:', error);
       setError('Failed to load Google Maps');
+      clearTimeout(loadTimeout);
     });
 
     window.addEventListener('googleMapsLoaded', handleLoad);
@@ -46,6 +59,7 @@ export function useGoogleMaps() {
     return () => {
       window.removeEventListener('googleMapsLoaded', handleLoad);
       window.removeEventListener('error', handleError);
+      clearTimeout(loadTimeout);
     };
   }, []);
 

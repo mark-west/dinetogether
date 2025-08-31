@@ -113,8 +113,16 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
 
   if (error) {
     return (
-      <div className="text-sm text-destructive">
-        Unable to load restaurant search: {error}
+      <div className="space-y-2">
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Restaurant name (Google Maps unavailable)"
+          data-testid="input-restaurant-search-fallback"
+        />
+        <div className="text-xs text-muted-foreground">
+          Google Maps search unavailable. Please enter restaurant name manually.
+        </div>
       </div>
     );
   }
@@ -123,13 +131,25 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
     <div className="relative">
       <Input
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={placeholder}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          // If Google Maps is not available, immediately call onSelect with manual input
+          if (error && e.target.value.trim()) {
+            // Simple manual restaurant entry
+            const manualRestaurant = {
+              placeId: `manual-${Date.now()}`,
+              name: e.target.value.trim(),
+              address: '',
+            };
+            onSelect(manualRestaurant);
+          }
+        }}
+        placeholder={error ? "Enter restaurant name manually" : placeholder}
         data-testid="input-restaurant-search"
-        disabled={!isLoaded}
+        disabled={!isLoaded && !error} // Only disable if loading, not if there's an error
       />
       
-      {!isLoaded && (
+      {!isLoaded && !error && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
         </div>
