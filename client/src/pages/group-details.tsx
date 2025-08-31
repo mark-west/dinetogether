@@ -11,6 +11,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import InviteModal from "@/components/InviteModal";
 import PhotoUploader from "@/components/PhotoUploader";
+import CreateEventModal from "@/components/CreateEventModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ export default function GroupDetails() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [duplicateGroupName, setDuplicateGroupName] = useState('');
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
   
   // Check URL parameters for auto-opening invite modal
   useEffect(() => {
@@ -90,6 +92,13 @@ export default function GroupDetails() {
     queryFn: () => fetch(`/api/groups/${groupId}/events/with-rsvps`).then(res => res.json()),
     retry: false,
     enabled: isAuthenticated && !!groupId,
+  });
+
+  // Fetch all groups for the create event modal
+  const { data: allGroups } = useQuery({
+    queryKey: ["/api/groups"],
+    retry: false,
+    enabled: isAuthenticated,
   });
 
   // Group photo update mutation
@@ -439,7 +448,7 @@ export default function GroupDetails() {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Group Events</h2>
                 <Button 
-                  onClick={() => window.location.href = '/events'}
+                  onClick={() => setShowCreateEventModal(true)}
                   data-testid="button-create-event"
                 >
                   <i className="fas fa-plus mr-2"></i>
@@ -760,6 +769,15 @@ export default function GroupDetails() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Event Modal */}
+      {showCreateEventModal && Array.isArray(allGroups) && (
+        <CreateEventModal 
+          onClose={() => setShowCreateEventModal(false)}
+          groups={allGroups}
+          preSelectedGroupId={groupId}
+        />
+      )}
     </div>
   );
 }

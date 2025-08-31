@@ -34,7 +34,7 @@ import {
   type InsertGroupInvite,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, ne, isNull } from "drizzle-orm";
 
 // Helper function to generate invite codes
 function generateInviteCode(): string {

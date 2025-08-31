@@ -53,19 +53,30 @@ type CreateEventFormData = z.infer<typeof createEventSchema>;
 interface CreateEventModalProps {
   onClose: () => void;
   groups: any[];
+  preSelectedGroupId?: string;
 }
 
-export default function CreateEventModal({ onClose, groups }: CreateEventModalProps) {
+export default function CreateEventModal({ onClose, groups, preSelectedGroupId }: CreateEventModalProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(true);
   const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null);
   const [showMap, setShowMap] = useState(false);
+  const [isNameCustomized, setIsNameCustomized] = useState(false);
+  
+  // Generate unique default event name
+  const generateDefaultEventName = () => {
+    const timestamp = Date.now();
+    const eventNumber = timestamp % 10000; // Use last 4 digits of timestamp
+    return `New Event ${eventNumber}`;
+  };
+  
+  const [defaultEventName] = useState(generateDefaultEventName());
 
   const form = useForm<CreateEventFormData>({
     resolver: zodResolver(createEventSchema),
     defaultValues: {
-      groupId: "",
-      name: "",
+      groupId: preSelectedGroupId || "",
+      name: defaultEventName,
       restaurantName: "",
       restaurantAddress: "",
       restaurantImageUrl: "",
@@ -177,7 +188,15 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
                   <FormControl>
                     <Input 
                       placeholder="e.g., Friday Night Dinner" 
-                      {...field} 
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // Mark as customized if user types something different
+                        const restaurantName = selectedRestaurant?.name;
+                        if (e.target.value !== defaultEventName && e.target.value !== restaurantName) {
+                          setIsNameCustomized(true);
+                        }
+                      }}
                       data-testid="input-event-name"
                     />
                   </FormControl>
@@ -202,6 +221,11 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
                       form.setValue('restaurantLat', restaurant.location?.lat);
                       form.setValue('restaurantLng', restaurant.location?.lng);
                       setShowMap(true);
+                      
+                      // Auto-update event name if not customized
+                      if (!isNameCustomized) {
+                        form.setValue('name', restaurant.name);
+                      }
                     }}
                     placeholder="Search for restaurants..."
                     initialValue={form.watch('restaurantName') || ''}
