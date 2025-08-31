@@ -17,7 +17,7 @@ export async function loadGoogleMapsScript(): Promise<void> {
     script.async = true;
     script.defer = true;
     // Only load places library, not all libraries
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=initGoogleMaps`;
     
     window.initGoogleMaps = function() {
       window.googleMapsLoaded = true;
