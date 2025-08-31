@@ -58,18 +58,23 @@ export function useGooglePlaces() {
   const [autocompleteService, setAutocompleteService] = useState<any>(null);
 
   useEffect(() => {
-    if (isLoaded && window.google?.maps?.places && !placesService && !autocompleteService) {
-      try {
-        const mapDiv = document.createElement('div');
-        const map = new window.google.maps.Map(mapDiv);
-        const placesServiceInstance = new window.google.maps.places.PlacesService(map);
-        const autocompleteServiceInstance = new window.google.maps.places.AutocompleteService();
-        
-        setPlacesService(placesServiceInstance);
-        setAutocompleteService(autocompleteServiceInstance);
-      } catch (error) {
-        console.error('Error initializing Google Places services:', error);
+    if (!isLoaded) {
+      return;
+    }
+
+    try {
+      if (placesService && autocompleteService) {
+        return; // Already initialized
       }
+      
+      const map = new window.google.maps.Map(document.createElement('div'));
+      const placesServiceInstance = new window.google.maps.places.PlacesService(map);
+      const autocompleteServiceInstance = new window.google.maps.places.AutocompleteService();
+      
+      setPlacesService(placesServiceInstance);
+      setAutocompleteService(autocompleteServiceInstance);
+    } catch (error) {
+      console.error('Error initializing Google Places services:', error);
     }
   }, [isLoaded, placesService, autocompleteService]); // Added services to dependencies to prevent re-initialization
 
