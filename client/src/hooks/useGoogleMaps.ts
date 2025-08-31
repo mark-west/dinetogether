@@ -58,8 +58,7 @@ export function useGooglePlaces() {
   const [autocompleteService, setAutocompleteService] = useState<any>(null);
 
   useEffect(() => {
-    if (isLoaded && window.google?.maps?.places) {
-      console.log('Initializing Google Places services...');
+    if (isLoaded && window.google?.maps?.places && !placesService && !autocompleteService) {
       try {
         const mapDiv = document.createElement('div');
         const map = new window.google.maps.Map(mapDiv);
@@ -68,14 +67,11 @@ export function useGooglePlaces() {
         
         setPlacesService(placesServiceInstance);
         setAutocompleteService(autocompleteServiceInstance);
-        console.log('Google Places services initialized successfully');
       } catch (error) {
         console.error('Error initializing Google Places services:', error);
       }
-    } else {
-      console.log('Google Maps status:', { isLoaded, googleMapsAvailable: !!window.google?.maps, placesAvailable: !!window.google?.maps?.places });
     }
-  }, [isLoaded]);
+  }, [isLoaded, placesService, autocompleteService]); // Added services to dependencies to prevent re-initialization
 
   const searchPlaces = (query: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
@@ -129,45 +125,29 @@ export function useGooglePlaces() {
 
   const autocompleteRestaurants = (input: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
-      console.log('autocompleteRestaurants called with:', { input, location, autocompleteService: !!autocompleteService });
-      
       if (!autocompleteService) {
-        console.error('Autocomplete service not available');
         reject(new Error('Autocomplete service not available'));
         return;
       }
       
       const request: any = {
         input,
-        types: ['establishment'],
-        componentRestrictions: { country: 'us' },
+        types: ['restaurant'], // More specific type to reduce irrelevant results
       };
 
       if (location) {
         request.location = new window.google.maps.LatLng(location.lat, location.lng);
-        request.radius = 20000; // 20km radius
+        request.radius = 15000; // Reduced radius from 20km to 15km
       }
 
-      console.log('Making autocomplete request:', request);
       autocompleteService.getPlacePredictions(
         request,
         (predictions: any[], status: any) => {
-          console.log('Autocomplete response:', { status, predictions });
           if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            // Filter for restaurants only
-            const restaurantPredictions = predictions.filter(prediction => 
-              prediction.types && (
-                prediction.types.includes('restaurant') ||
-                prediction.types.includes('food') ||
-                prediction.types.includes('meal_takeaway') ||
-                prediction.types.includes('meal_delivery')
-              )
-            );
-            resolve(restaurantPredictions || []);
+            resolve(predictions || []);
           } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
             resolve([]);
           } else {
-            console.error('Autocomplete failed with status:', status);
             reject(new Error(`Autocomplete failed: ${status}`));
           }
         }

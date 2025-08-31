@@ -37,24 +37,22 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
   const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Get user's location on component mount
+  // Get user's location on component mount - only once
   useEffect(() => {
-    if (isLoaded) {
-      console.log('Google Maps loaded, getting user location...');
+    if (isLoaded && !userLocation) {
       getUserLocation()
         .then(location => {
           setUserLocation(location);
-          console.log('User location obtained for restaurant search:', location);
         })
         .catch(error => {
           console.log('Could not get user location for restaurant search:', error.message);
           // Continue without location - search will still work but without proximity sorting
         });
     }
-  }, [isLoaded, getUserLocation]);
+  }, [isLoaded]); // Removed getUserLocation dependency to prevent re-runs
 
   useEffect(() => {
-    if (!isLoaded || !query.trim() || query.length < 2) {
+    if (!isLoaded || !query.trim() || query.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -64,12 +62,11 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
       clearTimeout(searchTimeoutRef.current);
     }
 
+    // Increase debounce time to reduce API calls
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
-      console.log('Triggering restaurant search for query:', query);
       try {
         const predictions = await autocompleteRestaurants(query, userLocation || undefined) as any[];
-        console.log('Received predictions:', predictions);
         setSuggestions(predictions.slice(0, 5));
         setShowSuggestions(true);
       } catch (err) {
@@ -79,7 +76,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
       } finally {
         setIsSearching(false);
       }
-    }, 300);
+    }, 800); // Increased from 300ms to 800ms
 
     return () => {
       if (searchTimeoutRef.current) {
