@@ -59,12 +59,15 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
+        console.log('Searching for restaurants:', query, 'with location:', userLocation);
         const predictions = await autocompleteRestaurants(query, userLocation || undefined) as any[];
+        console.log('Restaurant search results:', predictions);
         setSuggestions(predictions.slice(0, 5));
         setShowSuggestions(true);
       } catch (err) {
         console.error('Error fetching restaurant suggestions:', err);
         setSuggestions([]);
+        setShowSuggestions(false);
       } finally {
         setIsSearching(false);
       }
@@ -75,14 +78,16 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [query, isLoaded]);
+  }, [query, isLoaded, autocompleteRestaurants, userLocation]);
 
   const handleSelectRestaurant = async (prediction: any) => {
+    console.log('Selected restaurant prediction:', prediction);
     setQuery(prediction.description);
     setShowSuggestions(false);
     
     try {
       const placeDetails = await getPlaceDetails(prediction.place_id) as any;
+      console.log('Place details received:', placeDetails);
       const photoUrl = placeDetails.photos?.[0]?.getUrl({ maxWidth: 400, maxHeight: 300 });
       
       const restaurant: Restaurant = {
@@ -98,6 +103,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
         },
       };
       
+      console.log('Calling onSelect with restaurant:', restaurant);
       onSelect(restaurant);
     } catch (err) {
       console.error('Error fetching place details:', err);
