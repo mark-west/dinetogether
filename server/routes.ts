@@ -700,10 +700,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const groupId = req.params.id;
       
-      // Check if user is admin of the group
+      // Check if user is a member of the group (not just admin)
       const group = await storage.getGroup(groupId);
-      if (!group || group.adminId !== userId) {
-        return res.status(403).json({ message: "Only group admins can create invites" });
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      const isMember = await storage.isGroupMember(groupId, userId);
+      if (!isMember) {
+        return res.status(403).json({ message: "Only group members can create invites" });
       }
       
       // Return the group's permanent invite information
@@ -724,10 +729,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const groupId = req.params.id;
       
-      // Check if user is admin of the group
+      // Check if user is a member of the group (not just admin)
       const group = await storage.getGroup(groupId);
-      if (!group || group.adminId !== userId) {
-        return res.status(403).json({ message: "Only group admins can view invites" });
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      const isMember = await storage.isGroupMember(groupId, userId);
+      if (!isMember) {
+        return res.status(403).json({ message: "Only group members can view invites" });
       }
       
       // Return the group's permanent invite information

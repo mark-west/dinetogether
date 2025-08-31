@@ -35,6 +35,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ne, isNull } from "drizzle-orm";
+import { MailService } from '@sendgrid/mail';
 
 // Helper function to generate invite codes
 function generateInviteCode(): string {
@@ -57,6 +58,7 @@ export interface IStorage {
   addGroupMember(membership: InsertGroupMember): Promise<GroupMember>;
   removeGroupMember(groupId: string, userId: string): Promise<void>;
   getGroupMembers(groupId: string): Promise<Array<GroupMember & { user: User }>>;
+  isGroupMember(groupId: string, userId: string): Promise<boolean>;
   getGroupEventsWithMemberRsvps(groupId: string): Promise<Array<Event & { memberRsvps: Array<{ user: User; rsvpStatus?: string; role: string }> }>>;
   
   // Event operations
@@ -107,6 +109,14 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private mailService: MailService;
+
+  constructor() {
+    this.mailService = new MailService();
+    if (process.env.SENDGRID_API_KEY) {
+      this.mailService.setApiKey(process.env.SENDGRID_API_KEY);
+    }
+  }
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -258,6 +268,16 @@ export class DatabaseStorage implements IStorage {
       ...row.group_members,
       user: row.users,
     }));
+  }
+
+  async isGroupMember(groupId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+      .limit(1);
+    
+    return result.length > 0;
   }
 
   async getGroupEventsWithMemberRsvps(groupId: string): Promise<Array<Event & { memberRsvps: Array<{ user: User; rsvpStatus?: string; role: string }> }>> {
@@ -736,7 +756,51 @@ export class DatabaseStorage implements IStorage {
       role: 'member',
     }).returning();
 
+    // Send notification email to group admin
+    try {
+      const newUser = await this.getUser(userId);
+      const adminUser = await this.getUser(group.adminId);
+      
+      if (adminUser?.email && newUser) {
+        await this.sendNewMemberNotification(adminUser.email, group.name, newUser);
+      }
+    } catch (error) {
+      console.error('Failed to send admin notification email:', error);
+      // Don't fail the invite acceptance if email fails
+    }
+
     return member;
+  }
+
+  private async sendNewMemberNotification(adminEmail: string, groupName: string, newUser: User): Promise<void> {
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log('SendGrid API key not configured, skipping email notification');
+      return;
+    }
+
+    const userName = [newUser.firstName, newUser.lastName].filter(Boolean).join(' ') || newUser.email || 'Someone';
+    
+    try {
+      await this.mailService.send({
+        to: adminEmail,
+        from: 'noreply@dinetogether.app', // Update with your verified sender
+        subject: `New member joined ${groupName}`,
+        text: `${userName} has joined your dining group "${groupName}".`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #7c3aed;">New Member Alert</h2>
+            <p><strong>${userName}</strong> has joined your dining group <strong>"${groupName}"</strong>.</p>
+            <p>You can manage your group members and remove them if needed from the DineTogether app.</p>
+            <p style="color: #6b7280; font-size: 14px;">
+              This is an automated notification from DineTogether.
+            </p>
+          </div>
+        `,
+      });
+    } catch (error) {
+      console.error('SendGrid email error:', error);
+      throw error;
+    }
   }
 
   // Mark all messages in a group as read
