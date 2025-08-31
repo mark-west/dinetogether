@@ -12,6 +12,9 @@ import {
   insertGroupMessageSchema,
   insertGroupMemberSchema,
   insertGroupInviteSchema,
+  insertEventPhotoSchema,
+  insertEventDiarySchema,
+  insertEventRatingSchema,
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 
@@ -804,6 +807,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching invite:", error);
       res.status(500).json({ message: "Failed to fetch invite" });
+    }
+  });
+
+  // Event photo routes
+  app.get('/api/events/:eventId/photos', isAuthenticated, async (req: any, res) => {
+    try {
+      const photos = await storage.getEventPhotos(req.params.eventId);
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching event photos:", error);
+      res.status(500).json({ message: "Failed to fetch photos" });
+    }
+  });
+
+  app.post('/api/events/:eventId/photos', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const photoData = insertEventPhotoSchema.parse({
+        ...req.body,
+        eventId: req.params.eventId,
+        uploadedBy: userId,
+      });
+      const photo = await storage.addEventPhoto(photoData);
+      res.json(photo);
+    } catch (error) {
+      console.error("Error adding event photo:", error);
+      res.status(500).json({ message: "Failed to add photo" });
+    }
+  });
+
+  app.delete('/api/photos/:photoId', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteEventPhoto(req.params.photoId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting photo:", error);
+      res.status(500).json({ message: "Failed to delete photo" });
+    }
+  });
+
+  // Event diary routes
+  app.get('/api/events/:eventId/diary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const diary = await storage.getEventDiary(req.params.eventId, userId);
+      res.json(diary);
+    } catch (error) {
+      console.error("Error fetching diary:", error);
+      res.status(500).json({ message: "Failed to fetch diary" });
+    }
+  });
+
+  app.get('/api/events/:eventId/diaries', isAuthenticated, async (req: any, res) => {
+    try {
+      const diaries = await storage.getEventDiaries(req.params.eventId);
+      res.json(diaries);
+    } catch (error) {
+      console.error("Error fetching diaries:", error);
+      res.status(500).json({ message: "Failed to fetch diaries" });
+    }
+  });
+
+  app.put('/api/events/:eventId/diary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const diaryData = insertEventDiarySchema.parse({
+        ...req.body,
+        eventId: req.params.eventId,
+        userId: userId,
+      });
+      const diary = await storage.upsertEventDiary(diaryData);
+      res.json(diary);
+    } catch (error) {
+      console.error("Error saving diary:", error);
+      res.status(500).json({ message: "Failed to save diary" });
+    }
+  });
+
+  app.delete('/api/events/:eventId/diary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteEventDiary(req.params.eventId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting diary:", error);
+      res.status(500).json({ message: "Failed to delete diary" });
+    }
+  });
+
+  // Event rating routes
+  app.get('/api/events/:eventId/rating', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const rating = await storage.getEventRating(req.params.eventId, userId);
+      res.json(rating);
+    } catch (error) {
+      console.error("Error fetching rating:", error);
+      res.status(500).json({ message: "Failed to fetch rating" });
+    }
+  });
+
+  app.get('/api/events/:eventId/ratings', isAuthenticated, async (req: any, res) => {
+    try {
+      const ratings = await storage.getEventRatings(req.params.eventId);
+      res.json(ratings);
+    } catch (error) {
+      console.error("Error fetching ratings:", error);
+      res.status(500).json({ message: "Failed to fetch ratings" });
+    }
+  });
+
+  app.get('/api/events/:eventId/average-rating', isAuthenticated, async (req: any, res) => {
+    try {
+      const averageRating = await storage.getEventAverageRating(req.params.eventId);
+      res.json(averageRating);
+    } catch (error) {
+      console.error("Error fetching average rating:", error);
+      res.status(500).json({ message: "Failed to fetch average rating" });
+    }
+  });
+
+  app.put('/api/events/:eventId/rating', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const ratingData = insertEventRatingSchema.parse({
+        ...req.body,
+        eventId: req.params.eventId,
+        userId: userId,
+      });
+      const rating = await storage.upsertEventRating(ratingData);
+      res.json(rating);
+    } catch (error) {
+      console.error("Error saving rating:", error);
+      res.status(500).json({ message: "Failed to save rating" });
+    }
+  });
+
+  app.delete('/api/events/:eventId/rating', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteEventRating(req.params.eventId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting rating:", error);
+      res.status(500).json({ message: "Failed to delete rating" });
     }
   });
 

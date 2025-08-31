@@ -10,6 +10,9 @@ import {
   groupMessages,
   groupMessageReads,
   groupInvites,
+  eventPhotos,
+  eventDiaries,
+  eventRatings,
   type User,
   type UpsertUser,
   type Group,
@@ -32,6 +35,12 @@ import {
   type InsertGroupMember,
   type GroupInvite,
   type InsertGroupInvite,
+  type EventPhoto,
+  type InsertEventPhoto,
+  type EventDiary,
+  type InsertEventDiary,
+  type EventRating,
+  type InsertEventRating,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ne, isNull } from "drizzle-orm";
@@ -106,6 +115,24 @@ export interface IStorage {
   // Group invite operations
   getGroupByInviteCode(inviteCode: string): Promise<Group | undefined>;
   acceptGroupInvite(inviteCode: string, userId: string): Promise<GroupMember>;
+  
+  // Event photo operations
+  addEventPhoto(photo: InsertEventPhoto): Promise<EventPhoto>;
+  getEventPhotos(eventId: string): Promise<Array<EventPhoto & { uploader: User }>>;
+  deleteEventPhoto(photoId: string): Promise<void>;
+  
+  // Event diary operations
+  upsertEventDiary(diary: InsertEventDiary): Promise<EventDiary>;
+  getEventDiary(eventId: string, userId: string): Promise<EventDiary | undefined>;
+  getEventDiaries(eventId: string): Promise<Array<EventDiary & { user: User }>>;
+  deleteEventDiary(eventId: string, userId: string): Promise<void>;
+  
+  // Event rating operations
+  upsertEventRating(rating: InsertEventRating): Promise<EventRating>;
+  getEventRating(eventId: string, userId: string): Promise<EventRating | undefined>;
+  getEventRatings(eventId: string): Promise<Array<EventRating & { user: User }>>;
+  getEventAverageRating(eventId: string): Promise<{ averageRating: number; totalRatings: number }>;
+  deleteEventRating(eventId: string, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -839,6 +866,132 @@ export class DatabaseStorage implements IStorage {
         })
         .onConflictDoNothing();
     }
+  }
+
+  // Event photo operations
+  async addEventPhoto(photo: InsertEventPhoto): Promise<EventPhoto> {
+    const [newPhoto] = await db.insert(eventPhotos).values(photo).returning();
+    return newPhoto;
+  }
+
+  async getEventPhotos(eventId: string): Promise<Array<EventPhoto & { uploader: User }>> {
+    return await db
+      .select()
+      .from(eventPhotos)
+      .leftJoin(users, eq(eventPhotos.uploadedBy, users.id))
+      .where(eq(eventPhotos.eventId, eventId))
+      .orderBy(desc(eventPhotos.createdAt))
+      .then(rows => rows.map(row => ({
+        ...row.event_photos,
+        uploader: row.users!
+      })));
+  }
+
+  async deleteEventPhoto(photoId: string): Promise<void> {
+    await db.delete(eventPhotos).where(eq(eventPhotos.id, photoId));
+  }
+
+  // Event diary operations
+  async upsertEventDiary(diary: InsertEventDiary): Promise<EventDiary> {
+    const [newDiary] = await db
+      .insert(eventDiaries)
+      .values(diary)
+      .onConflictDoUpdate({
+        target: [eventDiaries.eventId, eventDiaries.userId],
+        set: {
+          title: diary.title,
+          notes: diary.notes,
+          cost: diary.cost,
+          costCurrency: diary.costCurrency,
+          isPublic: diary.isPublic,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return newDiary;
+  }
+
+  async getEventDiary(eventId: string, userId: string): Promise<EventDiary | undefined> {
+    const [diary] = await db
+      .select()
+      .from(eventDiaries)
+      .where(and(eq(eventDiaries.eventId, eventId), eq(eventDiaries.userId, userId)));
+    return diary || undefined;
+  }
+
+  async getEventDiaries(eventId: string): Promise<Array<EventDiary & { user: User }>> {
+    return await db
+      .select()
+      .from(eventDiaries)
+      .leftJoin(users, eq(eventDiaries.userId, users.id))
+      .where(eq(eventDiaries.eventId, eventId))
+      .orderBy(desc(eventDiaries.createdAt))
+      .then(rows => rows.map(row => ({
+        ...row.event_diaries,
+        user: row.users!
+      })));
+  }
+
+  async deleteEventDiary(eventId: string, userId: string): Promise<void> {
+    await db.delete(eventDiaries).where(and(eq(eventDiaries.eventId, eventId), eq(eventDiaries.userId, userId)));
+  }
+
+  // Event rating operations
+  async upsertEventRating(rating: InsertEventRating): Promise<EventRating> {
+    const [newRating] = await db
+      .insert(eventRatings)
+      .values(rating)
+      .onConflictDoUpdate({
+        target: [eventRatings.eventId, eventRatings.userId],
+        set: {
+          rating: rating.rating,
+          review: rating.review,
+          isPublic: rating.isPublic,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return newRating;
+  }
+
+  async getEventRating(eventId: string, userId: string): Promise<EventRating | undefined> {
+    const [rating] = await db
+      .select()
+      .from(eventRatings)
+      .where(and(eq(eventRatings.eventId, eventId), eq(eventRatings.userId, userId)));
+    return rating || undefined;
+  }
+
+  async getEventRatings(eventId: string): Promise<Array<EventRating & { user: User }>> {
+    return await db
+      .select()
+      .from(eventRatings)
+      .leftJoin(users, eq(eventRatings.userId, users.id))
+      .where(eq(eventRatings.eventId, eventId))
+      .orderBy(desc(eventRatings.createdAt))
+      .then(rows => rows.map(row => ({
+        ...row.event_ratings,
+        user: row.users!
+      })));
+  }
+
+  async getEventAverageRating(eventId: string): Promise<{ averageRating: number; totalRatings: number }> {
+    const result = await db
+      .select({
+        averageRating: sql<number>`AVG(${eventRatings.rating})::float`,
+        totalRatings: sql<number>`COUNT(${eventRatings.rating})::int`,
+      })
+      .from(eventRatings)
+      .where(eq(eventRatings.eventId, eventId));
+
+    return {
+      averageRating: result[0]?.averageRating || 0,
+      totalRatings: result[0]?.totalRatings || 0,
+    };
+  }
+
+  async deleteEventRating(eventId: string, userId: string): Promise<void> {
+    await db.delete(eventRatings).where(and(eq(eventRatings.eventId, eventId), eq(eventRatings.userId, userId)));
   }
 }
 

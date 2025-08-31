@@ -19,6 +19,597 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Star Rating Component
+function StarRating({ rating, interactive = false, onRatingChange }: { 
+  rating: number; 
+  interactive?: boolean; 
+  onRatingChange?: (rating: number) => void;
+}) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <i
+          key={star}
+          className={`fas fa-star text-sm ${
+            star <= rating ? 'text-yellow-400' : 'text-gray-300'
+          } ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : ''}`}
+          onClick={interactive ? () => onRatingChange?.(star) : undefined}
+          data-testid={`star-${star}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Photos Tab Component
+function PhotosTab({ eventId }: { eventId: string }) {
+  const [newPhotoUrl, setNewPhotoUrl] = useState("");
+  const [newPhotoCaption, setNewPhotoCaption] = useState("");
+  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
+  const { toast } = useToast();
+
+  const { data: photos = [], isLoading } = useQuery({
+    queryKey: [`/api/events/${eventId}/photos`],
+    retry: false,
+    enabled: !!eventId,
+  });
+
+  const addPhotoMutation = useMutation({
+    mutationFn: async (data: { url: string; caption?: string }) => {
+      return apiRequest("POST", `/api/events/${eventId}/photos`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/photos`] });
+      setNewPhotoUrl("");
+      setNewPhotoCaption("");
+      setIsAddingPhoto(false);
+      toast({ title: "Photo added successfully!" });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({ title: "Failed to add photo", variant: "destructive" });
+    },
+  });
+
+  const handleAddPhoto = () => {
+    if (!newPhotoUrl.trim()) return;
+    addPhotoMutation.mutate({
+      url: newPhotoUrl,
+      caption: newPhotoCaption || undefined,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-48" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Photos ({photos.length})</h3>
+        <Dialog open={isAddingPhoto} onOpenChange={setIsAddingPhoto}>
+          <DialogTrigger asChild>
+            <Button size="sm" data-testid="button-add-photo">
+              <i className="fas fa-camera mr-2"></i>
+              Add Photo
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Photo</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="photo-url">Photo URL</Label>
+                <Input
+                  id="photo-url"
+                  value={newPhotoUrl}
+                  onChange={(e) => setNewPhotoUrl(e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  data-testid="input-photo-url"
+                />
+              </div>
+              <div>
+                <Label htmlFor="photo-caption">Caption (optional)</Label>
+                <Input
+                  id="photo-caption"
+                  value={newPhotoCaption}
+                  onChange={(e) => setNewPhotoCaption(e.target.value)}
+                  placeholder="Add a caption..."
+                  data-testid="input-photo-caption"
+                />
+              </div>
+              <Button 
+                onClick={handleAddPhoto} 
+                disabled={!newPhotoUrl.trim() || addPhotoMutation.isPending}
+                data-testid="button-save-photo"
+              >
+                {addPhotoMutation.isPending ? "Adding..." : "Add Photo"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {photos.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-camera text-2xl text-muted-foreground"></i>
+          </div>
+          <h3 className="font-medium text-foreground mb-2">No photos yet</h3>
+          <p className="text-sm text-muted-foreground">Be the first to add one!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {photos.map((photo: any) => (
+            <Card key={photo.id} className="overflow-hidden">
+              <div className="aspect-square bg-gray-100">
+                <img
+                  src={photo.url}
+                  alt={photo.caption || "Event photo"}
+                  className="w-full h-full object-cover"
+                  data-testid={`img-photo-${photo.id}`}
+                />
+              </div>
+              <CardContent className="p-3">
+                {photo.caption && (
+                  <p className="text-sm mb-2" data-testid={`text-photo-caption-${photo.id}`}>
+                    {photo.caption}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Avatar className="w-6 h-6">
+                    <AvatarImage src={photo.uploader?.profileImageUrl} />
+                    <AvatarFallback>
+                      {photo.uploader?.firstName?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span>{photo.uploader?.firstName} {photo.uploader?.lastName}</span>
+                  <span>•</span>
+                  <span>{format(new Date(photo.createdAt), 'MMM d')}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Diaries Tab Component
+function DiariesTab({ eventId }: { eventId: string }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [notes, setNotes] = useState("");
+  const [cost, setCost] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [isPublic, setIsPublic] = useState(true);
+  const { toast } = useToast();
+
+  const { data: userDiary } = useQuery({
+    queryKey: [`/api/events/${eventId}/diary`],
+    retry: false,
+    enabled: !!eventId,
+  });
+
+  const { data: diaries = [], isLoading } = useQuery({
+    queryKey: [`/api/events/${eventId}/diaries`],
+    retry: false,
+    enabled: !!eventId,
+  });
+
+  useEffect(() => {
+    if (userDiary) {
+      setTitle(userDiary.title || "");
+      setNotes(userDiary.notes || "");
+      setCost(userDiary.cost?.toString() || "");
+      setCurrency(userDiary.costCurrency || "USD");
+      setIsPublic(userDiary.isPublic ?? true);
+    }
+  }, [userDiary]);
+
+  const saveDiaryMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("PUT", `/api/events/${eventId}/diary`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/diary`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/diaries`] });
+      setIsEditing(false);
+      toast({ title: "Diary saved successfully!" });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({ title: "Failed to save diary", variant: "destructive" });
+    },
+  });
+
+  const handleSave = () => {
+    if (!title.trim()) return;
+    saveDiaryMutation.mutate({
+      title,
+      notes: notes || undefined,
+      cost: cost ? parseFloat(cost) : undefined,
+      costCurrency: cost ? currency : undefined,
+      isPublic,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => (
+          <Skeleton key={i} className="h-32" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Diary Entries</h3>
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogTrigger asChild>
+            <Button size="sm" data-testid="button-edit-diary">
+              <i className="fas fa-book mr-2"></i>
+              {userDiary ? 'Edit My Entry' : 'Add Diary Entry'}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>My Diary Entry</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="diary-title">Title</Label>
+                <Input
+                  id="diary-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="How was the experience?"
+                  data-testid="input-diary-title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="diary-notes">Notes</Label>
+                <Textarea
+                  id="diary-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Share your thoughts about the meal, service, atmosphere..."
+                  className="h-24"
+                  data-testid="input-diary-notes"
+                />
+              </div>
+              <div>
+                <Label htmlFor="diary-cost">Cost (optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="diary-cost"
+                    type="number"
+                    step="0.01"
+                    value={cost}
+                    onChange={(e) => setCost(e.target.value)}
+                    placeholder="0.00"
+                    className="flex-1"
+                    data-testid="input-diary-cost"
+                  />
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="w-20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="GBP">GBP</SelectItem>
+                      <SelectItem value="CAD">CAD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="diary-public"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-diary-public"
+                />
+                <Label htmlFor="diary-public">Make this entry public</Label>
+              </div>
+              <Button 
+                onClick={handleSave} 
+                disabled={!title.trim() || saveDiaryMutation.isPending}
+                data-testid="button-save-diary"
+              >
+                {saveDiaryMutation.isPending ? "Saving..." : "Save Entry"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {diaries.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-book text-2xl text-muted-foreground"></i>
+          </div>
+          <h3 className="font-medium text-foreground mb-2">No diary entries yet</h3>
+          <p className="text-sm text-muted-foreground">Share your experience!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {diaries.map((diary: any) => (
+            <Card key={diary.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar>
+                    <AvatarImage src={diary.user?.profileImageUrl} />
+                    <AvatarFallback>
+                      {diary.user?.firstName?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-medium" data-testid={`text-diary-author-${diary.id}`}>
+                        {diary.user?.firstName} {diary.user?.lastName}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {format(new Date(diary.createdAt), 'MMM d, yyyy')}
+                      </span>
+                      {diary.cost && (
+                        <Badge variant="outline" className="ml-auto">
+                          <i className="fas fa-dollar-sign w-3 h-3 mr-1"></i>
+                          {diary.cost} {diary.costCurrency || 'USD'}
+                        </Badge>
+                      )}
+                    </div>
+                    <h4 className="font-medium mb-2" data-testid={`text-diary-title-${diary.id}`}>
+                      {diary.title}
+                    </h4>
+                    {diary.notes && (
+                      <p className="text-gray-600" data-testid={`text-diary-notes-${diary.id}`}>
+                        {diary.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Ratings Tab Component
+function RatingsTab({ eventId }: { eventId: string }) {
+  const [isRating, setIsRating] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const { toast } = useToast();
+
+  const { data: userRating } = useQuery({
+    queryKey: [`/api/events/${eventId}/rating`],
+    retry: false,
+    enabled: !!eventId,
+  });
+
+  const { data: ratings = [], isLoading } = useQuery({
+    queryKey: [`/api/events/${eventId}/ratings`],
+    retry: false,
+    enabled: !!eventId,
+  });
+
+  const { data: averageRating = { averageRating: 0, totalRatings: 0 } } = useQuery({
+    queryKey: [`/api/events/${eventId}/average-rating`],
+    retry: false,
+    enabled: !!eventId,
+  });
+
+  useEffect(() => {
+    if (userRating) {
+      setRating(userRating.rating || 0);
+      setReview(userRating.review || "");
+      setIsPublic(userRating.isPublic ?? true);
+    }
+  }, [userRating]);
+
+  const saveRatingMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("PUT", `/api/events/${eventId}/rating`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/rating`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/ratings`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/average-rating`] });
+      setIsRating(false);
+      toast({ title: "Rating saved successfully!" });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({ title: "Failed to save rating", variant: "destructive" });
+    },
+  });
+
+  const handleSave = () => {
+    if (rating === 0) return;
+    saveRatingMutation.mutate({
+      rating,
+      review: review || undefined,
+      isPublic,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Ratings & Reviews</h3>
+          {averageRating.totalRatings > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              <StarRating rating={averageRating.averageRating} />
+              <span className="text-sm text-gray-600">
+                {averageRating.averageRating.toFixed(1)} ({averageRating.totalRatings} ratings)
+              </span>
+            </div>
+          )}
+        </div>
+        <Dialog open={isRating} onOpenChange={setIsRating}>
+          <DialogTrigger asChild>
+            <Button size="sm" data-testid="button-add-rating">
+              <i className="fas fa-star mr-2"></i>
+              {userRating ? 'Edit Rating' : 'Add Rating'}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rate This Experience</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Your Rating</Label>
+                <div className="mt-2">
+                  <StarRating 
+                    rating={rating} 
+                    interactive={true} 
+                    onRatingChange={setRating}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="review">Review (optional)</Label>
+                <Textarea
+                  id="review"
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                  placeholder="Share your thoughts about the restaurant, food, service..."
+                  className="h-24"
+                  data-testid="input-rating-review"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="rating-public"
+                  checked={isPublic}
+                  onCheckedChange={setIsPublic}
+                  data-testid="switch-rating-public"
+                />
+                <Label htmlFor="rating-public">Make this rating public</Label>
+              </div>
+              <Button 
+                onClick={handleSave} 
+                disabled={rating === 0 || saveRatingMutation.isPending}
+                data-testid="button-save-rating"
+              >
+                {saveRatingMutation.isPending ? "Saving..." : "Save Rating"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {ratings.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-star text-2xl text-muted-foreground"></i>
+          </div>
+          <h3 className="font-medium text-foreground mb-2">No ratings yet</h3>
+          <p className="text-sm text-muted-foreground">Be the first to rate this experience!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {ratings.map((rating: any) => (
+            <Card key={rating.id}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Avatar>
+                    <AvatarImage src={rating.user?.profileImageUrl} />
+                    <AvatarFallback>
+                      {rating.user?.firstName?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-medium" data-testid={`text-rating-author-${rating.id}`}>
+                        {rating.user?.firstName} {rating.user?.lastName}
+                      </span>
+                      <StarRating rating={rating.rating} />
+                      <span className="text-sm text-gray-500 ml-auto">
+                        {format(new Date(rating.createdAt), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    {rating.review && (
+                      <p className="text-gray-600" data-testid={`text-rating-review-${rating.id}`}>
+                        {rating.review}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function EventDetails() {
   const { eventId } = useParams();
@@ -452,14 +1043,23 @@ export default function EventDetails() {
             </CardContent>
           </Card>
 
-          {/* Tabs for Attendees and Suggestions */}
+          {/* Tabs for Attendees, Suggestions, Photos, Diaries, Ratings */}
           <Tabs defaultValue="attendees" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="attendees" data-testid="tab-attendees">
                 Attendees ({rsvps?.filter((r: any) => r.status === 'confirmed').length || 0})
               </TabsTrigger>
               <TabsTrigger value="suggestions" data-testid="tab-suggestions">
-                Restaurant Suggestions ({suggestions?.length || 0})
+                Suggestions ({suggestions?.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="photos" data-testid="tab-photos">
+                Photos
+              </TabsTrigger>
+              <TabsTrigger value="diaries" data-testid="tab-diaries">
+                Diaries
+              </TabsTrigger>
+              <TabsTrigger value="ratings" data-testid="tab-ratings">
+                Ratings
               </TabsTrigger>
             </TabsList>
             
@@ -624,6 +1224,18 @@ export default function EventDetails() {
                   <p className="text-sm text-muted-foreground">Help the group decide by suggesting restaurants!</p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="photos" className="space-y-4">
+              <PhotosTab eventId={eventId} />
+            </TabsContent>
+
+            <TabsContent value="diaries" className="space-y-4">
+              <DiariesTab eventId={eventId} />
+            </TabsContent>
+
+            <TabsContent value="ratings" className="space-y-4">
+              <RatingsTab eventId={eventId} />
             </TabsContent>
           </Tabs>
         </div>
