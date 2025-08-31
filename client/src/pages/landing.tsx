@@ -4,9 +4,9 @@ import logoImage from "@assets/fulllogo_1756675026225.png";
 export default function Landing() {
   return (
     <div className="min-h-screen gradient-bg">
-      <div className="app-container flex flex-col justify-center p-6 space-y-8">
+      <div className="app-container flex flex-col justify-center p-6 space-y-6">
         {/* Logo */}
-        <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-lg">
+        <div className="w-full max-w-sm bg-white rounded-2xl p-4 shadow-lg">
           <img 
             src={logoImage} 
             alt="DineTogether Logo" 
@@ -15,7 +15,7 @@ export default function Landing() {
         </div>
         
         {/* Description and Features */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <p className="text-xl text-white/90 font-light leading-relaxed">
             Organize restaurant nights with friends. Create groups, plan dining events, and coordinate your culinary adventures.
           </p>
@@ -45,7 +45,7 @@ export default function Landing() {
         </div>
 
         {/* Call to Action */}
-        <div className="pt-4 text-center">
+        <div className="pt-4 w-full flex justify-center">
           <Button 
             className="bg-white text-purple-600 hover:bg-gray-100 font-semibold py-4 px-12 text-lg rounded-xl shadow-lg"
             onClick={() => window.location.href = '/api/login'}
