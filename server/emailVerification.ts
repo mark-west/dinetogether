@@ -1,4 +1,4 @@
-import { sendEmail } from './sendgrid';
+import { MailService } from '@sendgrid/mail';
 import { nanoid } from 'nanoid';
 
 // Store pending verifications in memory (in production, use Redis or database)
@@ -39,7 +39,10 @@ export async function sendVerificationEmail(
 
   const verificationUrl = `${process.env.REPLIT_DEV_DOMAIN || 'http://localhost:5000'}/verify-email?token=${verificationToken}`;
   
-  await sendEmail(process.env.SENDGRID_API_KEY!, {
+  const mailService = new MailService();
+  mailService.setApiKey(process.env.SENDGRID_API_KEY!);
+  
+  await mailService.send({
     to: email,
     from: 'noreply@dinetogether.app', // Use your verified sender
     subject: 'Verify Your DineTogether Account',
