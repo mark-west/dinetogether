@@ -80,7 +80,9 @@ export const eventRsvps = pgTable("event_rsvps", {
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   status: varchar("status", { length: 20 }).notNull().default('pending'), // 'confirmed', 'declined', 'maybe', 'pending'
   respondedAt: timestamp("responded_at").defaultNow(),
-});
+}, (table) => ({
+  unique: unique().on(table.eventId, table.userId),
+}));
 
 // Restaurant suggestions
 export const restaurantSuggestions = pgTable("restaurant_suggestions", {
