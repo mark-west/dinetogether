@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
+import logoImage from "@assets/fulllogo_1756675026225.png";
 
 export default function Landing() {
   const { navigateWithLoading, isLoading } = useLoadingNavigation();
@@ -12,7 +13,7 @@ export default function Landing() {
           {/* Your actual DineTogether logo */}
           <div className="mx-auto mb-8">
             <img 
-              src="/attached_assets/fulllogo_1756675026225.png" 
+              src={logoImage} 
               alt="DineTogether Logo" 
               className="w-48 h-48 mx-auto object-contain"
             />
