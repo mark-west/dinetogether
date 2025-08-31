@@ -93,13 +93,6 @@ export default function Landing() {
                 </>
               )}
             </Button>
-            
-            {/* Trust indicator */}
-            <div className="text-center pt-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                🔒 Secure sign-in powered by Replit
-              </p>
-            </div>
           </div>
         </CardContent>
       </Card>
