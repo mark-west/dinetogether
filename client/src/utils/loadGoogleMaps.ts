@@ -5,7 +5,8 @@ export async function loadGoogleMapsScript(): Promise<void> {
 
   try {
     // Get the API key from environment variables
-    const apiKey = 'AIzaSyCPTS0slU5KnKal2T_fWtO7XaGAYM78_5U'; // Temporarily hardcoded until secrets are fixed
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyCPTS0slU5KnKal2T_fWtO7XaGAYM78_5U';
+    console.log('Using Google Maps API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'No key found');
     
     if (!apiKey) {
       console.error('Google Maps API key not found - Google Maps features will be disabled');
@@ -20,12 +21,14 @@ export async function loadGoogleMapsScript(): Promise<void> {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=initGoogleMaps`;
     
     window.initGoogleMaps = function() {
+      console.log('Google Maps script loaded successfully');
       window.googleMapsLoaded = true;
       window.dispatchEvent(new Event('googleMapsLoaded'));
     };
     
-    script.onerror = function() {
-      console.error('Failed to load Google Maps script');
+    script.onerror = function(error) {
+      console.error('Failed to load Google Maps script:', error);
+      console.error('Check API key permissions and billing status');
     };
     
     document.head.appendChild(script);

@@ -48,12 +48,33 @@ export default function GoogleMapComponent({
       
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
       
+      // Add error listener for map loading issues
+      mapInstanceRef.current.addListener('error', (error: any) => {
+        console.error('Google Maps error:', error);
+        console.error('This might indicate API key issues or quota exceeded');
+      });
+      
       console.log('Map instance created:', {
         mapInstance: !!mapInstanceRef.current,
         mapDiv: mapRef.current,
         center: center,
         zoom: zoom
       });
+      
+      // Check for potential API key issues
+      setTimeout(() => {
+        const mapDiv = mapRef.current;
+        if (mapDiv) {
+          const computedStyle = window.getComputedStyle(mapDiv);
+          console.log('Map container background:', computedStyle.backgroundColor);
+          
+          // Look for error messages in the map
+          const errorElements = mapDiv.querySelectorAll('div[style*="background"]');
+          if (errorElements.length > 0) {
+            console.log('Potential map error elements found:', errorElements);
+          }
+        }
+      }, 2000);
       
       // Add idle event listener to detect when map is fully loaded
       mapInstanceRef.current.addListener('idle', () => {
