@@ -77,19 +77,19 @@ export default function Landing() {
             <Button 
               variant="outline"
               className="w-full h-9 text-sm transition-colors duration-200" 
-              onClick={() => navigateWithLoading('/api/login?force=true')}
-              disabled={isLoading('/api/login?force=true')}
-              data-testid="button-login-different-user"
+              onClick={() => navigateWithLoading('/api/login')}
+              disabled={isLoading('/api/login')}
+              data-testid="button-login-alternative"
             >
-              {isLoading('/api/login?force=true') ? (
+              {isLoading('/api/login') ? (
                 <>
                   <div className="animate-spin h-3 w-3 border-2 border-gray-400 border-t-gray-700 rounded-full mr-2"></div>
                   Signing in...
                 </>
               ) : (
                 <>
-                  <i className="fas fa-user-plus mr-2 text-sm"></i>
-                  Sign in as different user
+                  <i className="fas fa-sign-in-alt mr-2 text-sm"></i>
+                  Sign In
                 </>
               )}
             </Button>

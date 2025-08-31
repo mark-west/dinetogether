@@ -108,16 +108,9 @@ export async function setupAuth(app: Express) {
       (req.session as any).returnTo = req.query.redirect as string;
     }
     
-    const authOptions: any = {
+    passport.authenticate(`replitauth:${req.hostname}`, {
       scope: ["openid", "email", "profile", "offline_access"],
-    };
-    
-    // Only add prompt for forced login (different user)
-    if (req.query.force === 'true') {
-      authOptions.prompt = "login";
-    }
-    
-    passport.authenticate(`replitauth:${req.hostname}`, authOptions)(req, res, next);
+    })(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
