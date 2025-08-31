@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import QRCode from 'qrcode';
 
 interface InviteModalProps {
   groupId: string;
@@ -29,6 +30,8 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
   const { toast } = useToast();
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [generatedInvite, setGeneratedInvite] = useState<any>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [showQrCode, setShowQrCode] = useState(false);
 
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
@@ -88,6 +91,29 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
         description: "Invite link copied to clipboard",
       });
     });
+  };
+
+  const generateQRCode = async (inviteCode: string) => {
+    try {
+      const link = `${window.location.origin}/invite/${inviteCode}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(link, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeUrl(qrCodeDataUrl);
+      setShowQrCode(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate QR code",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -168,8 +194,34 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                       >
                         <i className="fas fa-copy"></i>
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => generateQRCode(generatedInvite.inviteCode)}
+                        data-testid="button-show-qr"
+                      >
+                        <i className="fas fa-qrcode"></i>
+                      </Button>
                     </div>
                   </div>
+                  
+                  {showQrCode && qrCodeUrl && (
+                    <div className="text-center py-4">
+                      <Label className="text-xs text-green-700 dark:text-green-300 mb-2 block">QR Code - Scan to Join</Label>
+                      <div className="inline-block p-4 bg-white rounded-lg">
+                        <img 
+                          src={qrCodeUrl} 
+                          alt="QR Code for invite link" 
+                          className="w-48 h-48"
+                          data-testid="qr-code-image"
+                        />
+                      </div>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+                        Friends can scan this with their phone camera
+                      </p>
+                    </div>
+                  )}
+                  
                   <p className="text-xs text-green-700 dark:text-green-300">
                     Expires on {format(new Date(generatedInvite.expiresAt), 'MMM d, yyyy')}
                   </p>
@@ -214,14 +266,24 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                         </div>
                         
                         {invite.status === 'pending' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyInviteLink(invite.inviteCode)}
-                            data-testid={`button-copy-${invite.id}`}
-                          >
-                            <i className="fas fa-copy"></i>
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => copyInviteLink(invite.inviteCode)}
+                              data-testid={`button-copy-${invite.id}`}
+                            >
+                              <i className="fas fa-copy"></i>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => generateQRCode(invite.inviteCode)}
+                              data-testid={`button-qr-${invite.id}`}
+                            >
+                              <i className="fas fa-qrcode"></i>
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </CardContent>
