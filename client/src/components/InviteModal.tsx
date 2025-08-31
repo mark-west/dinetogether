@@ -265,7 +265,13 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                   )}
                   
                   <p className="text-xs text-green-700 dark:text-green-300">
-                    Expires on {format(new Date(generatedInvite.expiresAt), 'MMM d, yyyy')}
+                    Expires on {(() => {
+                      try {
+                        return generatedInvite.expiresAt ? format(new Date(generatedInvite.expiresAt), 'MMM d, yyyy') : 'Unknown';
+                      } catch (error) {
+                        return 'Unknown';
+                      }
+                    })()}
                   </p>
                 </div>
               </CardContent>
@@ -302,8 +308,20 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Created {invite.createdAt ? format(new Date(invite.createdAt), 'MMM d, h:mm a') : 'Unknown'}
-                            {invite.status === 'pending' && invite.expiresAt && ` • Expires ${format(new Date(invite.expiresAt), 'MMM d')}`}
+                            Created {(() => {
+                              try {
+                                return invite.createdAt ? format(new Date(invite.createdAt), 'MMM d, h:mm a') : 'Unknown';
+                              } catch (error) {
+                                return 'Unknown';
+                              }
+                            })()}
+                            {invite.status === 'pending' && invite.expiresAt && (() => {
+                              try {
+                                return ` • Expires ${format(new Date(invite.expiresAt), 'MMM d')}`;
+                              } catch (error) {
+                                return ' • Expires Unknown';
+                              }
+                            })()}
                           </p>
                         </div>
                         
