@@ -23,6 +23,13 @@ interface RestaurantSearchProps {
 
 export default function RestaurantSearch({ onSelect, placeholder = "Search for restaurants...", initialValue = "" }: RestaurantSearchProps) {
   const [query, setQuery] = useState(initialValue);
+  
+  // Sync internal state with external initialValue changes
+  useEffect(() => {
+    if (initialValue !== query) {
+      setQuery(initialValue);
+    }
+  }, [initialValue]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -59,9 +66,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        console.log('Searching for restaurants:', query, 'with location:', userLocation);
         const predictions = await autocompleteRestaurants(query, userLocation || undefined) as any[];
-        console.log('Restaurant search results:', predictions);
         setSuggestions(predictions.slice(0, 5));
         setShowSuggestions(true);
       } catch (err) {
@@ -81,13 +86,12 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
   }, [query, isLoaded, autocompleteRestaurants, userLocation]);
 
   const handleSelectRestaurant = async (prediction: any) => {
-    console.log('Selected restaurant prediction:', prediction);
-    setQuery(prediction.description);
+    // Use the restaurant name instead of the full description for cleaner display
+    setQuery(prediction.structured_formatting?.main_text || prediction.description);
     setShowSuggestions(false);
     
     try {
       const placeDetails = await getPlaceDetails(prediction.place_id) as any;
-      console.log('Place details received:', placeDetails);
       const photoUrl = placeDetails.photos?.[0]?.getUrl({ maxWidth: 400, maxHeight: 300 });
       
       const restaurant: Restaurant = {
@@ -103,7 +107,6 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
         },
       };
       
-      console.log('Calling onSelect with restaurant:', restaurant);
       onSelect(restaurant);
     } catch (err) {
       console.error('Error fetching place details:', err);

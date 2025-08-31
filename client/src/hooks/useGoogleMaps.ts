@@ -59,7 +59,6 @@ export function useGooglePlaces() {
 
   useEffect(() => {
     if (isLoaded && window.google?.maps?.places) {
-      console.log('Initializing Google Places services');
       try {
         const mapDiv = document.createElement('div');
         const map = new window.google.maps.Map(mapDiv);
@@ -68,7 +67,6 @@ export function useGooglePlaces() {
         
         setPlacesService(placesServiceInstance);
         setAutocompleteService(autocompleteServiceInstance);
-        console.log('Google Places services initialized successfully');
       } catch (error) {
         console.error('Error initializing Google Places services:', error);
       }
@@ -128,12 +126,9 @@ export function useGooglePlaces() {
   const autocompleteRestaurants = (input: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
       if (!autocompleteService) {
-        console.error('Autocomplete service not available');
         reject(new Error('Autocomplete service not available'));
         return;
       }
-
-      console.log('Making autocomplete request with input:', input, 'location:', location);
       
       const request: any = {
         input,
@@ -148,11 +143,9 @@ export function useGooglePlaces() {
       autocompleteService.getPlacePredictions(
         request,
         (predictions: any[], status: any) => {
-          console.log('Autocomplete response - status:', status, 'predictions:', predictions);
           if (status === window.google.maps.places.PlacesServiceStatus.OK) {
             resolve(predictions || []);
           } else {
-            console.error('Autocomplete failed with status:', status);
             reject(new Error(`Autocomplete failed: ${status}`));
           }
         }

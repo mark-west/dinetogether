@@ -197,10 +197,14 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
                       setSelectedRestaurant(restaurant);
                       form.setValue('restaurantName', restaurant.name);
                       form.setValue('restaurantAddress', restaurant.address);
+                      form.setValue('restaurantImageUrl', restaurant.photoUrl || '');
+                      form.setValue('restaurantPlaceId', restaurant.placeId);
+                      form.setValue('restaurantLat', restaurant.location?.lat?.toString() || '');
+                      form.setValue('restaurantLng', restaurant.location?.lng?.toString() || '');
                       setShowMap(true);
                     }}
                     placeholder="Search for restaurants..."
-                    initialValue={form.getValues('restaurantName')}
+                    initialValue={form.watch('restaurantName') || ''}
                   />
                 </div>
               </div>
