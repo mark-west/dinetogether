@@ -14,10 +14,16 @@ if (!process.env.REPLIT_DOMAINS) {
 
 const getOidcConfig = memoize(
   async () => {
-    return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
-    );
+    try {
+      return await client.discovery(
+        new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
+        process.env.REPL_ID!
+      );
+    } catch (error) {
+      console.error("OIDC Discovery failed:", error);
+      // Return minimal config to prevent crashes
+      throw new Error("OIDC authentication is currently unavailable");
+    }
   },
   { maxAge: 3600 * 1000 }
 );
@@ -38,8 +44,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
       maxAge: sessionTtl,
     },
   });

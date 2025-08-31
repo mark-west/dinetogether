@@ -74,9 +74,9 @@ export default function Landing() {
               )}
             </Button>
             
-            {/* Clear messaging about authentication options */}
+            {/* Clear messaging about authentication process */}
             <div className="text-center text-xs text-muted-foreground px-4">
-              Sign in with Replit • Create account • Use Google, GitHub & more
+              You'll receive a secure email link to access your account
             </div>
           </div>
         </CardContent>
