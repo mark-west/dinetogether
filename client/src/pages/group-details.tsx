@@ -334,18 +334,33 @@ export default function GroupDetails() {
                       )}
                     </div>
                     
-                    {/* Admin actions */}
-                    {(group as Group).adminId === user?.id && (
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowInviteModal(true)}
-                          data-testid="button-invite-members-header"
-                        >
-                          <i className="fas fa-user-plus mr-1"></i>
-                          Invite
-                        </Button>
+                    {/* Invite button for all members */}
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowInviteModal(true)}
+                        data-testid="button-invite-members-header"
+                      >
+                        <i className="fas fa-user-plus mr-1"></i>
+                        Invite Members
+                      </Button>
+                      
+                      {/* Admin-only actions */}
+                      {(group as Group).adminId === user?.id && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setNewGroupName((group as Group).name);
+                              setShowRenameDialog(true);
+                            }}
+                            data-testid="button-rename-group"
+                          >
+                            <i className="fas fa-edit mr-1"></i>
+                            Rename
+                          </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -358,18 +373,18 @@ export default function GroupDetails() {
                           <i className="fas fa-edit mr-1"></i>
                           Rename
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setDuplicateGroupName(`${(group as Group).name} (Copy)`);
-                            setShowDuplicateDialog(true);
-                          }}
-                          data-testid="button-duplicate-group"
-                        >
-                          <i className="fas fa-copy mr-1"></i>
-                          Duplicate
-                        </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setDuplicateGroupName(`${(group as Group).name} (Copy)`);
+                              setShowDuplicateDialog(true);
+                            }}
+                            data-testid="button-duplicate-group"
+                          >
+                            <i className="fas fa-copy mr-1"></i>
+                            Duplicate
+                          </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -400,8 +415,9 @@ export default function GroupDetails() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
@@ -566,15 +582,6 @@ export default function GroupDetails() {
             <TabsContent value="members" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Group Members</h2>
-                {group?.adminId === user?.id && (
-                  <Button 
-                    onClick={() => setShowInviteModal(true)}
-                    data-testid="button-invite-members"
-                  >
-                    <i className="fas fa-user-plus mr-2"></i>
-                    Invite Members
-                  </Button>
-                )}
               </div>
               
               {membersLoading ? (

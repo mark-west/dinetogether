@@ -110,6 +110,30 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Group chat messages with threading support
+export const groupMessages = pgTable("group_messages", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: uuid("group_id").notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text("content").notNull(),
+  parentMessageId: uuid("parent_message_id").references(() => groupMessages.id, { onDelete: 'cascade' }), // For threading
+  messageType: varchar("message_type", { length: 50 }).notNull().default('text'), // 'text', 'restaurant_suggestion', 'system'
+  metadata: jsonb("metadata"), // For storing additional data like restaurant info
+  editedAt: timestamp("edited_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Message read status for notification system
+export const groupMessageReads = pgTable("group_message_reads", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupMessageId: uuid("group_message_id").notNull().references(() => groupMessages.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  readAt: timestamp("read_at").defaultNow(),
+}, (table) => ({
+  unique: unique().on(table.groupMessageId, table.userId),
+}));
+
 // Group invites table
 export const groupInvites = pgTable("group_invites", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
