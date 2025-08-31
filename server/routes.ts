@@ -385,7 +385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         groupId,
         invitedBy: userId,
         inviteCode,
-        invitedEmail: req.body.email,
+        invitedEmail: req.body.email || null, // Email is optional
         expiresAt,
       });
       

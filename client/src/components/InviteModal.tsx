@@ -1,8 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,9 +19,7 @@ interface InviteModalProps {
   onClose: () => void;
 }
 
-const inviteSchema = z.object({
-  email: z.string().email("Please enter a valid email address").optional(),
-});
+// No schema needed since we're not collecting any input
 
 export default function InviteModal({ groupId, groupName, onClose }: InviteModalProps) {
   const { toast } = useToast();
@@ -34,12 +29,7 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
   const [showQrCode, setShowQrCode] = useState(false);
   const [activeQrCode, setActiveQrCode] = useState<string>('');
 
-  const form = useForm<z.infer<typeof inviteSchema>>({
-    resolver: zodResolver(inviteSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
+  // No form needed
 
   const { data: invites, isLoading: invitesLoading } = useQuery({
     queryKey: ["/api/groups", groupId, "invites"],
@@ -47,13 +37,12 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
   });
 
   const createInviteMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof inviteSchema>) => {
-      return await apiRequest("POST", `/api/groups/${groupId}/invites`, data);
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/groups/${groupId}/invites`, {});
     },
     onSuccess: (invite) => {
       setGeneratedInvite(invite);
       setShowInviteLink(true);
-      form.reset();
       toast({
         title: "Success",
         description: "Invite created successfully!",
@@ -80,8 +69,8 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
     },
   });
 
-  const onSubmit = (data: z.infer<typeof inviteSchema>) => {
-    createInviteMutation.mutate(data);
+  const createNewInvite = () => {
+    createInviteMutation.mutate();
   };
 
   const copyInviteLink = (inviteCode: string) => {
@@ -179,36 +168,29 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
             <div>
               <h3 className="font-medium mb-2">Create New Invite</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Generate an invite link to share with friends. Email is optional.
+                Generate a shareable link or QR code to invite friends to join {groupName}.
               </p>
             </div>
             
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email (Optional)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="friend@example.com"
-                  {...form.register("email")}
-                  data-testid="input-invite-email"
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive mt-1">
-                    {form.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
-              
-              <Button 
-                type="submit" 
-                disabled={createInviteMutation.isPending}
-                data-testid="button-create-invite"
-                className="w-full"
-              >
-                {createInviteMutation.isPending ? "Creating..." : "Generate Invite Link"}
-              </Button>
-            </form>
+            <Button 
+              onClick={createNewInvite}
+              disabled={createInviteMutation.isPending}
+              data-testid="button-create-invite"
+              className="w-full"
+              size="lg"
+            >
+              {createInviteMutation.isPending ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Creating Invite...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-link mr-2"></i>
+                  Generate Invite Link
+                </>
+              )}
+            </Button>
           </div>
 
           {/* Show Generated Invite */}
