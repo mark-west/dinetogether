@@ -101,7 +101,8 @@ export default function Groups() {
               {groups.map((group: any) => (
                 <Card 
                   key={group.id} 
-                  className="hover:shadow-md transition-shadow" 
+                  className="hover:shadow-md transition-shadow cursor-pointer" 
+                  onClick={() => window.location.href = `/groups/${group.id}`}
                   data-testid={`card-group-${group.id}`}
                 >
                   <CardHeader className="pb-3">

@@ -110,6 +110,14 @@
     font-family: var(--font-sans);
   }
 
+  html, body {
+    /* Ensure content doesn't get cut off by browser chrome */
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
   h1, h2 {
     font-family: var(--font-sans);
     font-weight: 700;
@@ -159,7 +167,10 @@
   max-width: 420px;
   margin: 0 auto;
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
   position: relative;
+  /* Add bottom padding for mobile navigation */
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 768px) {
@@ -169,6 +180,7 @@
     grid-template-columns: 280px 1fr;
     gap: 2rem;
     padding: 2rem;
+    padding-bottom: 2rem; /* Reset mobile padding for desktop */
   }
 }
 

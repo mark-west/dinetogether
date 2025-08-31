@@ -370,13 +370,8 @@ export default function Dashboard() {
                         </span>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-muted-foreground">
-                          <span>Created {format(new Date(group.createdAt), 'MMM d, yyyy')}</span>
-                        </div>
-                        <Button variant="ghost" size="sm" data-testid={`button-view-group-${group.id}`}>
-                          <i className="fas fa-arrow-right text-sm"></i>
-                        </Button>
+                      <div className="text-xs text-muted-foreground">
+                        <span>Created {format(new Date(group.createdAt), 'MMM d, yyyy')}</span>
                       </div>
                     </CardContent>
                   </Card>
