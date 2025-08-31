@@ -116,18 +116,25 @@ export function useGooglePlaces() {
     });
   };
 
-  const autocompleteRestaurants = (input: string) => {
+  const autocompleteRestaurants = (input: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
       if (!autocompleteService) {
         reject(new Error('Autocomplete service not available'));
         return;
       }
 
+      const request: any = {
+        input,
+        types: ['restaurant'],
+      };
+
+      if (location) {
+        request.location = new window.google.maps.LatLng(location.lat, location.lng);
+        request.radius = 20000; // 20km radius
+      }
+
       autocompleteService.getPlacePredictions(
-        {
-          input,
-          types: ['restaurant'],
-        },
+        request,
         (predictions: any[], status: any) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK) {
             resolve(predictions || []);
@@ -139,11 +146,38 @@ export function useGooglePlaces() {
     });
   };
 
+  const getUserLocation = () => {
+    return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by this browser'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          reject(new Error(`Geolocation error: ${error.message}`));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes cache
+        }
+      );
+    });
+  };
+
   return {
     isLoaded,
     error,
     searchPlaces,
     getPlaceDetails,
     autocompleteRestaurants,
+    getUserLocation,
   };
 }

@@ -26,8 +26,24 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails } = useGooglePlaces();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Get user's location on component mount
+  useEffect(() => {
+    if (isLoaded) {
+      getUserLocation()
+        .then(location => {
+          setUserLocation(location);
+          console.log('User location obtained for restaurant search:', location);
+        })
+        .catch(error => {
+          console.log('Could not get user location for restaurant search:', error.message);
+          // Continue without location - search will still work but without proximity sorting
+        });
+    }
+  }, [isLoaded, getUserLocation]);
 
   useEffect(() => {
     if (!isLoaded || !query.trim() || query.length < 2) {
@@ -43,7 +59,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const predictions = await autocompleteRestaurants(query) as any[];
+        const predictions = await autocompleteRestaurants(query, userLocation || undefined) as any[];
         setSuggestions(predictions.slice(0, 5));
         setShowSuggestions(true);
       } catch (err) {

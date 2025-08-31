@@ -208,8 +208,8 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Created {format(new Date(invite.createdAt), 'MMM d, h:mm a')}
-                            {invite.status === 'pending' && ` • Expires ${format(new Date(invite.expiresAt), 'MMM d')}`}
+                            Created {invite.createdAt ? format(new Date(invite.createdAt), 'MMM d, h:mm a') : 'Unknown'}
+                            {invite.status === 'pending' && invite.expiresAt && ` • Expires ${format(new Date(invite.expiresAt), 'MMM d')}`}
                           </p>
                         </div>
                         
