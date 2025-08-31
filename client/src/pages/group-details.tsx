@@ -19,6 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function GroupDetails() {
   const { groupId } = useParams();
@@ -78,7 +80,14 @@ export default function GroupDetails() {
   });
 
   const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ["/api/groups", groupId, "events"],
+    queryKey: ["/api/groups", groupId, "events", "with-rsvps"],
+    retry: false,
+    enabled: isAuthenticated && !!groupId,
+  });
+
+  const { data: eventsWithRsvps, isLoading: eventsWithRsvpsLoading } = useQuery({
+    queryKey: ["/api/groups", groupId, "events", "with-rsvps"],
+    queryFn: () => fetch(`/api/groups/${groupId}/events/with-rsvps`).then(res => res.json()),
     retry: false,
     enabled: isAuthenticated && !!groupId,
   });
@@ -431,15 +440,15 @@ export default function GroupDetails() {
                 </Button>
               </div>
               
-              {eventsLoading ? (
+              {eventsWithRsvpsLoading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
                     <Skeleton key={i} className="h-32" />
                   ))}
                 </div>
-              ) : Array.isArray(events) && events.length > 0 ? (
+              ) : Array.isArray(eventsWithRsvps) && eventsWithRsvps.length > 0 ? (
                 <div className="space-y-4">
-                  {events?.map((event: any) => (
+                  {eventsWithRsvps?.map((event: any) => (
                     <Card 
                       key={event.id} 
                       className="hover:shadow-md transition-shadow cursor-pointer"
@@ -481,6 +490,63 @@ export default function GroupDetails() {
                               )}
                             </div>
                           </div>
+                        </div>
+                        
+                        {/* Member RSVP Status */}
+                        <div className="mt-4 pt-4 border-t">
+                          <Collapsible>
+                            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors w-full text-left" data-testid={`button-view-rsvps-${event.id}`}>
+                              <i className="fas fa-users"></i>
+                              <span>Member Attendance ({event.memberRsvps?.filter((m: any) => m.rsvpStatus === 'confirmed').length || 0} confirmed)</span>
+                              <i className="fas fa-chevron-down ml-auto"></i>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-3">
+                              <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {event.memberRsvps?.map((memberRsvp: any) => (
+                                  <div key={memberRsvp.user.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/30" data-testid={`rsvp-member-${memberRsvp.user.id}`}>
+                                    <div className="flex items-center gap-3">
+                                      <Avatar className="w-8 h-8">
+                                        <AvatarImage src={memberRsvp.user.profileImageUrl} />
+                                        <AvatarFallback className="text-xs">
+                                          {memberRsvp.user.firstName?.[0] || memberRsvp.user.email?.[0] || '?'}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <div className="text-sm font-medium">
+                                          {memberRsvp.user.firstName && memberRsvp.user.lastName 
+                                            ? `${memberRsvp.user.firstName} ${memberRsvp.user.lastName}`
+                                            : memberRsvp.user.email
+                                          }
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">{memberRsvp.role}</div>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      {memberRsvp.rsvpStatus ? (
+                                        <Badge 
+                                          variant={memberRsvp.rsvpStatus === 'confirmed' ? 'default' : memberRsvp.rsvpStatus === 'declined' ? 'destructive' : 'secondary'}
+                                          className="text-xs"
+                                          data-testid={`badge-rsvp-${memberRsvp.user.id}`}
+                                        >
+                                          {memberRsvp.rsvpStatus === 'confirmed' ? (
+                                            <><i className="fas fa-check mr-1"></i>Confirmed</>
+                                          ) : memberRsvp.rsvpStatus === 'declined' ? (
+                                            <><i className="fas fa-times mr-1"></i>Declined</>
+                                          ) : (
+                                            <><i className="fas fa-question mr-1"></i>Maybe</>
+                                          )}
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-xs" data-testid={`badge-no-response-${memberRsvp.user.id}`}>
+                                          <i className="fas fa-clock mr-1"></i>No Response
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
                         </div>
                       </CardContent>
                     </Card>

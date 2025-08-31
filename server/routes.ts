@@ -385,6 +385,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/groups/:id/events/with-rsvps', isAuthenticated, async (req: any, res) => {
+    try {
+      const events = await storage.getGroupEventsWithMemberRsvps(req.params.id);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching group events with RSVPs:", error);
+      res.status(500).json({ message: "Failed to fetch group events with RSVPs" });
+    }
+  });
+
   // RSVP routes
   app.post('/api/events/:id/rsvp', isAuthenticated, async (req: any, res) => {
     try {

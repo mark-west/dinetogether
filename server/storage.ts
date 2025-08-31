@@ -48,6 +48,7 @@ export interface IStorage {
   addGroupMember(membership: InsertGroupMember): Promise<GroupMember>;
   removeGroupMember(groupId: string, userId: string): Promise<void>;
   getGroupMembers(groupId: string): Promise<Array<GroupMember & { user: User }>>;
+  getGroupEventsWithMemberRsvps(groupId: string): Promise<Array<Event & { memberRsvps: Array<{ user: User; rsvpStatus?: string; role: string }> }>>;
   
   // Event operations
   createEvent(event: InsertEvent): Promise<Event>;
@@ -237,6 +238,38 @@ export class DatabaseStorage implements IStorage {
       ...row.group_members,
       user: row.users,
     }));
+  }
+
+  async getGroupEventsWithMemberRsvps(groupId: string): Promise<Array<Event & { memberRsvps: Array<{ user: User; rsvpStatus?: string; role: string }> }>> {
+    // Get all events for the group
+    const groupEvents = await this.getGroupEvents(groupId);
+    
+    // Get all group members
+    const members = await this.getGroupMembers(groupId);
+    
+    // For each event, get all RSVPs and match with members
+    const eventsWithRsvps = await Promise.all(
+      groupEvents.map(async (event) => {
+        const rsvps = await this.getEventRsvps(event.id);
+        
+        // Create a map of user ID to RSVP status
+        const rsvpMap = new Map(rsvps.map(rsvp => [rsvp.userId, rsvp.status]));
+        
+        // Map all members with their RSVP status
+        const memberRsvps = members.map(member => ({
+          user: member.user,
+          rsvpStatus: rsvpMap.get(member.userId),
+          role: member.role,
+        }));
+        
+        return {
+          ...event,
+          memberRsvps,
+        };
+      })
+    );
+    
+    return eventsWithRsvps;
   }
 
   // Event operations
