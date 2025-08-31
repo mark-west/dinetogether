@@ -25,11 +25,11 @@ export default function Sidebar() {
     <div className="hidden md:block bg-card border-r border-border h-screen sticky top-0 w-80">
       {/* Header */}
       <div className="p-6 border-b border-border">
-        <div className="mb-4">
+        <div className="mb-4 w-full aspect-square">
           <img 
             src={logoImage} 
             alt="Dine Together" 
-            className="w-full h-16 rounded-lg object-cover cursor-pointer"
+            className="w-full h-full rounded-lg object-contain cursor-pointer"
             data-testid="img-sidebar-logo"
             onClick={() => window.location.href = '/'}
           />
