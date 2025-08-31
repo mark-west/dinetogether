@@ -45,9 +45,9 @@ export default function Landing() {
         </div>
 
         {/* Call to Action */}
-        <div className="pt-4 w-full flex justify-center">
+        <div className="pt-4 w-full flex justify-center px-4">
           <Button 
-            className="bg-white text-purple-600 hover:bg-gray-100 font-semibold py-4 px-12 text-lg rounded-xl shadow-lg"
+            className="bg-white text-purple-600 hover:bg-gray-100 font-semibold py-4 px-8 sm:px-12 text-lg rounded-xl shadow-lg max-w-xs w-full"
             onClick={() => window.location.href = '/api/login'}
             data-testid="button-get-started"
           >
