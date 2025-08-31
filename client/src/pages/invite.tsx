@@ -138,7 +138,8 @@ export default function InvitePage() {
           variant: "destructive",
         });
         setTimeout(() => {
-          window.location.href = "/api/login";
+          const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = `/api/login?redirect=${currentUrl}`;
         }, 500);
         return;
       }
@@ -299,7 +300,10 @@ export default function InvitePage() {
                 You need to log in to accept this invite
               </p>
               <Button 
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => {
+                  const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+                  window.location.href = `/api/login?redirect=${currentUrl}`;
+                }}
                 variant="outline"
                 className="w-full"
                 data-testid="button-login"

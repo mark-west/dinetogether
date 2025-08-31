@@ -103,6 +103,11 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
+    // Store the original URL to redirect back to after login
+    if (req.query.redirect) {
+      (req.session as any).returnTo = req.query.redirect as string;
+    }
+    
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
@@ -111,9 +116,18 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/callback", (req, res, next) => {
     passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
-    })(req, res, next);
+    })(req, res, (err: any) => {
+      if (err) {
+        return next(err);
+      }
+      
+      // Check if there's a stored return URL, otherwise default to home
+      const returnTo = (req.session as any).returnTo || "/";
+      delete (req.session as any).returnTo; // Clean up the session
+      
+      res.redirect(returnTo);
+    });
   });
 
   app.get("/api/logout", (req, res) => {
