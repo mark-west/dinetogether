@@ -26,9 +26,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
   
   // Sync internal state with external initialValue changes
   useEffect(() => {
-    if (initialValue !== query) {
-      setQuery(initialValue);
-    }
+    setQuery(initialValue);
   }, [initialValue]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
