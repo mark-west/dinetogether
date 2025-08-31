@@ -33,21 +33,43 @@ export default function Landing() {
             </div>
           </div>
           
-          <Button 
-            className="w-full" 
-            onClick={() => navigateWithLoading('/api/login')}
-            disabled={isLoading('/api/login')}
-            data-testid="button-login"
-          >
-            {isLoading('/api/login') ? (
-              <>
-                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
-                Getting Started...
-              </>
-            ) : (
-              'Get Started'
-            )}
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              className="w-full" 
+              onClick={() => navigateWithLoading('/api/login')}
+              disabled={isLoading('/api/login')}
+              data-testid="button-login"
+            >
+              {isLoading('/api/login') ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                  Getting Started...
+                </>
+              ) : (
+                'Get Started'
+              )}
+            </Button>
+            
+            <Button 
+              variant="outline"
+              className="w-full" 
+              onClick={() => navigateWithLoading('/api/login?force=true')}
+              disabled={isLoading('/api/login?force=true')}
+              data-testid="button-login-different-user"
+            >
+              {isLoading('/api/login?force=true') ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-user-plus mr-2"></i>
+                  Sign in as different user
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

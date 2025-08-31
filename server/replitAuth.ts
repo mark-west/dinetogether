@@ -108,8 +108,10 @@ export async function setupAuth(app: Express) {
       (req.session as any).returnTo = req.query.redirect as string;
     }
     
+    const prompt = req.query.force === 'true' ? "select_account" : "login consent";
+    
     passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
+      prompt,
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
