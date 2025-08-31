@@ -98,14 +98,6 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.location.href = '/api/logout'}
-                data-testid="button-logout"
-              >
-                <i className="fas fa-sign-out-alt"></i>
-              </Button>
               {user?.profileImageUrl && (
                 <img 
                   src={user.profileImageUrl} 

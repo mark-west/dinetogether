@@ -391,7 +391,7 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between py-3">
+                <div className="flex items-center justify-between py-3 border-b border-border">
                   <div>
                     <h4 className="font-medium text-foreground">Switch Account</h4>
                     <p className="text-sm text-muted-foreground">
@@ -406,6 +406,24 @@ export default function Profile() {
                   >
                     <i className="fas fa-user-plus mr-2"></i>
                     Switch Account
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <h4 className="font-medium text-foreground">Log Out</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Sign out of your account
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = '/api/logout'}
+                    data-testid="button-logout"
+                  >
+                    <i className="fas fa-sign-out-alt mr-2"></i>
+                    Log Out
                   </Button>
                 </div>
               </CardContent>
