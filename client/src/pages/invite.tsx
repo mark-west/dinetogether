@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -11,11 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InvitePage() {
   const params = useParams();
-  const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [hasShownAuthError, setHasShownAuthError] = useState(false);
+  const [needsAuth, setNeedsAuth] = useState(false);
   
   // Get invite code from URL params
   const inviteCode = params.inviteCode;
@@ -29,11 +27,22 @@ export default function InvitePage() {
     enabled: !!inviteCode && !hasError,
     throwOnError: false,
     gcTime: 0, // Don't cache failed queries
-    onError: (error: any) => {
-      console.error("Invite query error:", error);
-      setHasError(true);
-    },
   });
+
+  // Only load auth AFTER we have valid invite data
+  const { data: user, isLoading: authLoading } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    enabled: !!inviteData && !hasError,
+    throwOnError: false,
+    gcTime: 0,
+  });
+
+  const isAuthenticated = !!user;
+  const isLoading = authLoading;
 
   // Set error state when there's an error to prevent further requests
   useEffect(() => {
@@ -80,20 +89,7 @@ export default function InvitePage() {
     },
   });
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated && !hasShownAuthError) {
-      setHasShownAuthError(true);
-      toast({
-        title: "Please log in",
-        description: "You need to log in to accept this invite",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 1500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast, hasShownAuthError]);
+  // Removed automatic auth redirect to prevent infinite loops
 
   const handleAcceptInvite = () => {
     setIsAccepting(true);
