@@ -27,32 +27,40 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { isLoaded, error, autocompleteRestaurants, getPlaceDetails } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const newValue = e.target.value;
+    setQuery(newValue);
     
     if (useGoogleSearch && isLoaded && !error) {
-      setShowSuggestions(true);
-      setIsSearching(true);
-      
       // Clear existing timeout
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
       
-      // Debounce search
-      searchTimeoutRef.current = setTimeout(async () => {
+      // Only search if there's actual content
+      if (newValue.trim().length > 0) {
         setIsSearching(true);
-        try {
-          const results = await autocompleteRestaurants(e.target.value);
-          setSuggestions(results);
-          setShowSuggestions(true);
-        } catch (error) {
-          setSuggestions([]);
-          setShowSuggestions(false);
-        }
+        setShowSuggestions(true);
+        
+        // Debounce search
+        searchTimeoutRef.current = setTimeout(async () => {
+          try {
+            const results = await autocompleteRestaurants(newValue);
+            setSuggestions(results as any[]);
+            setShowSuggestions(true);
+          } catch (error) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+          setIsSearching(false);
+        }, 500); // Increased debounce to reduce API calls
+      } else {
         setIsSearching(false);
-      }, 300);
+        setShowSuggestions(false);
+        setSuggestions([]);
+      }
     }
   };
 
@@ -69,11 +77,13 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   };
 
   const handleSuggestionSelect = async (prediction: any) => {
+    // Hide suggestions immediately to prevent keyboard issues
+    setShowSuggestions(false);
+    
     try {
       const details = await getPlaceDetails(prediction.place_id);
-      onSelect(details);
-      setQuery(details.name);
-      setShowSuggestions(false);
+      onSelect(details as Restaurant);
+      setQuery((details as Restaurant).name);
     } catch (error) {
       console.error('Error getting place details:', error);
       // Fallback to basic info
@@ -84,7 +94,11 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       };
       onSelect(restaurant);
       setQuery(restaurant.name);
-      setShowSuggestions(false);
+    }
+    
+    // Ensure input maintains focus after selection on mobile
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   };
 
@@ -131,12 +145,17 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       {/* Input field with search/suggestions */}
       <div className="relative">
         <Input
+          ref={inputRef}
           value={query}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           placeholder={useGoogleSearch ? "Search Google for restaurants..." : "Enter restaurant name..."}
           data-testid="input-restaurant-search"
           disabled={useGoogleSearch && (isSearching || (!isLoaded && !error))}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         
         {/* Manual mode: show checkmark when there's text */}
@@ -174,6 +193,10 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
               <div
                 key={prediction.place_id}
                 className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
+                onMouseDown={(e) => {
+                  // Prevent input blur on mobile when tapping suggestions
+                  e.preventDefault();
+                }}
                 onClick={() => handleSuggestionSelect(prediction)}
                 data-testid={`suggestion-${prediction.place_id}`}
               >
