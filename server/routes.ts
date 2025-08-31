@@ -13,7 +13,6 @@ import {
   insertGroupMemberSchema,
   insertGroupInviteSchema,
 } from "@shared/schema";
-import { sendEventUpdateNotifications } from "./emailService";
 import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -23,7 +22,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -35,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile routes
   app.put('/api/profile', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const updateData = {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
@@ -54,7 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/profile/photo', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const { photoUrl } = req.body;
       
       const updateData = {
@@ -74,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Group routes
   app.post('/api/groups', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const groupData = insertGroupSchema.parse({
         ...req.body,
         adminId: userId,
@@ -90,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/groups', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const groups = await storage.getUserGroups(userId);
       res.json(groups);
     } catch (error) {
@@ -150,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/groups/:id/photo', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const { photoUrl } = req.body;
       
       // Check if user is admin of the group
@@ -249,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Event routes
   app.post('/api/events', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const eventData = insertEventSchema.parse({
         ...req.body,
         createdBy: userId,
@@ -265,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/events', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const events = await storage.getUserEvents(userId);
       res.json(events);
     } catch (error) {
@@ -276,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/events/upcoming', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const events = await storage.getUpcomingEvents(userId);
       res.json(events);
     } catch (error) {
@@ -300,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put('/api/events/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const event = await storage.getEvent(req.params.id);
       
       if (!event) {
@@ -317,12 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = insertEventSchema.partial().parse(req.body);
       const updatedEvent = await storage.updateEvent(req.params.id, updateData);
       
-      // Send notifications to RSVP'd users about event changes (non-blocking)
-      if (rsvps.length > 0) {
-        sendEventUpdateNotifications(updatedEvent!, rsvps, 'updated').catch(error => {
-          console.error('Email notification failed but event update succeeded:', error);
-        });
-      }
+      // TODO: Add email notifications for event updates
       
       res.json(updatedEvent);
     } catch (error) {
@@ -333,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete('/api/events/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const event = await storage.getEvent(req.params.id);
       
       if (!event) {
@@ -349,12 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.deleteEvent(req.params.id);
       
-      // Send notifications to RSVP'd users about event cancellation (non-blocking)
-      if (rsvps.length > 0) {
-        sendEventUpdateNotifications(event, rsvps, 'cancelled').catch(error => {
-          console.error('Email notification failed but event deletion succeeded:', error);
-        });
-      }
+      // TODO: Add email notifications for event cancellation
       
       res.status(204).send();
     } catch (error) {
@@ -399,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RSVP routes
   app.post('/api/events/:id/rsvp', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const rsvpData = insertRsvpSchema.parse({
         eventId: req.params.id,
         userId: userId,
@@ -427,7 +416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Restaurant suggestion routes
   app.post('/api/events/:id/suggestions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const suggestionData = insertSuggestionSchema.parse({
         eventId: req.params.id,
         userId: userId,
@@ -455,7 +444,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Message routes
   app.post('/api/events/:id/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const messageData = insertMessageSchema.parse({
         eventId: req.params.id,
         userId: userId,
@@ -482,7 +471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/events/:id/messages/:messageId/reply', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const messageData = insertMessageSchema.parse({
         eventId: req.params.id,
         userId: userId,
@@ -500,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/events/:id/messages/:messageId/read', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       await storage.markMessageAsRead(req.params.messageId, userId);
       res.status(204).send();
     } catch (error) {
@@ -512,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Group message routes
   app.post('/api/groups/:id/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const messageData = insertGroupMessageSchema.parse({
         groupId: req.params.id,
         userId: userId,
@@ -542,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/groups/:id/messages/:messageId/reply', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const messageData = insertGroupMessageSchema.parse({
         groupId: req.params.id,
         userId: userId,
@@ -560,7 +549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/groups/:id/messages/:messageId/read', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       await storage.markGroupMessageAsRead(req.params.messageId, userId);
       res.status(204).send();
     } catch (error) {
@@ -572,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get unread message count for user
   app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const count = await storage.getUserUnreadCount(userId);
       res.json({ count });
     } catch (error) {
@@ -584,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all unread counts for user's chats
   app.get('/api/chats/all-unread-counts', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       
       // Get all groups user is a member of
       const userGroups = await storage.getUserGroups(userId);
@@ -614,7 +603,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mark all messages in a group as read
   app.post('/api/groups/:id/messages/mark-read', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const groupId = req.params.id;
       await storage.markAllGroupMessagesAsRead(groupId, userId);
       res.status(204).send();
@@ -627,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mark all messages in an event as read
   app.post('/api/events/:id/messages/mark-read', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const eventId = req.params.id;
       await storage.markAllEventMessagesAsRead(eventId, userId);
       res.status(204).send();
@@ -640,7 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get unread count for specific group
   app.get('/api/groups/:id/unread-count', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const groupId = req.params.id;
       const count = await storage.getGroupUnreadCount(groupId, userId);
       res.json({ count });
@@ -653,7 +642,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get unread count for specific event
   app.get('/api/events/:id/unread-count', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const eventId = req.params.id;
       const count = await storage.getEventUnreadCount(eventId, userId);
       res.json({ count });
@@ -666,7 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all unread counts for user's chats
   app.get('/api/chats/all-unread-counts', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       
       // Get all groups user is a member of
       const userGroups = await storage.getUserGroups(userId);
@@ -696,7 +685,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard stats
   app.get('/api/dashboard/stats', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const stats = await storage.getUserStats(userId);
       res.json(stats);
     } catch (error) {
@@ -708,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Group invite routes
   app.post('/api/groups/:id/invites', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const groupId = req.params.id;
       
       // Check if user is admin of the group
@@ -732,7 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/groups/:id/invites', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const groupId = req.params.id;
       
       // Check if user is admin of the group
@@ -758,7 +747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/invites/:code/accept', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const inviteCode = req.params.code;
       
       const member = await storage.acceptGroupInvite(inviteCode, userId);
@@ -773,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete/expire an invite
   app.delete('/api/invites/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const inviteId = req.params.id;
       
       // Permanent invites cannot be deleted - they persist with the group
