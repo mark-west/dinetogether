@@ -11,6 +11,9 @@ import CreateGroupModal from "@/components/CreateGroupModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EventCard } from "@/components/ui/event-card";
+import { GroupCard } from "@/components/ui/group-card";
+import { CheckCircleIcon, StarIcon, CalendarIcon, UsersIcon, PlusIcon } from "@/components/ui/app-icons";
 import logoImage from "@assets/fulllogo_1756644214427.jpg";
 
 export default function Dashboard() {
@@ -51,34 +54,6 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isToday(date)) {
-      return `Today, ${format(date, 'h:mm a')}`;
-    } else if (isTomorrow(date)) {
-      return `Tomorrow, ${format(date, 'h:mm a')}`;
-    } else {
-      return format(date, 'EEEE, h:mm a');
-    }
-  };
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'maybe': return 'bg-yellow-100 text-yellow-800';
-      case 'declined': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status?: string) => {
-    switch (status) {
-      case 'confirmed': return 'Going';
-      case 'maybe': return 'Maybe';
-      case 'declined': return 'Declined';
-      default: return 'Pending';
-    }
-  };
 
   if (isLoading) {
     return (
@@ -157,7 +132,7 @@ export default function Dashboard() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <i className="fas fa-users text-primary text-sm"></i>
+                    <UsersIcon className="text-primary" size="sm" />
                     <span className="text-sm font-medium text-muted-foreground">Groups</span>
                   </div>
                   {statsLoading ? (
@@ -173,7 +148,7 @@ export default function Dashboard() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <i className="fas fa-calendar text-secondary text-sm"></i>
+                    <CalendarIcon className="text-secondary" size="sm" />
                     <span className="text-sm font-medium text-muted-foreground">Events</span>
                   </div>
                   {statsLoading ? (
@@ -189,7 +164,7 @@ export default function Dashboard() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <i className="fas fa-check-circle text-green-500 text-sm"></i>
+                    <CheckCircleIcon className="text-green-500" size="sm" />
                     <span className="text-sm font-medium text-muted-foreground">Attended</span>
                   </div>
                   {statsLoading ? (
@@ -205,7 +180,7 @@ export default function Dashboard() {
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <i className="fas fa-star text-yellow-500 text-sm"></i>
+                    <StarIcon className="text-yellow-500" size="sm" />
                     <span className="text-sm font-medium text-muted-foreground">Rating</span>
                   </div>
                   {statsLoading ? (
@@ -243,71 +218,18 @@ export default function Dashboard() {
             ) : upcomingEvents && Array.isArray(upcomingEvents) && upcomingEvents.length > 0 ? (
               <div className="space-y-3">
                 {(upcomingEvents as any[]).map((event: any) => (
-                  <Card 
-                    key={event.id} 
-                    className="hover:shadow-md transition-shadow cursor-pointer" 
-                    onClick={() => window.location.href = `/events/${event.id}`}
-                    data-testid={`card-event-${event.id}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        {event.restaurantImageUrl ? (
-                          <img 
-                            src={event.restaurantImageUrl} 
-                            alt={event.restaurantName} 
-                            className="w-16 h-16 rounded-lg object-cover"
-                            data-testid={`img-restaurant-${event.id}`}
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                            <i className="fas fa-utensils text-muted-foreground"></i>
-                          </div>
-                        )}
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h4 className="font-semibold text-foreground" data-testid={`text-restaurant-${event.id}`}>
-                                {event.restaurantName || event.name}
-                              </h4>
-                              <p className="text-sm text-muted-foreground" data-testid={`text-group-${event.id}`}>
-                                {event.group.name}
-                              </p>
-                            </div>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(event.rsvpStatus)}`} data-testid={`status-${event.id}`}>
-                              {getStatusText(event.rsvpStatus)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                            <div className="flex items-center gap-1">
-                              <i className="fas fa-calendar text-xs"></i>
-                              <span data-testid={`text-date-${event.id}`}>{formatEventDate(event.dateTime)}</span>
-                            </div>
-                            {event.restaurantAddress && (
-                              <div className="flex items-center gap-1">
-                                <i className="fas fa-map-marker-alt text-xs"></i>
-                                <span data-testid={`text-location-${event.id}`}>{event.restaurantAddress}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground" data-testid={`text-attendees-${event.id}`}>
-                              {event.attendeeCount} going
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <EventCard 
+                    key={event.id}
+                    event={event}
+                    variant="summary"
+                  />
                 ))}
               </div>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-calendar text-muted-foreground"></i>
+                    <CalendarIcon className="text-muted-foreground" />
                   </div>
                   <h4 className="font-medium text-foreground mb-2">No upcoming events</h4>
                   <p className="text-sm text-muted-foreground mb-4">Create your first event to get started</p>
@@ -342,46 +264,18 @@ export default function Dashboard() {
             ) : groups && Array.isArray(groups) && groups.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-4">
                 {(groups as any[]).slice(0, 4).map((group: any) => (
-                  <Card 
-                    key={group.id} 
-                    className="hover:shadow-md transition-shadow cursor-pointer" 
-                    onClick={() => window.location.href = `/groups/${group.id}`}
-                    data-testid={`card-group-${group.id}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
-                            {group.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground" data-testid={`text-group-name-${group.id}`}>
-                              {group.name}
-                            </h4>
-                            <p className="text-sm text-muted-foreground" data-testid={`text-member-count-${group.id}`}>
-                              {group.memberCount} members
-                            </p>
-                          </div>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
-                        }`} data-testid={`text-role-${group.id}`}>
-                          {group.role === 'admin' ? 'Admin' : 'Member'}
-                        </span>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        <span>Created {format(new Date(group.createdAt), 'MMM d, yyyy')}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <GroupCard 
+                    key={group.id}
+                    group={group}
+                    variant="summary"
+                  />
                 ))}
               </div>
             ) : (
               <Card>
                 <CardContent className="p-8 text-center">
                   <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-users text-muted-foreground"></i>
+                    <UsersIcon className="text-muted-foreground" />
                   </div>
                   <h4 className="font-medium text-foreground mb-2">No groups yet</h4>
                   <p className="text-sm text-muted-foreground mb-4">Create your first group to start organizing dinners</p>
@@ -401,7 +295,7 @@ export default function Dashboard() {
         onClick={() => setShowEventModal(true)}
         data-testid="button-fab"
       >
-        <i className="fas fa-plus text-lg"></i>
+        <PlusIcon size="lg" />
       </Button>
 
       <MobileNavigation />

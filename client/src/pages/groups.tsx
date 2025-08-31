@@ -10,6 +10,8 @@ import CreateGroupModal from "@/components/CreateGroupModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GroupCard } from "@/components/ui/group-card";
+import { PlusIcon, UsersIcon } from "@/components/ui/app-icons";
 
 export default function Groups() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -68,7 +70,7 @@ export default function Groups() {
               onClick={() => setShowCreateModal(true)}
               data-testid="button-create-group-mobile"
             >
-              <i className="fas fa-plus"></i>
+              <PlusIcon />
             </Button>
           </div>
         </div>
@@ -85,7 +87,7 @@ export default function Groups() {
               className="hidden md:flex"
               data-testid="button-create-group"
             >
-              <i className="fas fa-plus mr-2"></i>
+              <PlusIcon className="mr-2" />
               Create Group
             </Button>
           </div>
@@ -99,93 +101,18 @@ export default function Groups() {
           ) : groups && Array.isArray(groups) && groups.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {groups.map((group: any) => (
-                <Card 
-                  key={group.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer" 
-                  onClick={() => window.location.href = `/groups/${group.id}`}
-                  data-testid={`card-group-${group.id}`}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start gap-3">
-                      {group.photoUrl ? (
-                        <img 
-                          src={group.photoUrl} 
-                          alt={`${group.name} photo`}
-                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                          data-testid={`img-group-photo-${group.id}`}
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                          {group.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <CardTitle className="text-lg leading-tight" data-testid={`text-group-name-${group.id}`}>
-                            {group.name}
-                          </CardTitle>
-                          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0 ${
-                            group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
-                          }`} data-testid={`text-role-${group.id}`}>
-                            {group.role === 'admin' ? 'Admin' : 'Member'}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground" data-testid={`text-member-count-${group.id}`}>
-                          {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    {group.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${group.id}`}>
-                        {group.description}
-                      </p>
-                    )}
-                    
-                    <div className="text-sm text-muted-foreground">
-                      <span>Created {format(new Date(group.createdAt), 'MMM d, yyyy')}</span>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.location.href = `/groups/${group.id}`;
-                        }}
-                        data-testid={`button-view-group-${group.id}`}
-                      >
-                        <i className="fas fa-eye mr-1"></i>
-                        View
-                      </Button>
-                      {group.role === 'admin' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1 text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.location.href = `/groups/${group.id}?tab=members&invite=true`;
-                          }}
-                          data-testid={`button-invite-${group.id}`}
-                        >
-                          <i className="fas fa-user-plus mr-1"></i>
-                          Invite
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <GroupCard
+                  key={group.id}
+                  group={group}
+                  variant="detailed"
+                  showActions={true}
+                />
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
-                <i className="fas fa-users text-3xl text-muted-foreground"></i>
+                <UsersIcon className="text-3xl text-muted-foreground" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">No groups yet</h3>
               <p className="text-muted-foreground text-center mb-6 max-w-md">
@@ -196,7 +123,7 @@ export default function Groups() {
                 onClick={() => setShowCreateModal(true)}
                 data-testid="button-create-first-group"
               >
-                <i className="fas fa-plus mr-2"></i>
+                <PlusIcon className="mr-2" />
                 Create Your First Group
               </Button>
             </div>
