@@ -48,11 +48,28 @@ export default function GoogleMapComponent({
       
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
       
+      console.log('Map instance created:', {
+        mapInstance: !!mapInstanceRef.current,
+        mapDiv: mapRef.current,
+        center: center,
+        zoom: zoom
+      });
+      
+      // Add idle event listener to detect when map is fully loaded
+      mapInstanceRef.current.addListener('idle', () => {
+        console.log('Map idle - tiles should be loaded');
+      });
+      
+      mapInstanceRef.current.addListener('tilesloaded', () => {
+        console.log('Map tiles loaded successfully');
+      });
+      
       // Force a resize after initialization to ensure proper rendering
       setTimeout(() => {
         if (mapInstanceRef.current) {
           window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
           mapInstanceRef.current.setCenter(center);
+          console.log('Map resized and centered');
         }
       }, 100);
 
