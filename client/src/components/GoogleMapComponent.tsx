@@ -32,28 +32,28 @@ export default function GoogleMapComponent({
     if (!isLoaded || !mapRef.current || !window.google || isInitializedRef.current) return;
 
     try {
-      // Initialize map - mapId only needed for AdvancedMarkerElement
+      console.log('Initializing Google Maps...', { 
+        isLoaded, 
+        hasMapRef: !!mapRef.current, 
+        hasGoogle: !!window.google,
+        hasAdvancedMarker: !!window.google.maps.marker?.AdvancedMarkerElement
+      });
+      
+      // Initialize map - use basic configuration without mapId to avoid cloud console dependency
       const mapConfig: any = {
         center,
         zoom,
-      };
-      
-      // Add mapId if AdvancedMarkerElement is available, otherwise add styles
-      if (window.google.maps.marker?.AdvancedMarkerElement) {
-        mapConfig.mapId = 'DEMO_MAP_ID';
-        // Don't set styles when mapId is present - they're controlled via cloud console
-      } else {
-        // Only add styles when not using mapId
-        mapConfig.styles = [
+        styles: [
           {
             featureType: "poi.business",
             elementType: "labels",
             stylers: [{ visibility: "on" }]
           }
-        ];
-      }
+        ]
+      };
       
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
+      console.log('Map initialized successfully:', mapInstanceRef.current);
 
       // Add click listener
       if (onMapClick) {
@@ -141,32 +141,13 @@ export default function GoogleMapComponent({
         infoWindowRef.current.close();
       }
 
-      // Add new markers - try AdvancedMarkerElement first, fallback to Marker
+      // Add new markers using standard Marker API
       markers.forEach(markerData => {
-        let marker;
-        
-        // Try using AdvancedMarkerElement if available
-        if (window.google.maps.marker?.AdvancedMarkerElement) {
-          try {
-            marker = new window.google.maps.marker.AdvancedMarkerElement({
-              position: markerData.position,
-              map: mapInstanceRef.current,
-              title: markerData.title,
-            });
-          } catch (advancedError) {
-            console.warn('AdvancedMarkerElement failed, falling back to Marker:', advancedError);
-            marker = null;
-          }
-        }
-        
-        // Fallback to regular Marker if AdvancedMarkerElement not available or failed
-        if (!marker) {
-          marker = new window.google.maps.Marker({
-            position: markerData.position,
-            map: mapInstanceRef.current,
-            title: markerData.title,
-          });
-        }
+        const marker = new window.google.maps.Marker({
+          position: markerData.position,
+          map: mapInstanceRef.current,
+          title: markerData.title,
+        });
 
         if (markerData.info && marker) {
           if (!infoWindowRef.current) {
