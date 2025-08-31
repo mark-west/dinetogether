@@ -220,7 +220,12 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">Upcoming Events</h3>
-              <Button variant="ghost" size="sm" data-testid="button-view-all-events">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.location.href = '/events'}
+                data-testid="button-view-all-events"
+              >
                 View All
               </Button>
             </div>
@@ -234,7 +239,12 @@ export default function Dashboard() {
             ) : upcomingEvents && upcomingEvents.length > 0 ? (
               <div className="space-y-3">
                 {upcomingEvents.map((event: any) => (
-                  <Card key={event.id} className="hover:shadow-md transition-shadow" data-testid={`card-event-${event.id}`}>
+                  <Card 
+                    key={event.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer" 
+                    onClick={() => window.location.href = `/events/${event.id}`}
+                    data-testid={`card-event-${event.id}`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         {event.restaurantImageUrl ? (
@@ -309,7 +319,12 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-foreground">My Groups</h3>
-              <Button variant="ghost" size="sm" data-testid="button-manage-groups">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => window.location.href = '/groups'}
+                data-testid="button-manage-groups"
+              >
                 Manage All
               </Button>
             </div>
@@ -323,7 +338,12 @@ export default function Dashboard() {
             ) : groups && groups.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-4">
                 {groups.slice(0, 4).map((group: any) => (
-                  <Card key={group.id} className="hover:shadow-md transition-shadow" data-testid={`card-group-${group.id}`}>
+                  <Card 
+                    key={group.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer" 
+                    onClick={() => window.location.href = `/groups/${group.id}`}
+                    data-testid={`card-group-${group.id}`}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
