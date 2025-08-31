@@ -36,7 +36,8 @@ function Router() {
       {!isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
-          <Route component={NotFound} />
+          {/* Redirect all other routes to login when not authenticated */}
+          <Route component={Landing} />
         </>
       ) : (
         <>
