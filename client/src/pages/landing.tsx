@@ -9,7 +9,7 @@ export default function Landing() {
           <div className="w-16 h-16 gradient-bg rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fas fa-utensils text-white text-2xl"></i>
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome to DineSync</CardTitle>
+          <CardTitle className="text-2xl font-bold">Welcome to DineTogether</CardTitle>
           <CardDescription>
             Organize restaurant nights with friends. Create groups, plan events, and chat about your dining adventures.
           </CardDescription>

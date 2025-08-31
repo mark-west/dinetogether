@@ -113,7 +113,7 @@ export default function Dashboard() {
               <div className="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center">
                 <i className="fas fa-utensils text-white text-sm"></i>
               </div>
-              <h1 className="font-bold text-lg text-foreground">DineSync</h1>
+              <h1 className="font-bold text-lg text-foreground">DineTogether</h1>
             </div>
             
             <div className="flex items-center gap-3">

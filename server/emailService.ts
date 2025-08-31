@@ -65,7 +65,7 @@ function generateIcsContent(event: Event): string {
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//DineSync//Event//EN',
+    'PRODID:-//DineTogether//Event//EN',
     'BEGIN:VEVENT',
     `DTSTART:${startDate}`,
     `DTEND:${endDate}`,

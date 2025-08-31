@@ -27,7 +27,7 @@ export default function Sidebar() {
           <div className="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
             <i className="fas fa-utensils text-white text-lg"></i>
           </div>
-          <h1 className="font-bold text-xl text-foreground">DineSync</h1>
+          <h1 className="font-bold text-xl text-foreground">DineTogether</h1>
         </div>
         
         {/* User Profile */}

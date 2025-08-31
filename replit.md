@@ -1,6 +1,6 @@
 # Overview
 
-DineSync is a restaurant dining coordination web application built with React and Express. The app allows users to create groups, plan dining events, and chat with friends about restaurant visits. It features a modern responsive design using Tailwind CSS and ShadCN UI components, with PostgreSQL database storage and Replit-based authentication.
+DineTogether is a restaurant dining coordination web application built with React and Express. The app allows users to create groups, plan dining events, and chat with friends about restaurant visits. It features a modern responsive design using Tailwind CSS and ShadCN UI components, with PostgreSQL database storage and Replit-based authentication.
 
 # User Preferences
 

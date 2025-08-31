@@ -53,7 +53,7 @@ export default function CalendarActions({ event, size = "sm", variant = "outline
         const icsContent = [
           'BEGIN:VCALENDAR',
           'VERSION:2.0',
-          'PRODID:-//DineSync//Event//EN',
+          'PRODID:-//DineTogether//Event//EN',
           'BEGIN:VEVENT',
           `DTSTART:${startDate}`,
           `DTEND:${endDate}`,
