@@ -199,8 +199,8 @@ export default function CreateEventModal({ onClose, groups }: CreateEventModalPr
                       form.setValue('restaurantAddress', restaurant.address);
                       form.setValue('restaurantImageUrl', restaurant.photoUrl || '');
                       form.setValue('restaurantPlaceId', restaurant.placeId);
-                      form.setValue('restaurantLat', restaurant.location?.lat?.toString() || '');
-                      form.setValue('restaurantLng', restaurant.location?.lng?.toString() || '');
+                      form.setValue('restaurantLat', restaurant.location?.lat);
+                      form.setValue('restaurantLng', restaurant.location?.lng);
                       setShowMap(true);
                     }}
                     placeholder="Search for restaurants..."
