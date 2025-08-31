@@ -108,12 +108,16 @@ export async function setupAuth(app: Express) {
       (req.session as any).returnTo = req.query.redirect as string;
     }
     
-    const prompt = req.query.force === 'true' ? "select_account" : "login consent";
-    
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt,
+    const authOptions: any = {
       scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
+    };
+    
+    // Only add prompt for forced login (different user)
+    if (req.query.force === 'true') {
+      authOptions.prompt = "login";
+    }
+    
+    passport.authenticate(`replitauth:${req.hostname}`, authOptions)(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
