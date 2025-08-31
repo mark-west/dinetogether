@@ -112,7 +112,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const eventData = insertEventSchema.parse({
         ...req.body,
-        dateTime: new Date(req.body.dateTime),
         createdBy: userId,
       });
       

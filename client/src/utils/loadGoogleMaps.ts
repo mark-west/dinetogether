@@ -8,6 +8,8 @@ export function loadGoogleMapsScript() {
     console.warn('VITE_GOOGLE_MAPS_API_KEY not found - Google Maps features will be disabled');
     return;
   }
+  
+  console.log('Loading Google Maps with API key prefix:', apiKey?.substring(0, 10) + '...');
 
   const script = document.createElement('script');
   script.id = 'google-maps-script';

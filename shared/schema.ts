@@ -226,6 +226,8 @@ export const insertEventSchema = createInsertSchema(events).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dateTime: z.string().transform((str) => new Date(str)),
 });
 
 export const insertRsvpSchema = createInsertSchema(eventRsvps).omit({
