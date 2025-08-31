@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGooglePlaces } from "@/hooks/useGoogleMaps";
 
@@ -24,19 +23,38 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails } = useGooglePlaces();
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Set initial value only once
+  // Get user location for better search results
+  useEffect(() => {
+    const getLocation = async () => {
+      try {
+        const location = await getUserLocation();
+        setUserLocation(location);
+      } catch (error) {
+        // Location access denied or failed, will search without location bias
+        console.log('Location access denied or failed');
+      }
+    };
+    
+    if (useGoogleSearch && isLoaded && !userLocation) {
+      getLocation();
+    }
+  }, [useGoogleSearch, isLoaded, getUserLocation, userLocation]);
+
+  // Set initial value
   useEffect(() => {
     if (inputRef.current && initialValue) {
       inputRef.current.value = initialValue;
     }
   }, [initialValue]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+  const handleInputChange = (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const newValue = target.value;
     
     if (useGoogleSearch && isLoaded && !error) {
       // Clear existing timeout
@@ -45,14 +63,14 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       }
       
       // Only search if there's actual content
-      if (newValue.trim().length > 0) {
+      if (newValue.trim().length > 2) { // Increased minimum length
         setIsSearching(true);
         setShowSuggestions(true);
         
-        // Debounce search
+        // Longer debounce to reduce re-renders
         searchTimeoutRef.current = setTimeout(async () => {
           try {
-            const results = await autocompleteRestaurants(newValue);
+            const results = await autocompleteRestaurants(newValue, userLocation || undefined);
             setSuggestions(results as any[]);
             setShowSuggestions(true);
           } catch (error) {
@@ -60,7 +78,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
             setShowSuggestions(false);
           }
           setIsSearching(false);
-        }, 800); // Even longer debounce
+        }, 1000); // Very long debounce
       } else {
         setIsSearching(false);
         setShowSuggestions(false);
@@ -68,6 +86,17 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       }
     }
   };
+
+  // Use native event listener to bypass React
+  useEffect(() => {
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener('input', handleInputChange);
+      return () => {
+        input.removeEventListener('input', handleInputChange);
+      };
+    }
+  }, [useGoogleSearch, isLoaded, error, userLocation]);
 
   const handleManualSelect = () => {
     const currentValue = inputRef.current?.value?.trim();
@@ -83,7 +112,6 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   };
 
   const handleSuggestionSelect = async (prediction: any) => {
-    // Hide suggestions immediately to prevent keyboard issues
     setShowSuggestions(false);
     
     try {
@@ -94,7 +122,6 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       }
     } catch (error) {
       console.error('Error getting place details:', error);
-      // Fallback to basic info
       const restaurant: Restaurant = {
         placeId: prediction.place_id,
         name: prediction.structured_formatting?.main_text || prediction.description,
@@ -107,7 +134,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (!useGoogleSearch || !showSuggestions || suggestions.length === 0) {
@@ -143,16 +170,15 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
           onClick={() => setUseGoogleSearch(true)}
           data-testid="button-google-search"
         >
-          Search Google
+          Search Google {userLocation ? '(Near You)' : ''}
         </Button>
       </div>
 
-      {/* Input field with search/suggestions */}
+      {/* Native HTML input to bypass React's controlled input system */}
       <div className="relative">
-        <Input
+        <input
           ref={inputRef}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyPress}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder={useGoogleSearch ? "Search Google for restaurants..." : "Enter restaurant name..."}
           data-testid="input-restaurant-search"
           disabled={useGoogleSearch && (isSearching || (!isLoaded && !error))}
@@ -160,6 +186,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
+          onKeyDown={handleKeyDown}
         />
         
         {/* Manual mode: show checkmark when there's text */}
@@ -198,7 +225,6 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
                 key={prediction.place_id}
                 className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer border-b last:border-b-0"
                 onMouseDown={(e) => {
-                  // Prevent input blur on mobile when tapping suggestions
                   e.preventDefault();
                 }}
                 onClick={() => handleSuggestionSelect(prediction)}
@@ -228,6 +254,12 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       {!useGoogleSearch && (
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Type the restaurant name and press Enter or click ✓
+        </p>
+      )}
+
+      {useGoogleSearch && userLocation && (
+        <p className="text-sm text-green-600 dark:text-green-400">
+          🎯 Searching near your location for better results
         </p>
       )}
     </div>
