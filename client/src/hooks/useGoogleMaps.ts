@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { loadGoogleMapsScript } from '@/utils/loadGoogleMaps';
 
 declare global {
   interface Window {
@@ -26,19 +27,18 @@ export function useGoogleMaps() {
       setError('Failed to load Google Maps');
     };
 
-    // Load the script with the API key
-    const existingScript = document.getElementById('google-maps-script');
-    if (existingScript && !existingScript.getAttribute('src').includes('key=')) {
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      if (apiKey) {
-        existingScript.setAttribute('src', 
-          `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`
-        );
-      } else {
-        setError('Google Maps API key not found');
-        return;
-      }
+    // Check if API key exists
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      setError('Google Maps API key not found - Google Maps features will be disabled');
+      return;
     }
+
+    // Load the Google Maps script
+    loadGoogleMapsScript().catch((error) => {
+      console.error('Failed to load Google Maps script:', error);
+      setError('Failed to load Google Maps');
+    });
 
     window.addEventListener('googleMapsLoaded', handleLoad);
     window.addEventListener('error', handleError);
