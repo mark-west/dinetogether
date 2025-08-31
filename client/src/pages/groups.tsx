@@ -76,15 +76,15 @@ export default function Groups() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-bold text-foreground">My Groups</h2>
-              <p className="text-sm sm:text-base text-muted-foreground">Manage your restaurant groups and memberships</p>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">My Groups</h2>
+              <p className="text-muted-foreground">Manage your restaurant groups and memberships</p>
             </div>
             <Button 
               onClick={() => setShowCreateModal(true)}
-              className="hidden md:flex shrink-0"
+              className="hidden md:flex"
               data-testid="button-create-group"
             >
               <PlusIcon className="mr-2" />
