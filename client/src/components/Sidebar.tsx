@@ -29,7 +29,7 @@ export default function Sidebar() {
           <img 
             src={logoImage} 
             alt="Dine Together" 
-            className="w-full h-full rounded-lg object-contain cursor-pointer"
+            className="w-full h-full rounded-lg object-cover cursor-pointer"
             data-testid="img-sidebar-logo"
             onClick={() => window.location.href = '/'}
           />
