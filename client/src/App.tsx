@@ -14,6 +14,7 @@ import Chat from "@/pages/chat";
 import InvitePage from "@/pages/invite";
 import EventDetails from "@/pages/event-details";
 import Profile from "@/pages/profile";
+import AuthLogin from "@/pages/auth-login";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,6 +34,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/invite/:inviteCode" component={InvitePage} />
+      <Route path="/login" component={AuthLogin} />
       {!isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />

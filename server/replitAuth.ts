@@ -3,6 +3,7 @@ import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { setupSocialAuth } from "./authProviders";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -30,27 +31,13 @@ export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
 
-  // Simple authentication routes
-  app.get("/api/login", async (req, res) => {
-    try {
-      // For now, create a test user session
-      // This will be replaced with proper Replit Auth
-      const testUser = {
-        id: "47063225", // Use existing user ID to maintain data
-        email: "mwest.vw@gmail.com",
-        firstName: "Test",
-        lastName: "User", 
-        profileImageUrl: null,
-      };
+  // Setup social authentication providers
+  const { setupSocialAuth } = await import("./authProviders");
+  await setupSocialAuth(app);
 
-      // Store user in session
-      (req.session as any).user = testUser;
-      
-      res.redirect("/");
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed" });
-    }
+  // Redirect to login page with provider options
+  app.get("/api/login", (req, res) => {
+    res.redirect("/login");
   });
 
   // Logout endpoint
