@@ -36,18 +36,21 @@ export default function GoogleMapComponent({
       const mapConfig: any = {
         center,
         zoom,
-        styles: [
+      };
+      
+      // Add mapId if AdvancedMarkerElement is available, otherwise add styles
+      if (window.google.maps.marker?.AdvancedMarkerElement) {
+        mapConfig.mapId = 'DEMO_MAP_ID';
+        // Don't set styles when mapId is present - they're controlled via cloud console
+      } else {
+        // Only add styles when not using mapId
+        mapConfig.styles = [
           {
             featureType: "poi.business",
             elementType: "labels",
             stylers: [{ visibility: "on" }]
           }
-        ],
-      };
-      
-      // Add mapId if AdvancedMarkerElement is available
-      if (window.google.maps.marker?.AdvancedMarkerElement) {
-        mapConfig.mapId = 'DEMO_MAP_ID';
+        ];
       }
       
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
