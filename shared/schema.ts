@@ -10,6 +10,7 @@ import {
   boolean,
   uuid,
   unique,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -162,6 +163,49 @@ export const groupInvites = pgTable("group_invites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Event photos table
+export const eventPhotos = pgTable("event_photos", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  photoUrl: varchar("photo_url", { length: 500 }).notNull(),
+  caption: text("caption"),
+  fileName: varchar("file_name", { length: 255 }),
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Event diary entries
+export const eventDiaries = pgTable("event_diaries", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar("title", { length: 255 }),
+  notes: text("notes"),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  costCurrency: varchar("cost_currency", { length: 3 }).default('USD'),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  unique: unique().on(table.eventId, table.userId),
+}));
+
+// Event ratings
+export const eventRatings = pgTable("event_ratings", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  rating: integer("rating").notNull(), // 1-5 stars
+  review: text("review"),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  unique: unique().on(table.eventId, table.userId),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   adminGroups: many(groups),
@@ -175,6 +219,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   groupMessageReads: many(groupMessageReads),
   sentInvites: many(groupInvites, { relationName: 'sentInvites' }),
   acceptedInvites: many(groupInvites, { relationName: 'acceptedInvites' }),
+  eventPhotos: many(eventPhotos),
+  eventDiaries: many(eventDiaries),
+  eventRatings: many(eventRatings),
 }));
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({
@@ -211,6 +258,9 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
   rsvps: many(eventRsvps),
   suggestions: many(restaurantSuggestions),
   messages: many(messages),
+  photos: many(eventPhotos),
+  diaries: many(eventDiaries),
+  ratings: many(eventRatings),
 }));
 
 export const eventRsvpsRelations = relations(eventRsvps, ({ one }) => ({
@@ -298,6 +348,39 @@ export const groupInvitesRelations = relations(groupInvites, ({ one }) => ({
   }),
 }));
 
+export const eventPhotosRelations = relations(eventPhotos, ({ one }) => ({
+  event: one(events, {
+    fields: [eventPhotos.eventId],
+    references: [events.id],
+  }),
+  uploader: one(users, {
+    fields: [eventPhotos.uploadedBy],
+    references: [users.id],
+  }),
+}));
+
+export const eventDiariesRelations = relations(eventDiaries, ({ one }) => ({
+  event: one(events, {
+    fields: [eventDiaries.eventId],
+    references: [events.id],
+  }),
+  user: one(users, {
+    fields: [eventDiaries.userId],
+    references: [users.id],
+  }),
+}));
+
+export const eventRatingsRelations = relations(eventRatings, ({ one }) => ({
+  event: one(events, {
+    fields: [eventRatings.eventId],
+    references: [events.id],
+  }),
+  user: one(users, {
+    fields: [eventRatings.userId],
+    references: [users.id],
+  }),
+}));
+
 // Zod schemas for validation
 export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
@@ -359,6 +442,25 @@ export const insertGroupInviteSchema = createInsertSchema(groupInvites).omit({
   createdAt: true,
 });
 
+export const insertEventPhotoSchema = createInsertSchema(eventPhotos).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertEventDiarySchema = createInsertSchema(eventDiaries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEventRatingSchema = createInsertSchema(eventRatings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  rating: z.number().min(1).max(5),
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -382,3 +484,9 @@ export type GroupMember = typeof groupMembers.$inferSelect;
 export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
 export type GroupInvite = typeof groupInvites.$inferSelect;
 export type InsertGroupInvite = z.infer<typeof insertGroupInviteSchema>;
+export type EventPhoto = typeof eventPhotos.$inferSelect;
+export type InsertEventPhoto = z.infer<typeof insertEventPhotoSchema>;
+export type EventDiary = typeof eventDiaries.$inferSelect;
+export type InsertEventDiary = z.infer<typeof insertEventDiarySchema>;
+export type EventRating = typeof eventRatings.$inferSelect;
+export type InsertEventRating = z.infer<typeof insertEventRatingSchema>;
