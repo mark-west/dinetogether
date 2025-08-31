@@ -40,6 +40,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
   // Get user's location on component mount
   useEffect(() => {
     if (isLoaded) {
+      console.log('Google Maps loaded, getting user location...');
       getUserLocation()
         .then(location => {
           setUserLocation(location);
@@ -65,8 +66,10 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
 
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
+      console.log('Triggering restaurant search for query:', query);
       try {
         const predictions = await autocompleteRestaurants(query, userLocation || undefined) as any[];
+        console.log('Received predictions:', predictions);
         setSuggestions(predictions.slice(0, 5));
         setShowSuggestions(true);
       } catch (err) {
