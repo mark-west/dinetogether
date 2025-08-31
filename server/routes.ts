@@ -180,9 +180,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updateData = insertEventSchema.partial().parse(req.body);
       const updatedEvent = await storage.updateEvent(req.params.id, updateData);
       
-      // Send notifications to RSVP'd users about event changes
+      // Send notifications to RSVP'd users about event changes (non-blocking)
       if (rsvps.length > 0) {
-        await sendEventUpdateNotifications(updatedEvent!, rsvps, 'updated');
+        sendEventUpdateNotifications(updatedEvent!, rsvps, 'updated').catch(error => {
+          console.error('Email notification failed but event update succeeded:', error);
+        });
       }
       
       res.json(updatedEvent);
@@ -210,9 +212,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.deleteEvent(req.params.id);
       
-      // Send notifications to RSVP'd users about event cancellation
+      // Send notifications to RSVP'd users about event cancellation (non-blocking)
       if (rsvps.length > 0) {
-        await sendEventUpdateNotifications(event, rsvps, 'cancelled');
+        sendEventUpdateNotifications(event, rsvps, 'cancelled').catch(error => {
+          console.error('Email notification failed but event deletion succeeded:', error);
+        });
       }
       
       res.status(204).send();
