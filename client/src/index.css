@@ -9,7 +9,7 @@
   --card-foreground: hsl(295, 25%, 20%);
   --popover: hsl(324, 30%, 98%);
   --popover-foreground: hsl(295, 25%, 20%);
-  --primary: hsl(295, 60%, 35%);
+  --primary: hsl(318, 50%, 15%);
   --primary-foreground: hsl(324, 40%, 95%);
   --secondary: hsl(324, 50%, 75%);
   --secondary-foreground: hsl(295, 25%, 20%);
@@ -21,7 +21,7 @@
   --destructive-foreground: hsl(324, 40%, 95%);
   --border: hsl(324, 20%, 88%);
   --input: hsl(324, 20%, 88%);
-  --ring: hsl(295, 60%, 35%);
+  --ring: hsl(318, 50%, 15%);
   --chart-1: hsl(12, 76%, 61%);
   --chart-2: hsl(173, 58%, 39%);
   --chart-3: hsl(197, 37%, 24%);
@@ -29,12 +29,12 @@
   --chart-5: hsl(27, 87%, 67%);
   --sidebar: hsl(324, 30%, 98%);
   --sidebar-foreground: hsl(295, 25%, 20%);
-  --sidebar-primary: hsl(295, 60%, 35%);
+  --sidebar-primary: hsl(318, 50%, 15%);
   --sidebar-primary-foreground: hsl(324, 40%, 95%);
   --sidebar-accent: hsl(324, 50%, 75%);
   --sidebar-accent-foreground: hsl(295, 25%, 20%);
   --sidebar-border: hsl(324, 20%, 88%);
-  --sidebar-ring: hsl(295, 60%, 35%);
+  --sidebar-ring: hsl(318, 50%, 15%);
   --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-mono: 'Space Mono', Menlo, monospace;
@@ -123,15 +123,15 @@
 
 /* Custom styles for the app */
 .gradient-bg {
-  background: linear-gradient(135deg, hsl(295, 60%, 35%) 0%, hsl(324, 50%, 75%) 100%);
+  background: linear-gradient(135deg, hsl(318, 50%, 15%) 0%, hsl(324, 50%, 75%) 100%);
 }
 
 .logo-gradient {
-  background: linear-gradient(135deg, hsl(295, 60%, 35%) 0%, hsl(324, 60%, 70%) 100%);
+  background: linear-gradient(135deg, hsl(318, 50%, 15%) 0%, hsl(324, 60%, 70%) 100%);
 }
 
 .elegant-gradient {
-  background: linear-gradient(135deg, hsl(295, 60%, 35%) 0%, hsl(324, 50%, 60%) 50%, hsl(310, 45%, 65%) 100%);
+  background: linear-gradient(135deg, hsl(318, 50%, 15%) 0%, hsl(324, 50%, 60%) 50%, hsl(310, 45%, 65%) 100%);
 }
 
 .subtle-gradient {
@@ -139,7 +139,7 @@
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, hsl(295, 60%, 35%) 0%, hsl(324, 60%, 50%) 100%);
+  background: linear-gradient(135deg, hsl(318, 50%, 15%) 0%, hsl(324, 60%, 50%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
