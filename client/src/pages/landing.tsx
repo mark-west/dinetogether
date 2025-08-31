@@ -10,19 +10,14 @@ export default function Landing() {
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <Card className="w-full max-w-lg shadow-2xl border-0">
         <CardHeader className="text-center pb-8 pt-12">
-          {/* Your actual DineTogether logo */}
-          <div className="mx-auto mb-8">
+          {/* Your actual DineTogether logo - full width */}
+          <div className="w-full mb-8">
             <img 
               src={logoImage} 
               alt="DineTogether Logo" 
-              className="w-48 h-48 mx-auto object-contain"
+              className="w-full h-auto max-h-48 object-contain"
             />
           </div>
-          
-          {/* Tagline from your logo */}
-          <CardDescription className="text-xl text-muted-foreground leading-relaxed max-w-md mx-auto font-medium">
-            GATHER. FEAST. REPEAT.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 px-8 pb-12">
           {/* Feature highlights using consistent site colors */}
