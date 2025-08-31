@@ -1,15 +1,24 @@
-export function loadGoogleMapsScript() {
+async function fetchApiKey(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/config');
+    const config = await response.json();
+    return config.googleMapsApiKey;
+  } catch (error) {
+    console.error('Failed to fetch Google Maps API key:', error);
+    return null;
+  }
+}
+
+export async function loadGoogleMapsScript() {
   if (window.google || document.getElementById('google-maps-script')) {
     return;
   }
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey = await fetchApiKey();
   if (!apiKey) {
-    console.warn('VITE_GOOGLE_MAPS_API_KEY not found - Google Maps features will be disabled');
+    console.warn('Google Maps API key not found - Google Maps features will be disabled');
     return;
   }
-  
-  console.log('Loading Google Maps with API key prefix:', apiKey?.substring(0, 10) + '...');
 
   const script = document.createElement('script');
   script.id = 'google-maps-script';
