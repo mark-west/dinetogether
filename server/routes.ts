@@ -236,6 +236,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/groups/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const group = await storage.getGroup(req.params.id);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      res.json(group);
+    } catch (error) {
+      console.error("Error fetching group:", error);
+      res.status(500).json({ message: "Failed to fetch group" });
+    }
+  });
+
   app.get('/api/groups/:id/events', isAuthenticated, async (req: any, res) => {
     try {
       const events = await storage.getGroupEvents(req.params.id);

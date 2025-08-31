@@ -101,6 +101,7 @@ export default function Sidebar() {
             <div 
               key={group.id} 
               className="flex items-center gap-3 p-2 hover:bg-muted rounded-lg transition-colors cursor-pointer"
+              onClick={() => window.location.href = `/groups/${group.id}`}
               data-testid={`sidebar-group-${group.id}`}
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs font-medium">

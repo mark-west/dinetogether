@@ -73,8 +73,8 @@ export default function Events() {
     }
   };
 
-  const upcomingEvents = events?.filter((event: any) => !isPast(new Date(event.dateTime))) || [];
-  const pastEvents = events?.filter((event: any) => isPast(new Date(event.dateTime))) || [];
+  const upcomingEvents = Array.isArray(events) ? events.filter((event: any) => !isPast(new Date(event.dateTime))) : [];
+  const pastEvents = Array.isArray(events) ? events.filter((event: any) => isPast(new Date(event.dateTime))) : [];
 
   if (isLoading) {
     return (
@@ -150,7 +150,12 @@ export default function Events() {
               ) : upcomingEvents.length > 0 ? (
                 <div className="space-y-4">
                   {upcomingEvents.map((event: any) => (
-                    <Card key={event.id} className="hover:shadow-md transition-shadow" data-testid={`card-event-${event.id}`}>
+                    <Card 
+                      key={event.id} 
+                      className="hover:shadow-md transition-shadow cursor-pointer" 
+                      onClick={() => window.location.href = `/events/${event.id}`}
+                      data-testid={`card-event-${event.id}`}
+                    >
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
                           {event.restaurantImageUrl ? (
@@ -271,7 +276,12 @@ export default function Events() {
               ) : pastEvents.length > 0 ? (
                 <div className="space-y-4">
                   {pastEvents.map((event: any) => (
-                    <Card key={event.id} className="opacity-75" data-testid={`card-past-event-${event.id}`}>
+                    <Card 
+                      key={event.id} 
+                      className="opacity-75 hover:shadow-md transition-shadow cursor-pointer" 
+                      onClick={() => window.location.href = `/events/${event.id}`}
+                      data-testid={`card-past-event-${event.id}`}
+                    >
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
                           {event.restaurantImageUrl ? (
@@ -340,7 +350,7 @@ export default function Events() {
       {showCreateModal && (
         <CreateEventModal 
           onClose={() => setShowCreateModal(false)}
-          groups={groups || []}
+          groups={Array.isArray(groups) ? groups : []}
         />
       )}
     </div>

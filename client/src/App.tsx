@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Groups from "@/pages/groups";
+import GroupDetails from "@/pages/group-details";
 import Events from "@/pages/events";
 import Chat from "@/pages/chat";
 import InvitePage from "@/pages/invite";
@@ -25,6 +26,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/groups" component={Groups} />
+          <Route path="/groups/:groupId" component={GroupDetails} />
           <Route path="/events" component={Events} />
           <Route path="/events/:eventId" component={EventDetails} />
           <Route path="/chat/:eventId?" component={Chat} />

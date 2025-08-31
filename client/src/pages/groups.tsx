@@ -101,7 +101,12 @@ export default function Groups() {
           ) : groups && Array.isArray(groups) && groups.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {groups.map((group: any) => (
-                <Card key={group.id} className="hover:shadow-md transition-shadow" data-testid={`card-group-${group.id}`}>
+                <Card 
+                  key={group.id} 
+                  className="hover:shadow-md transition-shadow cursor-pointer" 
+                  onClick={() => window.location.href = `/groups/${group.id}`}
+                  data-testid={`card-group-${group.id}`}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -141,6 +146,7 @@ export default function Groups() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
+                        onClick={() => window.location.href = `/groups/${group.id}`}
                         data-testid={`button-view-group-${group.id}`}
                       >
                         <i className="fas fa-eye mr-2"></i>
