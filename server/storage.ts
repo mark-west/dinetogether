@@ -27,6 +27,11 @@ import {
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 
+// Helper function to generate invite codes
+function generateInviteCode(): string {
+  return Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
 export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
@@ -74,11 +79,8 @@ export interface IStorage {
   }>;
   
   // Group invite operations
-  createGroupInvite(invite: InsertGroupInvite): Promise<GroupInvite>;
-  getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | undefined>;
-  getGroupInvites(groupId: string): Promise<Array<GroupInvite & { inviter: User }>>;
+  getGroupByInviteCode(inviteCode: string): Promise<Group | undefined>;
   acceptGroupInvite(inviteCode: string, userId: string): Promise<GroupMember>;
-  expireInvite(inviteId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -117,7 +119,13 @@ export class DatabaseStorage implements IStorage {
 
   // Group operations
   async createGroup(groupData: InsertGroup): Promise<Group> {
-    const [group] = await db.insert(groups).values(groupData).returning();
+    // Generate invite code if not provided
+    const groupWithInvite = {
+      ...groupData,
+      inviteCode: groupData.inviteCode || generateInviteCode(),
+    };
+    
+    const [group] = await db.insert(groups).values(groupWithInvite).returning();
     
     // Add creator as admin member
     await db.insert(groupMembers).values({
@@ -152,6 +160,8 @@ export class DatabaseStorage implements IStorage {
         id: groups.id,
         name: groups.name,
         description: groups.description,
+        photoUrl: groups.photoUrl,
+        inviteCode: groups.inviteCode,
         adminId: groups.adminId,
         createdAt: groups.createdAt,
         updatedAt: groups.updatedAt,
@@ -382,48 +392,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Group invite operations
-  async createGroupInvite(inviteData: InsertGroupInvite): Promise<GroupInvite> {
-    const [invite] = await db.insert(groupInvites).values(inviteData).returning();
-    return invite;
-  }
-
-  async getGroupInviteByCode(inviteCode: string): Promise<GroupInvite | undefined> {
-    const [invite] = await db
+  async getGroupByInviteCode(inviteCode: string): Promise<Group | undefined> {
+    const [group] = await db
       .select()
-      .from(groupInvites)
-      .where(and(
-        eq(groupInvites.inviteCode, inviteCode),
-        eq(groupInvites.status, 'pending'),
-        sql`${groupInvites.expiresAt} > now()`
-      ));
-    return invite;
-  }
-
-  async getGroupInvites(groupId: string): Promise<Array<GroupInvite & { inviter: User }>> {
-    const result = await db
-      .select()
-      .from(groupInvites)
-      .innerJoin(users, eq(groupInvites.invitedBy, users.id))
-      .where(eq(groupInvites.groupId, groupId))
-      .orderBy(desc(groupInvites.createdAt));
-    
-    return result.map(row => ({
-      ...row.group_invites,
-      inviter: row.users,
-    }));
+      .from(groups)
+      .where(eq(groups.inviteCode, inviteCode));
+    return group;
   }
 
   async acceptGroupInvite(inviteCode: string, userId: string): Promise<GroupMember> {
-    const invite = await this.getGroupInviteByCode(inviteCode);
-    if (!invite) {
-      throw new Error('Invalid or expired invite code');
+    const group = await this.getGroupByInviteCode(inviteCode);
+    if (!group) {
+      throw new Error('Invalid invite code');
     }
 
     // Check if user is already a member
     const existingMember = await db
       .select()
       .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, invite.groupId), eq(groupMembers.userId, userId)))
+      .where(and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, userId)))
       .limit(1);
 
     if (existingMember.length > 0) {
@@ -432,29 +419,12 @@ export class DatabaseStorage implements IStorage {
 
     // Add user as group member
     const [member] = await db.insert(groupMembers).values({
-      groupId: invite.groupId,
+      groupId: group.id,
       userId: userId,
       role: 'member',
     }).returning();
 
-    // Mark invite as accepted
-    await db
-      .update(groupInvites)
-      .set({
-        status: 'accepted',
-        acceptedAt: new Date(),
-        acceptedBy: userId,
-      })
-      .where(eq(groupInvites.id, invite.id));
-
     return member;
-  }
-
-  async expireInvite(inviteId: string): Promise<void> {
-    await db
-      .update(groupInvites)
-      .set({ status: 'expired' })
-      .where(eq(groupInvites.id, inviteId));
   }
 }
 

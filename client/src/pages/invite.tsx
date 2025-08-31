@@ -15,16 +15,13 @@ export default function InvitePage() {
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   
-  // Get invite code from URL params or direct from URL path
-  const inviteCode = params.inviteCode || window.location.pathname.split('/invite/')[1];
-  
-  console.log('Invite page params:', params);
-  console.log('Extracted invite code:', inviteCode);
+  // Get invite code from URL params
+  const inviteCode = params.inviteCode;
 
   const { data: inviteData, isLoading: inviteLoading, error } = useQuery<{invite: any; group: any}>({
     queryKey: [`/api/invites/${inviteCode}`],
     retry: false,
-    enabled: !!inviteCode && inviteCode !== 'undefined',
+    enabled: !!inviteCode,
   });
 
   const acceptInviteMutation = useMutation({

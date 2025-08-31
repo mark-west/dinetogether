@@ -44,6 +44,7 @@ export const groups = pgTable("groups", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   photoUrl: varchar("photo_url"),
+  inviteCode: varchar("invite_code", { length: 50 }),
   adminId: varchar("admin_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

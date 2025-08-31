@@ -423,23 +423,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only group admins can create invites" });
       }
       
-      const inviteCode = nanoid(12);
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
-      
-      const inviteData = insertGroupInviteSchema.parse({
-        groupId,
-        invitedBy: userId,
-        inviteCode,
-        invitedEmail: req.body.email || null, // Email is optional
-        expiresAt,
+      // Return the group's permanent invite information
+      res.status(201).json({
+        inviteCode: group.inviteCode,
+        groupId: group.id,
+        groupName: group.name,
+        inviteUrl: `https://dinetogether.app/invite/${group.inviteCode}`,
       });
-      
-      const invite = await storage.createGroupInvite(inviteData);
-      res.status(201).json(invite);
     } catch (error) {
-      console.error("Error creating invite:", error);
-      res.status(400).json({ message: "Failed to create invite" });
+      console.error("Error getting invite:", error);
+      res.status(400).json({ message: "Failed to get invite" });
     }
   });
 
@@ -454,8 +447,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only group admins can view invites" });
       }
       
-      const invites = await storage.getGroupInvites(groupId);
-      res.json(invites);
+      // Return the group's permanent invite information
+      res.json([{
+        inviteCode: group.inviteCode,
+        groupId: group.id,
+        groupName: group.name,
+        inviteUrl: `https://dinetogether.app/invite/${group.inviteCode}`,
+        status: 'active',
+        createdAt: group.createdAt,
+      }]);
     } catch (error) {
       console.error("Error fetching invites:", error);
       res.status(500).json({ message: "Failed to fetch invites" });
@@ -482,33 +482,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const inviteId = req.params.id;
       
-      // Get all invites to find the one with this ID (we need a better method)
-      // For now, we'll try all groups the user has access to
-      const userGroups = await storage.getUserGroups(userId);
-      let invite = null;
-      
-      for (const group of userGroups) {
-        const groupInvites = await storage.getGroupInvites(group.id);
-        const foundInvite = groupInvites.find(i => i.id === inviteId);
-        if (foundInvite) {
-          invite = foundInvite;
-          break;
-        }
-      }
-      
-      if (!invite) {
-        return res.status(404).json({ message: "Invite not found" });
-      }
-      
-      // Check if user is the one who created the invite or group admin
-      if (invite.invitedBy !== userId) {
-        const group = await storage.getGroup(invite.groupId);
-        if (!group || group.adminId !== userId) {
-          return res.status(403).json({ message: "Only invite creator or group admin can delete invites" });
-        }
-      }
-      
-      await storage.expireInvite(inviteId);
+      // Permanent invites cannot be deleted - they persist with the group
+      return res.status(400).json({ message: "Permanent invites cannot be deleted" });
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting invite:", error);
@@ -519,14 +494,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/invites/:code', async (req: any, res) => {
     try {
       const inviteCode = req.params.code;
-      const invite = await storage.getGroupInviteByCode(inviteCode);
+      const group = await storage.getGroupByInviteCode(inviteCode);
       
-      if (!invite) {
-        return res.status(404).json({ message: "Invite not found or expired" });
+      if (!group) {
+        return res.status(404).json({ message: "Invite not found" });
       }
       
-      const group = await storage.getGroup(invite.groupId);
-      res.json({ invite, group });
+      res.json({ 
+        invite: {
+          inviteCode: group.inviteCode,
+          groupId: group.id,
+          status: 'active'
+        },
+        group 
+      });
     } catch (error) {
       console.error("Error fetching invite:", error);
       res.status(500).json({ message: "Failed to fetch invite" });
