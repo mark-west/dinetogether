@@ -228,7 +228,7 @@ export default function CreateEventModal({ onClose, groups, preSelectedGroupId }
                       }
                     }}
                     placeholder="Search for restaurants..."
-                    initialValue={form.watch('restaurantName') || ''}
+                    initialValue=""
                   />
                 </div>
               </div>
