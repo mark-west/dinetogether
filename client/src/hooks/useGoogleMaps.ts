@@ -188,18 +188,20 @@ export function useGooglePlaces() {
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log('Got user location:', position.coords.latitude, position.coords.longitude);
           resolve({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
         },
         (error) => {
+          console.error('Geolocation error:', error.message);
           reject(new Error(`Geolocation error: ${error.message}`));
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000 // 5 minutes cache
+          timeout: 15000, // Increased timeout
+          maximumAge: 60000 // 1 minute cache instead of 5 minutes
         }
       );
     });
