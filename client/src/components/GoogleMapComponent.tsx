@@ -32,28 +32,29 @@ export default function GoogleMapComponent({
     if (!isLoaded || !mapRef.current || !window.google || isInitializedRef.current) return;
 
     try {
-      console.log('Initializing Google Maps...', { 
-        isLoaded, 
-        hasMapRef: !!mapRef.current, 
-        hasGoogle: !!window.google,
-        hasAdvancedMarker: !!window.google.maps.marker?.AdvancedMarkerElement
-      });
-      
-      // Initialize map - use basic configuration without mapId to avoid cloud console dependency
+      // Initialize map with proper configuration for tile loading
       const mapConfig: any = {
         center,
         zoom,
-        styles: [
-          {
-            featureType: "poi.business",
-            elementType: "labels",
-            stylers: [{ visibility: "on" }]
-          }
-        ]
+        mapTypeId: window.google.maps.MapTypeId.ROADMAP,
+        zoomControl: true,
+        mapTypeControl: false,
+        scaleControl: true,
+        streetViewControl: false,
+        rotateControl: false,
+        fullscreenControl: true,
+        gestureHandling: 'cooperative'
       };
       
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
-      console.log('Map initialized successfully:', mapInstanceRef.current);
+      
+      // Force a resize after initialization to ensure proper rendering
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
+          mapInstanceRef.current.setCenter(center);
+        }
+      }, 100);
 
       // Add click listener
       if (onMapClick) {
@@ -198,5 +199,12 @@ export default function GoogleMapComponent({
     );
   }
 
-  return <div ref={mapRef} className={className} data-testid="google-map" />;
+  return (
+    <div 
+      ref={mapRef} 
+      className={className} 
+      data-testid="google-map"
+      style={{ minHeight: '400px', width: '100%' }}
+    />
+  );
 }
