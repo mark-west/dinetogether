@@ -155,6 +155,12 @@ export default function Chat() {
     window.history.pushState({}, '', `/chat/${type}/${id}`);
   };
 
+  const handleBackToChats = () => {
+    setSelectedChatId(null);
+    setReplyTo(null);
+    window.history.pushState({}, '', '/chat');
+  };
+
   const handleReply = (messageId: string) => {
     setReplyTo(messageId);
     document.getElementById('message-input')?.focus();
@@ -243,14 +249,28 @@ export default function Chat() {
       <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
         {/* Mobile Header */}
         <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
-          <h1 className="font-bold text-lg text-foreground">Messages</h1>
+          <div className="flex items-center gap-3">
+            {selectedChatId && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleBackToChats}
+                data-testid="button-mobile-back"
+              >
+                <i className="fas fa-arrow-left"></i>
+              </Button>
+            )}
+            <h1 className="font-bold text-lg text-foreground">
+              {selectedChatId ? (currentChat?.name || 'Chat') : 'Messages'}
+            </h1>
+          </div>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="h-full flex gap-4">
-            {/* Chat List Sidebar */}
-            <div className="w-80 hidden lg:block">
+            {/* Chat List Sidebar - Show on mobile when no chat selected */}
+            <div className={`w-full lg:w-80 ${selectedChatId ? 'hidden lg:block' : 'block'}`}>
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -352,24 +372,36 @@ export default function Chat() {
               </Card>
             </div>
 
-            {/* Chat Area */}
-            <div className="flex-1">
+            {/* Chat Area - Show on mobile when chat selected */}
+            <div className={`flex-1 ${selectedChatId ? 'block' : 'hidden lg:block'}`}>
               {selectedChatId ? (
                 <Card className="h-full flex flex-col">
                   <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle data-testid="text-chat-title">
-                          {currentChat?.name || 'Chat'}
-                        </CardTitle>
-                        {currentChat && (
-                          <p className="text-sm text-muted-foreground" data-testid="text-chat-details">
-                            {selectedChatType === 'group' 
-                              ? `Group Chat`
-                              : `${currentChat.group?.name} • ${format(new Date(currentChat.dateTime), 'MMM d, h:mm a')}`
-                            }
-                          </p>
-                        )}
+                      <div className="flex items-center gap-3">
+                        {/* Back button for mobile */}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="lg:hidden"
+                          onClick={handleBackToChats}
+                          data-testid="button-back-to-chats"
+                        >
+                          <i className="fas fa-arrow-left"></i>
+                        </Button>
+                        <div>
+                          <CardTitle data-testid="text-chat-title">
+                            {currentChat?.name || 'Chat'}
+                          </CardTitle>
+                          {currentChat && (
+                            <p className="text-sm text-muted-foreground" data-testid="text-chat-details">
+                              {selectedChatType === 'group' 
+                                ? `Group Chat`
+                                : `${currentChat.group?.name} • ${format(new Date(currentChat.dateTime), 'MMM d, h:mm a')}`
+                              }
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <Button 
                         variant="outline" 
@@ -382,8 +414,9 @@ export default function Chat() {
                         }}
                         data-testid="button-chat-details"
                       >
-                        <i className="fas fa-info-circle mr-2"></i>
-                        Details
+                        <i className="fas fa-info-circle mr-2 hidden sm:inline"></i>
+                        <span className="hidden sm:inline">Details</span>
+                        <i className="fas fa-info-circle sm:hidden"></i>
                       </Button>
                     </div>
                     {replyTo && (
