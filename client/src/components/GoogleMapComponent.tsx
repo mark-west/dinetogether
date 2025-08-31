@@ -28,64 +28,76 @@ export default function GoogleMapComponent({
   useEffect(() => {
     if (!isLoaded || !mapRef.current || !window.google) return;
 
-    // Initialize map
-    mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
-      center,
-      zoom,
-      styles: [
-        {
-          featureType: "poi.business",
-          elementType: "labels",
-          stylers: [{ visibility: "on" }]
-        }
-      ],
-    });
-
-    // Add click listener
-    if (onMapClick) {
-      mapInstanceRef.current.addListener('click', (event: any) => {
-        onMapClick({
-          lat: event.latLng.lat(),
-          lng: event.latLng.lng(),
-        });
+    try {
+      // Initialize map
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+        center,
+        zoom,
+        styles: [
+          {
+            featureType: "poi.business",
+            elementType: "labels",
+            stylers: [{ visibility: "on" }]
+          }
+        ],
       });
+
+      // Add click listener
+      if (onMapClick) {
+        mapInstanceRef.current.addListener('click', (event: any) => {
+          onMapClick({
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng(),
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error initializing Google Map:', error);
     }
   }, [isLoaded, center, zoom, onMapClick]);
 
   // Update markers when they change
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapInstanceRef.current || !window.google) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
+    try {
+      // Clear existing markers
+      markersRef.current.forEach(marker => {
+        if (marker && marker.setMap) {
+          marker.setMap(null);
+        }
+      });
+      markersRef.current = [];
 
-    // Add new markers
-    markers.forEach(markerData => {
-      const marker = new window.google.maps.Marker({
-        position: markerData.position,
-        map: mapInstanceRef.current,
-        title: markerData.title,
+      // Add new markers
+      markers.forEach(markerData => {
+        const marker = new window.google.maps.Marker({
+          position: markerData.position,
+          map: mapInstanceRef.current,
+          title: markerData.title,
+        });
+
+        if (markerData.info) {
+          const infoWindow = new window.google.maps.InfoWindow({
+            content: markerData.info,
+          });
+
+          marker.addListener('click', () => {
+            infoWindow.open(mapInstanceRef.current, marker);
+          });
+        }
+
+        markersRef.current.push(marker);
       });
 
-      if (markerData.info) {
-        const infoWindow = new window.google.maps.InfoWindow({
-          content: markerData.info,
-        });
-
-        marker.addListener('click', () => {
-          infoWindow.open(mapInstanceRef.current, marker);
-        });
+      // Adjust map bounds if we have markers
+      if (markers.length > 0) {
+        const bounds = new window.google.maps.LatLngBounds();
+        markers.forEach(marker => bounds.extend(marker.position));
+        mapInstanceRef.current.fitBounds(bounds);
       }
-
-      markersRef.current.push(marker);
-    });
-
-    // Adjust map bounds if we have markers
-    if (markers.length > 0) {
-      const bounds = new window.google.maps.LatLngBounds();
-      markers.forEach(marker => bounds.extend(marker.position));
-      mapInstanceRef.current.fitBounds(bounds);
+    } catch (error) {
+      console.error('Error updating map markers:', error);
     }
   }, [markers]);
 
