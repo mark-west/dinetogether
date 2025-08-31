@@ -11,6 +11,7 @@ import CreateGroupModal from "@/components/CreateGroupModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import logoImage from "@assets/fulllogo_1756644214427.jpg";
 
 export default function Dashboard() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -110,10 +111,13 @@ export default function Dashboard() {
         <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center">
-                <i className="fas fa-utensils text-white text-sm"></i>
-              </div>
-              <h1 className="font-bold text-lg text-foreground">DineTogether</h1>
+              <img 
+                src={logoImage} 
+                alt="Dine Together" 
+                className="w-10 h-10 rounded-lg object-cover"
+                data-testid="img-logo"
+              />
+              <h1 className="font-semibold text-xl text-gradient">Dine Together</h1>
             </div>
             
             <div className="flex items-center gap-3">
@@ -142,7 +146,7 @@ export default function Dashboard() {
           {/* Dashboard Header */}
           <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-foreground" data-testid="text-welcome">
+              <h2 className="text-3xl font-bold text-foreground" data-testid="text-welcome">
                 Welcome back{(user as any)?.firstName ? `, ${(user as any).firstName}` : ''}!
               </h2>
               <p className="text-muted-foreground">Here's what's happening with your restaurant groups</p>
@@ -219,7 +223,7 @@ export default function Dashboard() {
           {/* Upcoming Events */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Upcoming Events</h3>
+              <h3 className="text-xl font-semibold text-foreground">Upcoming Events</h3>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -318,7 +322,7 @@ export default function Dashboard() {
           {/* My Groups */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">My Groups</h3>
+              <h3 className="text-xl font-semibold text-foreground">My Groups</h3>
               <Button 
                 variant="ghost" 
                 size="sm" 

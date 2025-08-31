@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import type { Group } from "@shared/schema";
+import logoImage from "@assets/fulllogo_1756644214427.jpg";
 
 export default function Sidebar() {
   const { user } = useAuth();
@@ -25,10 +26,13 @@ export default function Sidebar() {
       {/* Header */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
-            <i className="fas fa-utensils text-white text-lg"></i>
-          </div>
-          <h1 className="font-bold text-xl text-foreground">DineTogether</h1>
+          <img 
+            src={logoImage} 
+            alt="Dine Together" 
+            className="w-12 h-12 rounded-lg object-cover"
+            data-testid="img-sidebar-logo"
+          />
+          <h1 className="font-bold text-2xl text-gradient">Dine Together</h1>
         </div>
         
         {/* User Profile */}
