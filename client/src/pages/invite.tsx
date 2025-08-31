@@ -15,6 +15,7 @@ export default function InvitePage() {
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [hasShownAuthError, setHasShownAuthError] = useState(false);
   
   // Get invite code from URL params
   const inviteCode = params.inviteCode;
@@ -80,7 +81,8 @@ export default function InvitePage() {
   });
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !hasShownAuthError) {
+      setHasShownAuthError(true);
       toast({
         title: "Please log in",
         description: "You need to log in to accept this invite",
@@ -91,7 +93,7 @@ export default function InvitePage() {
       }, 1500);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [isAuthenticated, isLoading, toast, hasShownAuthError]);
 
   const handleAcceptInvite = () => {
     setIsAccepting(true);
