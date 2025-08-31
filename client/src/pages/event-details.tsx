@@ -256,23 +256,25 @@ export default function EventDetails() {
           {/* Event Header */}
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-start gap-6">
-                {event.restaurantImageUrl ? (
-                  <img 
-                    src={event.restaurantImageUrl} 
-                    alt={event.restaurantName} 
-                    className="w-24 h-24 rounded-lg object-cover"
-                    data-testid="img-event-restaurant"
-                  />
-                ) : (
-                  <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center">
-                    <i className="fas fa-utensils text-2xl text-muted-foreground"></i>
-                  </div>
-                )}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                <div className="w-full sm:w-auto flex justify-center sm:justify-start">
+                  {event.restaurantImageUrl ? (
+                    <img 
+                      src={event.restaurantImageUrl} 
+                      alt={event.restaurantName} 
+                      className="w-28 h-28 sm:w-24 sm:h-24 rounded-lg object-cover"
+                      data-testid="img-event-restaurant"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 sm:w-24 sm:h-24 bg-muted rounded-lg flex items-center justify-center">
+                      <i className="fas fa-utensils text-2xl text-muted-foreground"></i>
+                    </div>
+                  )}
+                </div>
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
+                <div className="flex-1 min-w-0 w-full text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-4">
+                    <div className="flex-1">
                       <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-event-name">
                         {event.name}
                       </h1>
@@ -289,7 +291,7 @@ export default function EventDetails() {
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-center sm:justify-end">
                       <div className={`w-3 h-3 rounded-full ${getStatusColor(rsvpStatus)}`}></div>
                       <Badge variant="secondary" data-testid="status-current">
                         {getStatusText(rsvpStatus)}
@@ -297,12 +299,12 @@ export default function EventDetails() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-muted-foreground mb-4">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
                       <i className="fas fa-calendar"></i>
                       <span data-testid="text-event-date">{formatEventDate(event.dateTime)}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
                       <i className="fas fa-users"></i>
                       <span data-testid="text-attendee-count">
                         {rsvps?.filter((r: any) => r.status === 'confirmed').length || 0} attending
@@ -316,7 +318,7 @@ export default function EventDetails() {
                     </p>
                   )}
                   
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <CalendarActions event={event} />
                     {event.restaurantAddress && (
                       <DirectionsButton 
@@ -329,6 +331,7 @@ export default function EventDetails() {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      className="w-full sm:w-auto"
                       onClick={() => navigateWithLoading(`/chat/${eventId}`)}
                       disabled={isNavigationLoading(`/chat/${eventId}`)}
                       data-testid="button-chat"
@@ -344,6 +347,7 @@ export default function EventDetails() {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => setShowEditModal(true)}
                         data-testid="button-edit-event"
                       >

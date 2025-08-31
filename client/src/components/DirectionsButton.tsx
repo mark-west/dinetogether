@@ -77,7 +77,7 @@ export default function DirectionsButton({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} size={size} data-testid="button-directions">
+        <Button variant={variant} size={size} className="w-full sm:w-auto" data-testid="button-directions">
           <i className="fas fa-directions mr-2"></i>
           Get Directions
         </Button>

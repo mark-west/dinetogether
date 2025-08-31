@@ -91,7 +91,7 @@ export default function CalendarActions({ event, size = "sm", variant = "outline
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} size={size} data-testid="button-add-to-calendar">
+        <Button variant={variant} size={size} className="w-full sm:w-auto" data-testid="button-add-to-calendar">
           <i className="fas fa-calendar-plus mr-2"></i>
           Add to Calendar
         </Button>
