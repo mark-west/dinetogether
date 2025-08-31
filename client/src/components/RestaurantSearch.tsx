@@ -34,6 +34,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const [manualMode, setManualMode] = useState(false);
 
   // Get user's location on component mount - only once
   useEffect(() => {
@@ -48,6 +49,18 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
         });
     }
   }, [isLoaded, getUserLocation]); // Keep getUserLocation but memoize it in the hook
+
+  // Auto-enable manual mode after 2 seconds if Google Maps doesn't load
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isLoaded && !error) {
+        console.log('Google Maps taking too long to load, enabling manual input');
+        setManualMode(true);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, [isLoaded, error]);
 
   useEffect(() => {
     if (!isLoaded || !query.trim() || query.length < 3) {
@@ -133,8 +146,8 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
-          // If Google Maps is not available, immediately call onSelect with manual input
-          if (error && e.target.value.trim()) {
+          // If Google Maps is not available or manual mode is enabled, handle manual input
+          if ((error || manualMode) && e.target.value.trim()) {
             // Simple manual restaurant entry
             const manualRestaurant = {
               placeId: `manual-${Date.now()}`,
@@ -144,14 +157,38 @@ export default function RestaurantSearch({ onSelect, placeholder = "Search for r
             onSelect(manualRestaurant);
           }
         }}
-        placeholder={error ? "Enter restaurant name manually" : placeholder}
+        placeholder={error || manualMode ? "Enter restaurant name" : placeholder}
         data-testid="input-restaurant-search"
-        disabled={!isLoaded && !error} // Only disable if loading, not if there's an error
+        disabled={!isLoaded && !error && !manualMode} // Enable if loaded, error state, or manual mode
       />
       
-      {!isLoaded && !error && (
+      {!isLoaded && !error && !manualMode && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      
+      {(error || manualMode) && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (query.trim()) {
+                const manualRestaurant = {
+                  placeId: `manual-${Date.now()}`,
+                  name: query.trim(),
+                  address: '',
+                };
+                onSelect(manualRestaurant);
+              }
+            }}
+            className="h-6 w-6 p-0"
+            data-testid="button-manual-select"
+          >
+            ✓
+          </Button>
         </div>
       )}
       
