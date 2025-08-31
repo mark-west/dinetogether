@@ -143,7 +143,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div>
               <h2 className="text-2xl font-bold text-foreground" data-testid="text-welcome">
-                Welcome back, {user?.firstName || 'there'}! 👋
+                Welcome back{(user as any)?.firstName ? `, ${(user as any).firstName}` : ''}!
               </h2>
               <p className="text-muted-foreground">Here's what's happening with your restaurant groups</p>
             </div>
