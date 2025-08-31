@@ -25,49 +25,45 @@ export default function Sidebar() {
     <div className="hidden md:block bg-card border-r border-border h-screen sticky top-0 w-80">
       {/* Header */}
       <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="mb-4">
           <img 
             src={logoImage} 
             alt="Dine Together" 
-            className="w-12 h-12 rounded-lg object-cover"
+            className="w-full h-16 rounded-lg object-cover cursor-pointer"
             data-testid="img-sidebar-logo"
+            onClick={() => window.location.href = '/'}
           />
-          <h1 className="font-bold text-2xl text-gradient">Dine Together</h1>
         </div>
         
         {/* User Profile */}
-        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-          {user?.profileImageUrl ? (
+        <div 
+          className="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-colors"
+          onClick={() => window.location.href = '/profile'}
+          data-testid="button-profile"
+        >
+          {(user as any)?.profileImageUrl ? (
             <img 
-              src={user.profileImageUrl} 
+              src={(user as any).profileImageUrl} 
               alt="User avatar" 
               className="w-10 h-10 rounded-full object-cover"
               data-testid="img-user-avatar"
             />
           ) : (
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-medium">
-              {(user?.firstName?.[0] || user?.email?.[0] || '?').toUpperCase()}
+              {((user as any)?.firstName?.[0] || (user as any)?.email?.[0] || '?').toUpperCase()}
             </div>
           )}
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm truncate" data-testid="text-user-name">
-              {user?.firstName && user?.lastName 
-                ? `${user.firstName} ${user.lastName}`
-                : user?.email || 'User'
+              {(user as any)?.firstName && (user as any)?.lastName 
+                ? `${(user as any).firstName} ${(user as any).lastName}`
+                : (user as any)?.email || 'User'
               }
             </p>
             <p className="text-xs text-muted-foreground truncate" data-testid="text-user-email">
-              {user?.email}
+              {(user as any)?.email}
             </p>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => window.location.href = '/profile'}
-            data-testid="button-profile"
-          >
-            <i className="fas fa-cog text-sm"></i>
-          </Button>
         </div>
       </div>
       
