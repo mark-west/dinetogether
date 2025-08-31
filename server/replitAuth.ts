@@ -107,9 +107,9 @@ export async function setupAuth(app: Express) {
       if (err) {
         console.error("Error destroying session:", err);
       }
-      // Force fresh authentication with login prompt
+      // Force fresh authentication with account selection prompt
       passport.authenticate(`replitauth:${req.hostname}`, {
-        prompt: "login consent",
+        prompt: "select_account",
         scope: ["openid", "email", "profile", "offline_access"],
       })(req, res, next);
     });
