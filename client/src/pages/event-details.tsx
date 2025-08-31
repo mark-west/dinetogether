@@ -10,6 +10,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import GoogleMapComponent from "@/components/GoogleMapComponent";
 import CalendarActions from "@/components/CalendarActions";
+import DirectionsButton from "@/components/DirectionsButton";
 import EditEventModal from "@/components/EditEventModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -313,18 +314,12 @@ export default function EventDetails() {
                   <div className="flex gap-2 flex-wrap">
                     <CalendarActions event={event} />
                     {event.restaurantAddress && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(event.restaurantAddress)}`;
-                          window.open(url, '_blank');
-                        }}
-                        data-testid="button-directions"
-                      >
-                        <i className="fas fa-directions mr-2"></i>
-                        Directions
-                      </Button>
+                      <DirectionsButton 
+                        address={event.restaurantAddress}
+                        restaurantName={event.restaurantName}
+                        lat={event.restaurantLat}
+                        lng={event.restaurantLng}
+                      />
                     )}
                     <Button 
                       variant="outline" 
@@ -361,12 +356,28 @@ export default function EventDetails() {
                   Location
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <GoogleMapComponent
                   center={mapMarkers[0].position}
                   markers={mapMarkers}
+                  zoom={15}
                   className="w-full h-64 rounded-lg"
                 />
+                {event.restaurantAddress && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-medium">{event.restaurantName}</p>
+                      <p className="text-sm text-muted-foreground">{event.restaurantAddress}</p>
+                    </div>
+                    <DirectionsButton 
+                      address={event.restaurantAddress}
+                      restaurantName={event.restaurantName}
+                      lat={event.restaurantLat}
+                      lng={event.restaurantLng}
+                      size="sm"
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

@@ -6,6 +6,8 @@ interface CalendarActionsProps {
     name: string;
     restaurantName?: string;
     restaurantAddress?: string;
+    restaurantLat?: string;
+    restaurantLng?: string;
     dateTime: string;
     description?: string;
   };
@@ -24,10 +26,20 @@ export default function CalendarActions({ event, size = "sm", variant = "outline
     const endDate = formatDateForCalendar(new Date(new Date(event.dateTime).getTime() + 2 * 60 * 60 * 1000).toISOString()); // 2 hours later
     
     const title = encodeURIComponent(event.name);
-    const location = encodeURIComponent(event.restaurantName && event.restaurantAddress ? 
-      `${event.restaurantName}, ${event.restaurantAddress}` : 
-      event.restaurantAddress || event.restaurantName || ''
-    );
+    // Create comprehensive location string with coordinates for better mapping
+    let locationString = '';
+    if (event.restaurantName && event.restaurantAddress) {
+      locationString = `${event.restaurantName}, ${event.restaurantAddress}`;
+      // Add coordinates for more precise location if available
+      if (event.restaurantLat && event.restaurantLng) {
+        locationString += ` (${event.restaurantLat}, ${event.restaurantLng})`;
+      }
+    } else if (event.restaurantAddress) {
+      locationString = event.restaurantAddress;
+    } else if (event.restaurantName) {
+      locationString = event.restaurantName;
+    }
+    const location = encodeURIComponent(locationString);
     const details = encodeURIComponent(event.description || '');
 
     switch (type) {
@@ -46,9 +58,7 @@ export default function CalendarActions({ event, size = "sm", variant = "outline
           `DTSTART:${startDate}`,
           `DTEND:${endDate}`,
           `SUMMARY:${event.name}`,
-          `LOCATION:${event.restaurantName && event.restaurantAddress ? 
-            `${event.restaurantName}, ${event.restaurantAddress}` : 
-            event.restaurantAddress || event.restaurantName || ''}`,
+          `LOCATION:${locationString}`,
           `DESCRIPTION:${event.description || ''}`,
           'END:VEVENT',
           'END:VCALENDAR'
