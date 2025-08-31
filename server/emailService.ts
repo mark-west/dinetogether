@@ -158,7 +158,7 @@ export async function sendEventUpdateNotifications(
 
       const msg = {
         to: rsvp.user.email,
-        from: 'test@example.com', // Using verified test sender for now
+        from: 'dinesync@replit.dev', // Using Replit dev domain for testing
         subject,
         html: htmlContent,
         attachments: type === 'updated' ? [{
@@ -172,8 +172,20 @@ export async function sendEventUpdateNotifications(
       return sgMail.send(msg);
     });
 
-    await Promise.allSettled(emailPromises);
-    console.log(`Attempted to send ${type} notifications to ${rsvps.length} participants`);
+    const results = await Promise.allSettled(emailPromises);
+    
+    // Log results for debugging
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    
+    console.log(`Email notifications: ${successful} sent, ${failed} failed out of ${rsvps.length} participants`);
+    
+    // Log failed attempts for debugging
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to send email to ${rsvps[index]?.user?.email}:`, result.reason);
+      }
+    });
   } catch (error) {
     console.error(`Error sending ${type} notifications:`, error);
     // Don't throw - let event update succeed even if email fails
