@@ -8,6 +8,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
+import InviteModal from "@/components/InviteModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ export default function GroupDetails() {
   const { groupId } = useParams();
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -243,6 +245,15 @@ export default function GroupDetails() {
             <TabsContent value="members" className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Group Members</h2>
+                {group?.adminId === user?.id && (
+                  <Button 
+                    onClick={() => setShowInviteModal(true)}
+                    data-testid="button-invite-members"
+                  >
+                    <i className="fas fa-user-plus mr-2"></i>
+                    Invite Members
+                  </Button>
+                )}
               </div>
               
               {membersLoading ? (
@@ -305,6 +316,14 @@ export default function GroupDetails() {
       </div>
 
       <MobileNavigation />
+      
+      {showInviteModal && group && (
+        <InviteModal 
+          groupId={group.id}
+          groupName={group.name}
+          onClose={() => setShowInviteModal(false)} 
+        />
+      )}
     </div>
   );
 }
