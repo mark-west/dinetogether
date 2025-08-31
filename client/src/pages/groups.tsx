@@ -93,13 +93,13 @@ export default function Groups() {
           </div>
 
           {groupsLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
                 <Skeleton key={i} className="h-48" />
               ))}
             </div>
           ) : groups && Array.isArray(groups) && groups.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {groups.map((group: any) => (
                 <GroupCard
                   key={group.id}

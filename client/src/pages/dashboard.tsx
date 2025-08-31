@@ -266,13 +266,13 @@ export default function Dashboard() {
             </div>
             
             {groupsLoading ? (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(2)].map((_, i) => (
                   <Skeleton key={i} className="h-32" />
                 ))}
               </div>
             ) : groups && Array.isArray(groups) && groups.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
                 {(groups as any[]).slice(0, 4).map((group: any) => (
                   <GroupCard 
                     key={group.id}

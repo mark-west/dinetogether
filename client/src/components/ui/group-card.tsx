@@ -55,27 +55,29 @@ export function GroupCard({
         data-testid={`card-group-${group.id}`}
       >
         <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3">
             {/* Group Photo */}
-            {group.photoUrl ? (
-              <img 
-                src={group.photoUrl} 
-                alt={`${group.name} photo`}
-                className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                data-testid={`img-group-photo-${group.id}`}
-              />
-            ) : (
-              <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                {group.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div className="w-full sm:w-auto flex justify-center sm:justify-start">
+              {group.photoUrl ? (
+                <img 
+                  src={group.photoUrl} 
+                  alt={`${group.name} photo`}
+                  className="w-20 h-20 sm:w-16 sm:h-16 rounded-lg object-cover flex-shrink-0"
+                  data-testid={`img-group-photo-${group.id}`}
+                />
+              ) : (
+                <div className="w-20 h-20 sm:w-16 sm:h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                  {group.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
             
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-2">
+            <div className="flex-1 min-w-0 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
                 <CardTitle className="text-lg leading-tight" data-testid={`text-group-name-${group.id}`}>
                   {group.name}
                 </CardTitle>
-                <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0 ${
+                <span className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0 mx-auto sm:mx-0 ${
                   group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
                 }`} data-testid={`text-role-${group.id}`}>
                   {group.role === 'admin' ? 'Admin' : 'Member'}
@@ -100,11 +102,11 @@ export function GroupCard({
           </div>
           
           {showActions && (
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 text-xs"
+                className="flex-1 text-xs w-full"
                 onClick={(e) => handleActionClick(e, 'view')}
                 data-testid={`button-view-group-${group.id}`}
               >
@@ -115,7 +117,7 @@ export function GroupCard({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1 text-xs"
+                  className="flex-1 text-xs w-full"
                   onClick={(e) => handleActionClick(e, 'invite')}
                   data-testid={`button-invite-${group.id}`}
                 >
@@ -138,12 +140,12 @@ export function GroupCard({
       data-testid={`card-group-${group.id}`}
     >
       <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 mb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 w-full">
+            <div className="w-16 h-16 sm:w-12 sm:h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold mx-auto sm:mx-0">
               {group.name.charAt(0).toUpperCase()}
             </div>
-            <div>
+            <div className="text-center sm:text-left flex-1">
               <h4 className="font-semibold text-foreground" data-testid={`text-group-name-${group.id}`}>
                 {group.name}
               </h4>
@@ -152,7 +154,7 @@ export function GroupCard({
               </p>
             </div>
           </div>
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          <span className={`px-2 py-1 text-xs font-medium rounded-full mx-auto sm:mx-0 ${
             group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
           }`} data-testid={`text-role-${group.id}`}>
             {group.role === 'admin' ? 'Admin' : 'Member'}
