@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 
 interface GoogleMapComponentProps {
@@ -23,14 +23,17 @@ export default function GoogleMapComponent({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const infoWindowRef = useRef<any>(null);
+  const isInitializedRef = useRef(false);
   const { isLoaded, error } = useGoogleMaps();
 
+  // Initialize map only once
   useEffect(() => {
-    if (!isLoaded || !mapRef.current || !window.google) return;
+    if (!isLoaded || !mapRef.current || !window.google || isInitializedRef.current) return;
 
     try {
-      // Initialize map
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+      // Initialize map - mapId only needed for AdvancedMarkerElement
+      const mapConfig: any = {
         center,
         zoom,
         styles: [
@@ -40,7 +43,14 @@ export default function GoogleMapComponent({
             stylers: [{ visibility: "on" }]
           }
         ],
-      });
+      };
+      
+      // Add mapId if AdvancedMarkerElement is available
+      if (window.google.maps.marker?.AdvancedMarkerElement) {
+        mapConfig.mapId = 'DEMO_MAP_ID';
+      }
+      
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
 
       // Add click listener
       if (onMapClick) {
@@ -51,50 +61,131 @@ export default function GoogleMapComponent({
           });
         });
       }
+
+      isInitializedRef.current = true;
     } catch (error) {
       console.error('Error initializing Google Map:', error);
     }
-  }, [isLoaded, center, zoom, onMapClick]);
+  }, [isLoaded]);
 
-  // Update markers when they change
+  // Update map center and zoom when props change
   useEffect(() => {
-    if (!mapInstanceRef.current || !window.google) return;
-
+    if (!mapInstanceRef.current) return;
+    
     try {
-      // Clear existing markers
+      mapInstanceRef.current.setCenter(center);
+      mapInstanceRef.current.setZoom(zoom);
+    } catch (error) {
+      console.error('Error updating map center/zoom:', error);
+    }
+  }, [center, zoom]);
+
+  // Cleanup function
+  useEffect(() => {
+    return () => {
+      // Clear markers
       markersRef.current.forEach(marker => {
-        if (marker && marker.setMap) {
-          marker.setMap(null);
+        try {
+          if (marker && marker.map) {
+            marker.map = null;
+          } else if (marker && marker.setMap) {
+            marker.setMap(null);
+          }
+        } catch (error) {
+          console.error('Error cleaning up marker:', error);
         }
       });
       markersRef.current = [];
 
-      // Add new markers
+      // Clear info window
+      if (infoWindowRef.current) {
+        try {
+          infoWindowRef.current.close();
+          infoWindowRef.current = null;
+        } catch (error) {
+          console.error('Error cleaning up info window:', error);
+        }
+      }
+
+      // Clear map instance
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current = null;
+        } catch (error) {
+          console.error('Error cleaning up map:', error);
+        }
+      }
+      
+      isInitializedRef.current = false;
+    };
+  }, []);
+
+  // Update markers when they change
+  useEffect(() => {
+    if (!mapInstanceRef.current || !window.google || !isInitializedRef.current) return;
+
+    try {
+      // Clear existing markers
+      markersRef.current.forEach(marker => {
+        if (marker && marker.map) {
+          marker.map = null;
+        }
+      });
+      markersRef.current = [];
+
+      // Close any open info windows
+      if (infoWindowRef.current) {
+        infoWindowRef.current.close();
+      }
+
+      // Add new markers - try AdvancedMarkerElement first, fallback to Marker
       markers.forEach(markerData => {
-        const marker = new window.google.maps.Marker({
-          position: markerData.position,
-          map: mapInstanceRef.current,
-          title: markerData.title,
-        });
-
-        if (markerData.info) {
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: markerData.info,
-          });
-
-          marker.addListener('click', () => {
-            infoWindow.open(mapInstanceRef.current, marker);
+        let marker;
+        
+        // Try using AdvancedMarkerElement if available
+        if (window.google.maps.marker?.AdvancedMarkerElement) {
+          try {
+            marker = new window.google.maps.marker.AdvancedMarkerElement({
+              position: markerData.position,
+              map: mapInstanceRef.current,
+              title: markerData.title,
+            });
+          } catch (advancedError) {
+            console.warn('AdvancedMarkerElement failed, falling back to Marker:', advancedError);
+            marker = null;
+          }
+        }
+        
+        // Fallback to regular Marker if AdvancedMarkerElement not available or failed
+        if (!marker) {
+          marker = new window.google.maps.Marker({
+            position: markerData.position,
+            map: mapInstanceRef.current,
+            title: markerData.title,
           });
         }
 
-        markersRef.current.push(marker);
+        if (markerData.info && marker) {
+          if (!infoWindowRef.current) {
+            infoWindowRef.current = new window.google.maps.InfoWindow();
+          }
+
+          marker.addListener('click', () => {
+            infoWindowRef.current.setContent(markerData.info);
+            infoWindowRef.current.open(mapInstanceRef.current, marker);
+          });
+        }
+
+        if (marker) {
+          markersRef.current.push(marker);
+        }
       });
 
       // Adjust map bounds if we have markers
       if (markers.length > 0) {
         const bounds = new window.google.maps.LatLngBounds();
         markers.forEach(marker => bounds.extend(marker.position));
-        mapInstanceRef.current.fitBounds(bounds);
+        mapInstanceRef.current.fitBounds(bounds, { padding: 50 });
       }
     } catch (error) {
       console.error('Error updating map markers:', error);

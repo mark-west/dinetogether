@@ -16,8 +16,8 @@ export async function loadGoogleMapsScript(): Promise<void> {
     script.id = 'google-maps-script';
     script.async = true;
     script.defer = true;
-    // Only load places library, not all libraries
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=initGoogleMaps`;
+    // Load places and marker libraries for AdvancedMarkerElement
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&loading=async&callback=initGoogleMaps`;
     
     window.initGoogleMaps = function() {
       window.googleMapsLoaded = true;
