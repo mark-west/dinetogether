@@ -402,8 +402,8 @@ export default function Profile() {
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      // First log out the current user, then redirect to login
-                      window.location.href = '/api/logout';
+                      // Use dedicated account switching endpoint
+                      window.location.href = '/api/login/switch';
                     }}
                     data-testid="button-switch-account"
                   >

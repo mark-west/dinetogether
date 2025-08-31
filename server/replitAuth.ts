@@ -84,14 +84,18 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  // Register strategy for each domain including localhost for development
+  const domains = process.env.REPLIT_DOMAINS!.split(",");
+  domains.push("localhost"); // Add localhost for development
+  
+  for (const domain of domains) {
+    const protocol = domain === "localhost" ? "http" : "https";
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
         config,
         scope: "openid email profile offline_access",
-        callbackURL: `https://${domain}/api/callback`,
+        callbackURL: `${protocol}://${domain === "localhost" ? "localhost:5000" : domain}/api/callback`,
       },
       verify,
     );
@@ -101,7 +105,16 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
+  // Regular login endpoint
   app.get("/api/login", (req, res, next) => {
+    passport.authenticate(`replitauth:${req.hostname}`, {
+      prompt: "login consent",
+      scope: ["openid", "email", "profile", "offline_access"],
+    })(req, res, next);
+  });
+
+  // Account switching endpoint that forces fresh authentication
+  app.get("/api/login/switch", (req, res, next) => {
     // Clear existing session to force fresh authentication
     req.session.destroy((err) => {
       if (err) {
@@ -110,7 +123,6 @@ export async function setupAuth(app: Express) {
       // Force fresh authentication with account selection prompt
       passport.authenticate(`replitauth:${req.hostname}`, {
         prompt: "login",
-        max_age: 0, // Force re-authentication
         scope: ["openid", "email", "profile", "offline_access"],
       })(req, res, next);
     });
