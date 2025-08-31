@@ -43,9 +43,12 @@ export interface IStorage {
   // Event operations
   createEvent(event: InsertEvent): Promise<Event>;
   getEvent(id: string): Promise<Event | undefined>;
+  updateEvent(id: string, updates: Partial<InsertEvent>): Promise<Event | undefined>;
+  deleteEvent(id: string): Promise<void>;
   getGroupEvents(groupId: string): Promise<Event[]>;
   getUserEvents(userId: string): Promise<Array<Event & { group: Group; rsvpStatus?: string }>>;
   getUpcomingEvents(userId: string): Promise<Array<Event & { group: Group; rsvpStatus?: string; attendeeCount: number }>>;
+  getEventWithRsvps(eventId: string): Promise<{ event: Event; rsvps: Array<EventRsvp & { user: User }> } | undefined>;
   
   // RSVP operations
   upsertRsvp(rsvp: InsertRsvp): Promise<EventRsvp>;
@@ -170,6 +173,27 @@ export class DatabaseStorage implements IStorage {
   async getEvent(id: string): Promise<Event | undefined> {
     const [event] = await db.select().from(events).where(eq(events.id, id));
     return event;
+  }
+
+  async updateEvent(id: string, updates: Partial<InsertEvent>): Promise<Event | undefined> {
+    const [event] = await db
+      .update(events)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(events.id, id))
+      .returning();
+    return event;
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await db.delete(events).where(eq(events.id, id));
+  }
+
+  async getEventWithRsvps(eventId: string): Promise<{ event: Event; rsvps: Array<EventRsvp & { user: User }> } | undefined> {
+    const event = await this.getEvent(eventId);
+    if (!event) return undefined;
+    
+    const rsvps = await this.getEventRsvps(eventId);
+    return { event, rsvps };
   }
 
   async getGroupEvents(groupId: string): Promise<Event[]> {

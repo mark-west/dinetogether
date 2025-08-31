@@ -10,6 +10,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import GoogleMapComponent from "@/components/GoogleMapComponent";
 import CalendarActions from "@/components/CalendarActions";
+import EditEventModal from "@/components/EditEventModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ export default function EventDetails() {
   const { toast } = useToast();
   const [rsvpStatus, setRsvpStatus] = useState<string>('pending');
   const [newSuggestion, setNewSuggestion] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -333,6 +335,17 @@ export default function EventDetails() {
                       <i className="fas fa-comments mr-2"></i>
                       Chat
                     </Button>
+                    {user && event.createdBy === user.id && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowEditModal(true)}
+                        data-testid="button-edit-event"
+                      >
+                        <i className="fas fa-edit mr-2"></i>
+                        Edit Event
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -566,6 +579,15 @@ export default function EventDetails() {
       </div>
 
       <MobileNavigation />
+      
+      {/* Edit Event Modal */}
+      {event && (
+        <EditEventModal
+          event={event}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </div>
   );
 }

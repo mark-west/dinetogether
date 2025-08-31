@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import type { Event, EventRsvp, User } from "@shared/schema";
 import {
   insertGroupSchema,
   insertEventSchema,
@@ -11,6 +12,21 @@ import {
   insertGroupMemberSchema,
   insertGroupInviteSchema,
 } from "@shared/schema";
+
+// Email notification function (placeholder - will be enhanced with SendGrid)
+async function sendEventUpdateNotifications(
+  event: Event, 
+  rsvps: Array<EventRsvp & { user: User }>, 
+  type: 'updated' | 'cancelled'
+) {
+  // For now, just log the notification (will be replaced with SendGrid)
+  console.log(`Sending ${type} notifications for event "${event.name}" to ${rsvps.length} users`);
+  for (const rsvp of rsvps) {
+    if (rsvp.user.email) {
+      console.log(`Would notify ${rsvp.user.email} about event ${type}`);
+    }
+  }
+}
 import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -29,12 +45,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Config endpoint for frontend
-  app.get('/api/config', (req, res) => {
-    res.json({
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '',
-    });
-  });
 
   // Group routes
   app.post('/api/groups', isAuthenticated, async (req: any, res) => {
@@ -162,6 +172,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching event:", error);
       res.status(500).json({ message: "Failed to fetch event" });
+    }
+  });
+
+  app.put('/api/events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const event = await storage.getEvent(req.params.id);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdBy !== userId) {
+        return res.status(403).json({ message: "Only event creator can edit events" });
+      }
+      
+      // Get RSVPs before updating to send notifications
+      const { rsvps } = await storage.getEventWithRsvps(req.params.id) || { rsvps: [] };
+      
+      const updateData = insertEventSchema.partial().parse(req.body);
+      const updatedEvent = await storage.updateEvent(req.params.id, updateData);
+      
+      // Send notifications to RSVP'd users about event changes
+      if (rsvps.length > 0) {
+        await sendEventUpdateNotifications(updatedEvent!, rsvps, 'updated');
+      }
+      
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error("Error updating event:", error);
+      res.status(400).json({ message: "Failed to update event" });
+    }
+  });
+
+  app.delete('/api/events/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const event = await storage.getEvent(req.params.id);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdBy !== userId) {
+        return res.status(403).json({ message: "Only event creator can cancel events" });
+      }
+      
+      // Get RSVPs before deleting to send notifications
+      const { rsvps } = await storage.getEventWithRsvps(req.params.id) || { rsvps: [] };
+      
+      await storage.deleteEvent(req.params.id);
+      
+      // Send notifications to RSVP'd users about event cancellation
+      if (rsvps.length > 0) {
+        await sendEventUpdateNotifications(event, rsvps, 'cancelled');
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      res.status(500).json({ message: "Failed to delete event" });
     }
   });
 
