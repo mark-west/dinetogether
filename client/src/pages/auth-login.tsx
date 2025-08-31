@@ -31,12 +31,21 @@ export default function AuthLogin() {
             </Button>
 
             <Button 
-              className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white" 
-              onClick={() => window.location.href = '/api/auth/github'}
-              data-testid="button-login-github"
+              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white" 
+              onClick={() => window.location.href = '/api/auth/facebook'}
+              data-testid="button-login-facebook"
             >
-              <i className="fab fa-github mr-3"></i>
-              Continue with GitHub
+              <i className="fab fa-facebook mr-3"></i>
+              Continue with Facebook
+            </Button>
+
+            <Button 
+              className="w-full h-11 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white" 
+              onClick={() => window.location.href = '/api/auth/instagram'}
+              data-testid="button-login-instagram"
+            >
+              <i className="fab fa-instagram mr-3"></i>
+              Continue with Instagram
             </Button>
 
             <Button 
@@ -47,15 +56,6 @@ export default function AuthLogin() {
               <i className="fab fa-apple mr-3"></i>
               Continue with Apple
             </Button>
-
-            <Button 
-              className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white" 
-              onClick={() => window.location.href = '/api/auth/twitter'}
-              data-testid="button-login-twitter"
-            >
-              <i className="fab fa-twitter mr-3"></i>
-              Continue with X
-            </Button>
           </div>
 
           <Separator className="my-6" />
@@ -65,7 +65,7 @@ export default function AuthLogin() {
             <Button 
               className="w-full h-11" 
               variant="outline"
-              onClick={() => window.location.href = '/api/auth/email'}
+              onClick={() => window.location.href = '/email-signup'}
               data-testid="button-login-email"
             >
               <i className="fas fa-envelope mr-3"></i>

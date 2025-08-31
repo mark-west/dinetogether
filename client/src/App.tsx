@@ -15,6 +15,7 @@ import InvitePage from "@/pages/invite";
 import EventDetails from "@/pages/event-details";
 import Profile from "@/pages/profile";
 import AuthLogin from "@/pages/auth-login";
+import EmailSignup from "@/pages/email-signup";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -35,6 +36,7 @@ function Router() {
     <Switch>
       <Route path="/invite/:inviteCode" component={InvitePage} />
       <Route path="/login" component={AuthLogin} />
+      <Route path="/email-signup" component={EmailSignup} />
       {!isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />

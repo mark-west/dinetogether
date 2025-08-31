@@ -40,16 +40,29 @@ export async function setupSocialAuth(app: Express) {
     res.redirect("/");
   });
 
-  app.get("/api/auth/github", (req, res) => {
-    const githubUser = {
-      id: "github-user-" + Date.now(),
-      email: "github.user@example.com", 
-      firstName: "GitHub",
+  app.get("/api/auth/facebook", (req, res) => {
+    const facebookUser = {
+      id: "facebook-user-" + Date.now(),
+      email: "facebook.user@example.com", 
+      firstName: "Facebook",
       lastName: "User",
       profileImageUrl: null,
     };
     
-    (req.session as any).user = githubUser;
+    (req.session as any).user = facebookUser;
+    res.redirect("/");
+  });
+
+  app.get("/api/auth/instagram", (req, res) => {
+    const instagramUser = {
+      id: "instagram-user-" + Date.now(),
+      email: "instagram.user@example.com",
+      firstName: "Instagram", 
+      lastName: "User",
+      profileImageUrl: null,
+    };
+    
+    (req.session as any).user = instagramUser;
     res.redirect("/");
   });
 
@@ -66,29 +79,32 @@ export async function setupSocialAuth(app: Express) {
     res.redirect("/");
   });
 
-  app.get("/api/auth/twitter", (req, res) => {
-    const twitterUser = {
-      id: "twitter-user-" + Date.now(),
-      email: "twitter.user@example.com",
-      firstName: "Twitter",
-      lastName: "User", 
-      profileImageUrl: null,
-    };
-    
-    (req.session as any).user = twitterUser;
-    res.redirect("/");
-  });
+  // Email signup endpoint
+  app.post("/api/auth/email/signup", async (req, res) => {
+    try {
+      const { email, firstName, lastName, password } = req.body;
+      
+      // Validate input
+      if (!email || !firstName || !lastName || !password) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
 
-  app.get("/api/auth/email", (req, res) => {
-    const emailUser = {
-      id: "email-user-" + Date.now(),
-      email: "email.user@example.com",
-      firstName: "Email",
-      lastName: "User",
-      profileImageUrl: null,
-    };
-    
-    (req.session as any).user = emailUser;
-    res.redirect("/");
+      // Create new user with email/password
+      const emailUser = {
+        id: "email-user-" + Date.now(),
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        profileImageUrl: null,
+      };
+
+      // Store user in session
+      (req.session as any).user = emailUser;
+      
+      res.json({ success: true, message: "Account created successfully" });
+    } catch (error) {
+      console.error("Email signup error:", error);
+      res.status(500).json({ message: "Failed to create account" });
+    }
   });
 }
