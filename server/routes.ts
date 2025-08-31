@@ -410,6 +410,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete/expire an invite
+  app.delete('/api/invites/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const inviteId = req.params.id;
+      
+      // Get all invites to find the one with this ID (we need a better method)
+      // For now, we'll try all groups the user has access to
+      const userGroups = await storage.getUserGroups(userId);
+      let invite = null;
+      
+      for (const group of userGroups) {
+        const groupInvites = await storage.getGroupInvites(group.id);
+        const foundInvite = groupInvites.find(i => i.id === inviteId);
+        if (foundInvite) {
+          invite = foundInvite;
+          break;
+        }
+      }
+      
+      if (!invite) {
+        return res.status(404).json({ message: "Invite not found" });
+      }
+      
+      // Check if user is the one who created the invite or group admin
+      if (invite.invitedBy !== userId) {
+        const group = await storage.getGroup(invite.groupId);
+        if (!group || group.adminId !== userId) {
+          return res.status(403).json({ message: "Only invite creator or group admin can delete invites" });
+        }
+      }
+      
+      await storage.expireInvite(inviteId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting invite:", error);
+      res.status(500).json({ message: "Failed to delete invite" });
+    }
+  });
+
   app.get('/api/invites/:code', async (req: any, res) => {
     try {
       const inviteCode = req.params.code;

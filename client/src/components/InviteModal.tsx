@@ -32,6 +32,7 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
   const [generatedInvite, setGeneratedInvite] = useState<any>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [showQrCode, setShowQrCode] = useState(false);
+  const [activeQrCode, setActiveQrCode] = useState<string>('');
 
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
@@ -95,6 +96,13 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
 
   const generateQRCode = async (inviteCode: string) => {
     try {
+      // Toggle QR code if clicking same invite
+      if (showQrCode && activeQrCode === inviteCode) {
+        setShowQrCode(false);
+        setActiveQrCode('');
+        return;
+      }
+      
       const link = `${window.location.origin}/invite/${inviteCode}`;
       const qrCodeDataUrl = await QRCode.toDataURL(link, {
         width: 200,
@@ -105,12 +113,46 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
         }
       });
       setQrCodeUrl(qrCodeDataUrl);
+      setActiveQrCode(inviteCode);
       setShowQrCode(true);
+      toast({
+        title: "QR Code Generated!",
+        description: "QR code is ready to scan",
+      });
     } catch (error) {
       console.error('Error generating QR code:', error);
       toast({
         title: "Error",
         description: "Failed to generate QR code",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteInvite = async (inviteId: string) => {
+    try {
+      await apiRequest("DELETE", `/api/invites/${inviteId}`);
+      toast({
+        title: "Success",
+        description: "Invite removed successfully",
+      });
+      
+      // Reset UI state if deleting the currently displayed invite
+      if (generatedInvite && generatedInvite.id === inviteId) {
+        setShowInviteLink(false);
+        setGeneratedInvite(null);
+      }
+      
+      // Reset QR code state
+      setShowQrCode(false);
+      setActiveQrCode('');
+      setQrCodeUrl('');
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "invites"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove invite",
         variant: "destructive"
       });
     }
@@ -202,13 +244,22 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                       >
                         <i className="fas fa-qrcode"></i>
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deleteInvite(generatedInvite.id)}
+                        data-testid="button-delete-generated"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </Button>
                     </div>
                   </div>
                   
-                  {showQrCode && qrCodeUrl && (
+                  {showQrCode && qrCodeUrl && activeQrCode === generatedInvite.inviteCode && (
                     <div className="text-center py-4">
                       <Label className="text-xs text-green-700 dark:text-green-300 mb-2 block">QR Code - Scan to Join</Label>
-                      <div className="inline-block p-4 bg-white rounded-lg">
+                      <div className="inline-block p-4 bg-white rounded-lg shadow-sm">
                         <img 
                           src={qrCodeUrl} 
                           alt="QR Code for invite link" 
@@ -219,6 +270,15 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                       <p className="text-xs text-green-600 dark:text-green-400 mt-2">
                         Friends can scan this with their phone camera
                       </p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowQrCode(false)}
+                        className="mt-2"
+                        data-testid="button-hide-qr"
+                      >
+                        Hide QR Code
+                      </Button>
                     </div>
                   )}
                   
@@ -283,9 +343,36 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
                             >
                               <i className="fas fa-qrcode"></i>
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteInvite(invite.id)}
+                              data-testid={`button-delete-${invite.id}`}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </Button>
                           </div>
                         )}
                       </div>
+                      
+                      {/* QR Code display for individual invites */}
+                      {showQrCode && activeQrCode === invite.inviteCode && qrCodeUrl && (
+                        <div className="mt-4 text-center py-4 border-t">
+                          <Label className="text-xs text-muted-foreground mb-2 block">QR Code - Scan to Join</Label>
+                          <div className="inline-block p-4 bg-white rounded-lg shadow-sm">
+                            <img 
+                              src={qrCodeUrl} 
+                              alt="QR Code for invite link" 
+                              className="w-32 h-32"
+                              data-testid={`qr-code-${invite.id}`}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Friends can scan this with their phone camera
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
