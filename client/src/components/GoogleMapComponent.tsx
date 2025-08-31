@@ -50,39 +50,7 @@ export default function GoogleMapComponent({
       
       // Add error listener for map loading issues
       mapInstanceRef.current.addListener('error', (error: any) => {
-        console.error('Google Maps error:', error);
-        console.error('This might indicate API key issues or quota exceeded');
-      });
-      
-      console.log('Map instance created:', {
-        mapInstance: !!mapInstanceRef.current,
-        mapDiv: mapRef.current,
-        center: center,
-        zoom: zoom
-      });
-      
-      // Check for potential API key issues
-      setTimeout(() => {
-        const mapDiv = mapRef.current;
-        if (mapDiv) {
-          const computedStyle = window.getComputedStyle(mapDiv);
-          console.log('Map container background:', computedStyle.backgroundColor);
-          
-          // Look for error messages in the map
-          const errorElements = mapDiv.querySelectorAll('div[style*="background"]');
-          if (errorElements.length > 0) {
-            console.log('Potential map error elements found:', errorElements);
-          }
-        }
-      }, 2000);
-      
-      // Add idle event listener to detect when map is fully loaded
-      mapInstanceRef.current.addListener('idle', () => {
-        console.log('Map idle - tiles should be loaded');
-      });
-      
-      mapInstanceRef.current.addListener('tilesloaded', () => {
-        console.log('Map tiles loaded successfully');
+        console.error('Google Maps API Error - likely billing/quota issue:', error);
       });
       
       // Force a resize after initialization to ensure proper rendering
@@ -90,7 +58,7 @@ export default function GoogleMapComponent({
         if (mapInstanceRef.current) {
           window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
           mapInstanceRef.current.setCenter(center);
-          console.log('Map resized and centered');
+          // Map resized and centered
         }
       }, 100);
 
