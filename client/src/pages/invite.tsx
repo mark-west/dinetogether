@@ -16,7 +16,7 @@ export default function InvitePage() {
   const [isAccepting, setIsAccepting] = useState(false);
 
   const { data: inviteData, isLoading: inviteLoading, error } = useQuery<{invite: any; group: any}>({
-    queryKey: ["/api/invites", inviteCode],
+    queryKey: [`/api/invites/${inviteCode}`],
     retry: false,
     enabled: !!inviteCode,
   });
