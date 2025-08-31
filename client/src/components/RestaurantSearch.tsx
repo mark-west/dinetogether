@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGooglePlaces } from "@/hooks/useGoogleMaps";
@@ -20,7 +20,9 @@ interface RestaurantSearchProps {
 }
 
 export default function RestaurantSearch({ onSelect, placeholder = "Enter restaurant name...", initialValue = "" }: RestaurantSearchProps) {
-  const [query, setQuery] = useState(initialValue);
+  // Use refs for values that shouldn't cause re-renders
+  const queryRef = useRef(initialValue);
+  const [displayQuery, setDisplayQuery] = useState(initialValue);
   const [useGoogleSearch, setUseGoogleSearch] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -29,9 +31,10 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    setQuery(newValue);
+    queryRef.current = newValue;
+    setDisplayQuery(newValue);
     
     if (useGoogleSearch && isLoaded && !error) {
       // Clear existing timeout
@@ -62,28 +65,29 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
         setSuggestions([]);
       }
     }
-  };
+  }, [useGoogleSearch, isLoaded, error, autocompleteRestaurants]);
 
-  const handleManualSelect = () => {
-    if (query.trim()) {
+  const handleManualSelect = useCallback(() => {
+    if (queryRef.current.trim()) {
       const restaurant: Restaurant = {
         placeId: `manual-${Date.now()}`,
-        name: query.trim(),
+        name: queryRef.current.trim(),
         address: '',
       };
       onSelect(restaurant);
       setShowSuggestions(false);
     }
-  };
+  }, [onSelect]);
 
-  const handleSuggestionSelect = async (prediction: any) => {
+  const handleSuggestionSelect = useCallback(async (prediction: any) => {
     // Hide suggestions immediately to prevent keyboard issues
     setShowSuggestions(false);
     
     try {
       const details = await getPlaceDetails(prediction.place_id);
       onSelect(details as Restaurant);
-      setQuery((details as Restaurant).name);
+      queryRef.current = (details as Restaurant).name;
+      setDisplayQuery((details as Restaurant).name);
     } catch (error) {
       console.error('Error getting place details:', error);
       // Fallback to basic info
@@ -93,16 +97,17 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
         address: prediction.structured_formatting?.secondary_text || '',
       };
       onSelect(restaurant);
-      setQuery(restaurant.name);
+      queryRef.current = restaurant.name;
+      setDisplayQuery(restaurant.name);
     }
     
     // Ensure input maintains focus after selection on mobile
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  };
+  }, [getPlaceDetails, onSelect]);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (!useGoogleSearch || !showSuggestions || suggestions.length === 0) {
@@ -113,7 +118,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     } else if (e.key === 'Escape') {
       setShowSuggestions(false);
     }
-  };
+  }, [useGoogleSearch, showSuggestions, suggestions, handleManualSelect, handleSuggestionSelect]);
 
   return (
     <div className="space-y-2">
@@ -146,7 +151,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       <div className="relative">
         <Input
           ref={inputRef}
-          value={query}
+          value={displayQuery}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           placeholder={useGoogleSearch ? "Search Google for restaurants..." : "Enter restaurant name..."}
@@ -159,7 +164,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
         />
         
         {/* Manual mode: show checkmark when there's text */}
-        {!useGoogleSearch && query.trim() && (
+        {!useGoogleSearch && displayQuery.trim() && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
             <Button
               type="button"
