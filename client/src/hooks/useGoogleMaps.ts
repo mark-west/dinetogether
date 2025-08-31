@@ -28,7 +28,7 @@ export function useGoogleMaps() {
     };
 
     // Check if API key exists
-    const apiKey = 'AIzaSyCPTS0slU5KnKal2T_fWtO7XaGAYM78_5U'; // Temporarily hardcoded until secrets are fixed
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       setError('Google Maps API key not found - Google Maps features will be disabled');
       return;
