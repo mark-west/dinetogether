@@ -158,7 +158,7 @@ export async function sendEventUpdateNotifications(
 
       const msg = {
         to: rsvp.user.email,
-        from: 'dinesync@replit.dev', // Using Replit dev domain for testing
+        from: 'noreply@dinetogether.app', // Using correct domain
         subject,
         html: htmlContent,
         attachments: type === 'updated' ? [{
