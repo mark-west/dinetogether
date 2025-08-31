@@ -5,7 +5,7 @@ export async function loadGoogleMapsScript(): Promise<void> {
 
   try {
     // Get the API key from environment variables
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const apiKey = 'AIzaSyCPTS0slU5KnKal2T_fWtO7XaGAYM78_5U'; // Temporarily hardcoded until secrets are fixed
     
     if (!apiKey) {
       console.error('Google Maps API key not found - Google Maps features will be disabled');
