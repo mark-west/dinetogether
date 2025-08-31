@@ -295,6 +295,14 @@ export class DatabaseStorage implements IStorage {
   // Event operations
   async createEvent(eventData: InsertEvent): Promise<Event> {
     const [event] = await db.insert(events).values(eventData).returning();
+    
+    // Automatically RSVP the creator as "going"
+    await db.insert(eventRsvps).values({
+      eventId: event.id,
+      userId: eventData.createdBy,
+      status: 'going',
+    });
+    
     return event;
   }
 
@@ -565,13 +573,13 @@ export class DatabaseStorage implements IStorage {
 
   async markAllEventMessagesAsRead(eventId: string, userId: string): Promise<void> {
     // Get all event messages not sent by the user
-    const eventMessages = await db
+    const eventMessageList = await db
       .select({ id: messages.id })
       .from(messages)
       .where(and(eq(messages.eventId, eventId), ne(messages.userId, userId)));
 
     // Mark all as read
-    for (const message of eventMessages) {
+    for (const message of eventMessageList) {
       await db.insert(messageReads)
         .values({
           messageId: message.id,
