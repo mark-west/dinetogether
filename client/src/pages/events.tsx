@@ -207,15 +207,30 @@ export default function Events() {
                             )}
                             
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm" data-testid={`button-view-${event.id}`}>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => window.location.href = `/events/${event.id}`}
+                                data-testid={`button-view-${event.id}`}
+                              >
                                 <i className="fas fa-eye mr-2"></i>
                                 View Details
                               </Button>
-                              <Button variant="outline" size="sm" data-testid={`button-chat-${event.id}`}>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.location.href = `/chat/${event.id}`}
+                                data-testid={`button-chat-${event.id}`}
+                              >
                                 <i className="fas fa-comments mr-2"></i>
                                 Chat
                               </Button>
-                              <Button variant="outline" size="sm" data-testid={`button-rsvp-${event.id}`}>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.location.href = `/events/${event.id}`}
+                                data-testid={`button-rsvp-${event.id}`}
+                              >
                                 <i className="fas fa-reply mr-2"></i>
                                 RSVP
                               </Button>
