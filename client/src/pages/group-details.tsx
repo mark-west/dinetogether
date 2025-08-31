@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -16,14 +16,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function GroupDetails() {
   const { groupId } = useParams();
+  const [, navigate] = useLocation();
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showPhotoUploader, setShowPhotoUploader] = useState(false);
   const [activeTab, setActiveTab] = useState('events');
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [duplicateGroupName, setDuplicateGroupName] = useState('');
   
   // Check URL parameters for auto-opening invite modal
   useEffect(() => {
@@ -102,6 +110,99 @@ export default function GroupDetails() {
       toast({
         title: "Error",
         description: "Failed to update group photo",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Remove member mutation
+  const removeMemberMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await apiRequest("DELETE", `/api/groups/${groupId}/members/${userId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Member removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId, "members"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove member",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Rename group mutation
+  const renameGroupMutation = useMutation({
+    mutationFn: async (name: string) => {
+      return await apiRequest("PUT", `/api/groups/${groupId}`, { name });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Group renamed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      setShowRenameDialog(false);
+      setNewGroupName('');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to rename group",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Duplicate group mutation
+  const duplicateGroupMutation = useMutation({
+    mutationFn: async (name: string) => {
+      return await apiRequest("POST", `/api/groups/${groupId}/duplicate`, { name });
+    },
+    onSuccess: (newGroup) => {
+      toast({
+        title: "Success",
+        description: "Group duplicated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      setShowDuplicateDialog(false);
+      setDuplicateGroupName('');
+      // Navigate to the new group
+      navigate(`/groups/${newGroup.id}`);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate group",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete group mutation
+  const deleteGroupMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", `/api/groups/${groupId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Group deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      // Navigate back to dashboard
+      navigate('/');
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete group",
         variant: "destructive",
       });
     },
@@ -226,16 +327,70 @@ export default function GroupDetails() {
                     
                     {/* Admin actions */}
                     {(group as Group).adminId === user?.id && (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setShowInviteModal(true)}
-                          data-testid="button-invite-members"
+                          data-testid="button-invite-members-header"
                         >
-                          <i className="fas fa-user-plus mr-2"></i>
+                          <i className="fas fa-user-plus mr-1"></i>
                           Invite
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setNewGroupName((group as Group).name);
+                            setShowRenameDialog(true);
+                          }}
+                          data-testid="button-rename-group"
+                        >
+                          <i className="fas fa-edit mr-1"></i>
+                          Rename
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setDuplicateGroupName(`${(group as Group).name} (Copy)`);
+                            setShowDuplicateDialog(true);
+                          }}
+                          data-testid="button-duplicate-group"
+                        >
+                          <i className="fas fa-copy mr-1"></i>
+                          Duplicate
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              data-testid="button-delete-group"
+                            >
+                              <i className="fas fa-trash mr-1"></i>
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Group</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{(group as Group).name}"? This will permanently delete the group, all its events, and remove all members. This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => deleteGroupMutation.mutate()}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Delete Group
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     )}
                   </div>
@@ -393,9 +548,46 @@ export default function GroupDetails() {
                             </p>
                           </div>
                           
-                          <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} data-testid={`text-member-role-${member.userId}`}>
-                            {member.role}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} data-testid={`text-member-role-${member.userId}`}>
+                              {member.role}
+                            </Badge>
+                            {/* Show remove button for admin (but not for themselves) */}
+                            {group?.adminId === user?.id && member.userId !== user?.id && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    data-testid={`button-remove-member-${member.userId}`}
+                                  >
+                                    <i className="fas fa-user-minus"></i>
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to remove {member.user.firstName && member.user.lastName 
+                                        ? `${member.user.firstName} ${member.user.lastName}`
+                                        : member.user.email
+                                      } from this group? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => removeMemberMutation.mutate(member.userId)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      Remove Member
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -434,6 +626,76 @@ export default function GroupDetails() {
         title="Update Group Photo"
         description="Upload a photo that represents your group"
       />
+
+      {/* Rename Group Dialog */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Group</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Enter new group name"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              data-testid="input-new-group-name"
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowRenameDialog(false);
+                setNewGroupName('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => renameGroupMutation.mutate(newGroupName)}
+              disabled={!newGroupName.trim() || renameGroupMutation.isPending}
+              data-testid="button-confirm-rename"
+            >
+              {renameGroupMutation.isPending ? 'Renaming...' : 'Rename Group'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Group Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate Group</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              placeholder="Enter name for duplicated group"
+              value={duplicateGroupName}
+              onChange={(e) => setDuplicateGroupName(e.target.value)}
+              data-testid="input-duplicate-group-name"
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDuplicateDialog(false);
+                setDuplicateGroupName('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => duplicateGroupMutation.mutate(duplicateGroupName)}
+              disabled={!duplicateGroupName.trim() || duplicateGroupMutation.isPending}
+              data-testid="button-confirm-duplicate"
+            >
+              {duplicateGroupMutation.isPending ? 'Duplicating...' : 'Duplicate Group'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

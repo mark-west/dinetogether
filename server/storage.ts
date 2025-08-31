@@ -42,6 +42,8 @@ export interface IStorage {
   createGroup(group: InsertGroup): Promise<Group>;
   getGroup(id: string): Promise<Group | undefined>;
   updateGroup(id: string, updates: Partial<InsertGroup>): Promise<Group | undefined>;
+  deleteGroup(id: string): Promise<void>;
+  duplicateGroup(groupId: string, newName: string, adminId: string): Promise<Group>;
   getUserGroups(userId: string): Promise<Array<Group & { memberCount: number; role: string }>>;
   addGroupMember(membership: InsertGroupMember): Promise<GroupMember>;
   removeGroupMember(groupId: string, userId: string): Promise<void>;
@@ -152,6 +154,43 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groups.id, id))
       .returning();
     return group;
+  }
+
+  async deleteGroup(id: string): Promise<void> {
+    await db.delete(groups).where(eq(groups.id, id));
+  }
+
+  async duplicateGroup(groupId: string, newName: string, adminId: string): Promise<Group> {
+    // Get the original group
+    const originalGroup = await this.getGroup(groupId);
+    if (!originalGroup) {
+      throw new Error('Group not found');
+    }
+
+    // Create new group with copied data
+    const newGroupData = {
+      name: newName,
+      description: originalGroup.description,
+      photoUrl: originalGroup.photoUrl,
+      adminId: adminId,
+      inviteCode: generateInviteCode(),
+    };
+
+    const newGroup = await this.createGroup(newGroupData);
+
+    // Copy all members from original group (except the admin who's already added)
+    const originalMembers = await this.getGroupMembers(groupId);
+    for (const member of originalMembers) {
+      if (member.userId !== adminId) {
+        await this.addGroupMember({
+          groupId: newGroup.id,
+          userId: member.userId,
+          role: 'member', // All copied members become regular members
+        });
+      }
+    }
+
+    return newGroup;
   }
 
   async getUserGroups(userId: string): Promise<Array<Group & { memberCount: number; role: string }>> {

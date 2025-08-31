@@ -175,6 +175,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Remove group member (admin only)
+  app.delete('/api/groups/:id/members/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const { id: groupId, userId: memberUserId } = req.params;
+
+      // Check if current user is admin
+      const group = await storage.getGroup(groupId);
+      if (!group || group.adminId !== currentUserId) {
+        return res.status(403).json({ message: "Only group admin can remove members" });
+      }
+
+      // Prevent admin from removing themselves
+      if (memberUserId === currentUserId) {
+        return res.status(400).json({ message: "Admin cannot remove themselves from the group" });
+      }
+
+      await storage.removeGroupMember(groupId, memberUserId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ message: "Failed to remove group member" });
+    }
+  });
+
+  // Duplicate group (admin only)
+  app.post('/api/groups/:id/duplicate', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const groupId = req.params.id;
+      const { name: newName } = req.body;
+
+      if (!newName || typeof newName !== 'string') {
+        return res.status(400).json({ message: "Group name is required" });
+      }
+
+      // Check if current user is admin
+      const group = await storage.getGroup(groupId);
+      if (!group || group.adminId !== currentUserId) {
+        return res.status(403).json({ message: "Only group admin can duplicate groups" });
+      }
+
+      const newGroup = await storage.duplicateGroup(groupId, newName, currentUserId);
+      res.status(201).json(newGroup);
+    } catch (error) {
+      console.error("Error duplicating group:", error);
+      res.status(500).json({ message: "Failed to duplicate group" });
+    }
+  });
+
+  // Delete group (admin only)
+  app.delete('/api/groups/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const groupId = req.params.id;
+
+      // Check if current user is admin
+      const group = await storage.getGroup(groupId);
+      if (!group || group.adminId !== currentUserId) {
+        return res.status(403).json({ message: "Only group admin can delete groups" });
+      }
+
+      await storage.deleteGroup(groupId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      res.status(500).json({ message: "Failed to delete group" });
+    }
+  });
+
   // Event routes
   app.post('/api/events', isAuthenticated, async (req: any, res) => {
     try {
