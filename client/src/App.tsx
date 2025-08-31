@@ -13,6 +13,7 @@ import Events from "@/pages/events";
 import Chat from "@/pages/chat";
 import InvitePage from "@/pages/invite";
 import EventDetails from "@/pages/event-details";
+import Profile from "@/pages/profile";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,6 +31,7 @@ function Router() {
           <Route path="/events" component={Events} />
           <Route path="/events/:eventId" component={EventDetails} />
           <Route path="/chat/:eventId?" component={Chat} />
+          <Route path="/profile" component={Profile} />
         </>
       )}
       <Route component={NotFound} />

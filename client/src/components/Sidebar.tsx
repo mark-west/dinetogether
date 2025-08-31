@@ -2,12 +2,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import type { Group } from "@shared/schema";
 
 export default function Sidebar() {
   const { user } = useAuth();
   const [location] = useLocation();
   
-  const { data: groups } = useQuery({
+  const { data: groups } = useQuery<Array<Group & { memberCount: number; role: string }>>({
     queryKey: ["/api/groups"],
     retry: false,
   });
@@ -58,8 +59,8 @@ export default function Sidebar() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => window.location.href = '/api/logout'}
-            data-testid="button-logout"
+            onClick={() => window.location.href = '/profile'}
+            data-testid="button-profile"
           >
             <i className="fas fa-cog text-sm"></i>
           </Button>
@@ -120,6 +121,19 @@ export default function Sidebar() {
             <p className="text-xs text-muted-foreground text-center py-2">No groups yet</p>
           )}
         </div>
+      </div>
+      
+      {/* Logout */}
+      <div className="p-4 border-t border-border">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={() => window.location.href = '/api/logout'}
+          data-testid="button-logout"
+        >
+          <i className="fas fa-sign-out-alt text-sm mr-3"></i>
+          <span>Log Out</span>
+        </Button>
       </div>
     </div>
   );
