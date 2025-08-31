@@ -53,10 +53,10 @@ export default function Landing() {
             </div>
           </div>
           
-          {/* Enhanced login buttons using site's existing primary colors */}
+          {/* Single login button with clear messaging */}
           <div className="space-y-4">
             <Button 
-              className="w-full h-10 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200" 
+              className="w-full h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200" 
               onClick={() => navigateWithLoading('/api/login')}
               disabled={isLoading('/api/login')}
               data-testid="button-login"
@@ -64,35 +64,20 @@ export default function Landing() {
               {isLoading('/api/login') ? (
                 <>
                   <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full mr-2"></div>
-                  Getting Started...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-rocket mr-2 text-base"></i>
-                  Get Started
-                </>
-              )}
-            </Button>
-            
-            <Button 
-              variant="outline"
-              className="w-full h-9 text-sm transition-colors duration-200" 
-              onClick={() => navigateWithLoading('/api/login')}
-              disabled={isLoading('/api/login')}
-              data-testid="button-login-alternative"
-            >
-              {isLoading('/api/login') ? (
-                <>
-                  <div className="animate-spin h-3 w-3 border-2 border-gray-400 border-t-gray-700 rounded-full mr-2"></div>
                   Signing in...
                 </>
               ) : (
                 <>
-                  <i className="fas fa-sign-in-alt mr-2 text-sm"></i>
-                  Sign In
+                  <i className="fas fa-utensils mr-2 text-base"></i>
+                  Start Dining Together
                 </>
               )}
             </Button>
+            
+            {/* Clear messaging about authentication options */}
+            <div className="text-center text-xs text-muted-foreground px-4">
+              Sign in with Replit • Create account • Use Google, GitHub & more
+            </div>
           </div>
         </CardContent>
       </Card>
