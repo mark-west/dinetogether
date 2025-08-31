@@ -10,12 +10,12 @@ export default function Landing() {
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <Card className="w-full max-w-lg shadow-2xl border-0">
         <CardHeader className="text-center pb-8 pt-12 px-0">
-          {/* Your actual DineTogether logo - full width */}
-          <div className="w-full mb-8">
+          {/* Your actual DineTogether logo - full width with square aspect ratio */}
+          <div className="w-full mb-8 bg-white rounded-lg p-4">
             <img 
               src={logoImage} 
               alt="DineTogether Logo" 
-              className="w-full h-auto max-h-48 object-cover"
+              className="w-full aspect-square object-contain"
             />
           </div>
         </CardHeader>
