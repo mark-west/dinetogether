@@ -9,6 +9,7 @@ import {
   insertRsvpSchema,
   insertSuggestionSchema,
   insertMessageSchema,
+  insertGroupMessageSchema,
   insertGroupMemberSchema,
   insertGroupInviteSchema,
 } from "@shared/schema";
@@ -476,6 +477,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post('/api/events/:id/messages/:messageId/reply', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageData = insertMessageSchema.parse({
+        eventId: req.params.id,
+        userId: userId,
+        content: req.body.content,
+        parentMessageId: req.params.messageId,
+      });
+      
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating reply:", error);
+      res.status(400).json({ message: "Failed to create reply" });
+    }
+  });
+
+  app.post('/api/events/:id/messages/:messageId/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.markMessageAsRead(req.params.messageId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ message: "Failed to mark message as read" });
+    }
+  });
+
+  // Group message routes
+  app.post('/api/groups/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageData = insertGroupMessageSchema.parse({
+        groupId: req.params.id,
+        userId: userId,
+        content: req.body.content,
+        parentMessageId: req.body.parentMessageId || null,
+        messageType: req.body.messageType || 'text',
+        metadata: req.body.metadata || null,
+      });
+      
+      const message = await storage.createGroupMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating group message:", error);
+      res.status(400).json({ message: "Failed to create group message" });
+    }
+  });
+
+  app.get('/api/groups/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const messages = await storage.getGroupMessages(req.params.id);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching group messages:", error);
+      res.status(500).json({ message: "Failed to fetch group messages" });
+    }
+  });
+
+  app.post('/api/groups/:id/messages/:messageId/reply', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageData = insertGroupMessageSchema.parse({
+        groupId: req.params.id,
+        userId: userId,
+        content: req.body.content,
+        parentMessageId: req.params.messageId,
+      });
+      
+      const message = await storage.createGroupMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Error creating group reply:", error);
+      res.status(400).json({ message: "Failed to create group reply" });
+    }
+  });
+
+  app.post('/api/groups/:id/messages/:messageId/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.markGroupMessageAsRead(req.params.messageId, userId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error marking group message as read:", error);
+      res.status(500).json({ message: "Failed to mark group message as read" });
+    }
+  });
+
+  // Get unread message count for user
+  app.get('/api/messages/unread-count', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const count = await storage.getUserUnreadCount(userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+      res.status(500).json({ message: "Failed to fetch unread count" });
     }
   });
 

@@ -6,6 +6,9 @@ import {
   eventRsvps,
   restaurantSuggestions,
   messages,
+  messageReads,
+  groupMessages,
+  groupMessageReads,
   groupInvites,
   type User,
   type UpsertUser,
@@ -19,6 +22,12 @@ import {
   type InsertSuggestion,
   type Message,
   type InsertMessage,
+  type GroupMessage,
+  type InsertGroupMessage,
+  type MessageRead,
+  type InsertMessageRead,
+  type GroupMessageRead,
+  type InsertGroupMessageRead,
   type GroupMember,
   type InsertGroupMember,
   type GroupInvite,
@@ -71,7 +80,14 @@ export interface IStorage {
   
   // Message operations
   createMessage(message: InsertMessage): Promise<Message>;
-  getEventMessages(eventId: string): Promise<Array<Message & { user: User }>>;
+  getEventMessages(eventId: string): Promise<Array<Message & { user: User; replies?: Array<Message & { user: User }> }>>;
+  markMessageAsRead(messageId: string, userId: string): Promise<void>;
+  
+  // Group message operations
+  createGroupMessage(message: InsertGroupMessage): Promise<GroupMessage>;
+  getGroupMessages(groupId: string): Promise<Array<GroupMessage & { user: User; replies?: Array<GroupMessage & { user: User }> }>>;
+  markGroupMessageAsRead(messageId: string, userId: string): Promise<void>;
+  getUserUnreadCount(userId: string): Promise<number>;
   
   // Dashboard/stats operations
   getUserStats(userId: string): Promise<{
@@ -423,7 +439,8 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async getEventMessages(eventId: string): Promise<Array<Message & { user: User }>> {
+  async getEventMessages(eventId: string): Promise<Array<Message & { user: User; replies?: Array<Message & { user: User }> }>> {
+    // Get all messages for the event
     const result = await db
       .select()
       .from(messages)
@@ -431,10 +448,122 @@ export class DatabaseStorage implements IStorage {
       .where(eq(messages.eventId, eventId))
       .orderBy(messages.createdAt);
     
-    return result.map(row => ({
+    const messagesWithUsers = result.map(row => ({
       ...row.messages,
       user: row.users,
     }));
+
+    // Organize into threads (top-level messages with replies)
+    const messagesMap = new Map<string, Message & { user: User; replies: Array<Message & { user: User }> }>();
+    const topLevelMessages: Array<Message & { user: User; replies: Array<Message & { user: User }> }> = [];
+
+    // First pass: create map and identify top-level messages
+    for (const message of messagesWithUsers) {
+      const messageWithReplies = { ...message, replies: [] };
+      messagesMap.set(message.id, messageWithReplies);
+      
+      if (!message.parentMessageId) {
+        topLevelMessages.push(messageWithReplies);
+      }
+    }
+
+    // Second pass: organize replies under parent messages
+    for (const message of messagesWithUsers) {
+      if (message.parentMessageId) {
+        const parent = messagesMap.get(message.parentMessageId);
+        if (parent) {
+          parent.replies.push(message);
+        }
+      }
+    }
+
+    return topLevelMessages;
+  }
+
+  async markMessageAsRead(messageId: string, userId: string): Promise<void> {
+    await db
+      .insert(messageReads)
+      .values({ messageId, userId })
+      .onConflictDoNothing();
+  }
+
+  // Group message operations
+  async createGroupMessage(messageData: InsertGroupMessage): Promise<GroupMessage> {
+    const [message] = await db.insert(groupMessages).values(messageData).returning();
+    return message;
+  }
+
+  async getGroupMessages(groupId: string): Promise<Array<GroupMessage & { user: User; replies?: Array<GroupMessage & { user: User }> }>> {
+    // Get all messages for the group
+    const result = await db
+      .select()
+      .from(groupMessages)
+      .innerJoin(users, eq(groupMessages.userId, users.id))
+      .where(eq(groupMessages.groupId, groupId))
+      .orderBy(groupMessages.createdAt);
+    
+    const messagesWithUsers = result.map(row => ({
+      ...row.group_messages,
+      user: row.users,
+    }));
+
+    // Organize into threads (top-level messages with replies)
+    const messagesMap = new Map<string, GroupMessage & { user: User; replies: Array<GroupMessage & { user: User }> }>();
+    const topLevelMessages: Array<GroupMessage & { user: User; replies: Array<GroupMessage & { user: User }> }> = [];
+
+    // First pass: create map and identify top-level messages
+    for (const message of messagesWithUsers) {
+      const messageWithReplies = { ...message, replies: [] };
+      messagesMap.set(message.id, messageWithReplies);
+      
+      if (!message.parentMessageId) {
+        topLevelMessages.push(messageWithReplies);
+      }
+    }
+
+    // Second pass: organize replies under parent messages
+    for (const message of messagesWithUsers) {
+      if (message.parentMessageId) {
+        const parent = messagesMap.get(message.parentMessageId);
+        if (parent) {
+          parent.replies.push(message);
+        }
+      }
+    }
+
+    return topLevelMessages;
+  }
+
+  async markGroupMessageAsRead(messageId: string, userId: string): Promise<void> {
+    await db
+      .insert(groupMessageReads)
+      .values({ groupMessageId: messageId, userId })
+      .onConflictDoNothing();
+  }
+
+  async getUserUnreadCount(userId: string): Promise<number> {
+    // Count unread messages across all groups the user is a member of
+    const [result] = await db
+      .select({
+        unreadCount: sql<number>`
+          count(distinct gm.id) + count(distinct em.id)
+        `,
+      })
+      .from(groupMembers)
+      .leftJoin(groupMessages, sql`${groupMessages.groupId} = ${groupMembers.groupId}`)
+      .leftJoin(sql`${groupMessages} as gm`, sql`gm.id = ${groupMessages.id} AND gm.user_id != ${userId}`)
+      .leftJoin(groupMessageReads, sql`${groupMessageReads.groupMessageId} = gm.id AND ${groupMessageReads.userId} = ${userId}`)
+      .leftJoin(events, sql`${events.groupId} = ${groupMembers.groupId}`)
+      .leftJoin(sql`${messages} as em`, sql`em.event_id = ${events.id} AND em.user_id != ${userId}`)
+      .leftJoin(messageReads, sql`${messageReads.messageId} = em.id AND ${messageReads.userId} = ${userId}`)
+      .where(
+        and(
+          eq(groupMembers.userId, userId),
+          sql`(gm.id IS NOT NULL AND ${groupMessageReads.id} IS NULL) OR (em.id IS NOT NULL AND ${messageReads.id} IS NULL)`
+        )
+      );
+
+    return result?.unreadCount || 0;
   }
 
   // Dashboard/stats operations

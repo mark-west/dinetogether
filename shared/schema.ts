@@ -107,7 +107,7 @@ export const messages = pgTable("messages", {
   eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
-  parentMessageId: uuid("parent_message_id").references(() => messages.id, { onDelete: 'cascade' }), // For threading
+  parentMessageId: uuid("parent_message_id"), // For threading - handled in application layer
   messageType: varchar("message_type", { length: 50 }).notNull().default('text'), // 'text', 'restaurant_suggestion', 'system'
   metadata: jsonb("metadata"), // For storing additional data like restaurant info
   editedAt: timestamp("edited_at"),
@@ -131,7 +131,7 @@ export const groupMessages = pgTable("group_messages", {
   groupId: uuid("group_id").notNull().references(() => groups.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
-  parentMessageId: uuid("parent_message_id").references(() => groupMessages.id, { onDelete: 'cascade' }), // For threading
+  parentMessageId: uuid("parent_message_id"), // For threading - handled in application layer
   messageType: varchar("message_type", { length: 50 }).notNull().default('text'), // 'text', 'restaurant_suggestion', 'system'
   metadata: jsonb("metadata"), // For storing additional data like restaurant info
   editedAt: timestamp("edited_at"),
@@ -245,12 +245,6 @@ export const messagesRelations = relations(messages, ({ one, many }) => ({
     fields: [messages.userId],
     references: [users.id],
   }),
-  parentMessage: one(messages, {
-    fields: [messages.parentMessageId],
-    references: [messages.id],
-    relationName: 'parentMessage',
-  }),
-  replies: many(messages, { relationName: 'parentMessage' }),
   reads: many(messageReads),
 }));
 
@@ -274,12 +268,6 @@ export const groupMessagesRelations = relations(groupMessages, ({ one, many }) =
     fields: [groupMessages.userId],
     references: [users.id],
   }),
-  parentMessage: one(groupMessages, {
-    fields: [groupMessages.parentMessageId],
-    references: [groupMessages.id],
-    relationName: 'parentMessage',
-  }),
-  replies: many(groupMessages, { relationName: 'parentMessage' }),
   reads: many(groupMessageReads),
 }));
 
@@ -385,6 +373,12 @@ export type RestaurantSuggestion = typeof restaurantSuggestions.$inferSelect;
 export type InsertSuggestion = z.infer<typeof insertSuggestionSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type GroupMessage = typeof groupMessages.$inferSelect;
+export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
+export type MessageRead = typeof messageReads.$inferSelect;
+export type InsertMessageRead = z.infer<typeof insertMessageReadSchema>;
+export type GroupMessageRead = typeof groupMessageReads.$inferSelect;
+export type InsertGroupMessageRead = z.infer<typeof insertGroupMessageReadSchema>;
 export type GroupMember = typeof groupMembers.$inferSelect;
 export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
 export type GroupInvite = typeof groupInvites.$inferSelect;

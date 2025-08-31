@@ -13,12 +13,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type ChatType = 'group' | 'event';
+
+interface ThreadedMessage {
+  id: string;
+  content: string;
+  userId: string;
+  user: any;
+  createdAt: string;
+  parentMessageId?: string;
+  replies?: ThreadedMessage[];
+}
 
 export default function Chat() {
-  const { eventId } = useParams();
+  const params = useParams();
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
+  const [selectedChatType, setSelectedChatType] = useState<ChatType>('group');
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+
+  // Parse URL params for chat type and ID
+  useEffect(() => {
+    if (params.chatType && params.chatId) {
+      setSelectedChatType(params.chatType as ChatType);
+      setSelectedChatId(params.chatId);
+    }
+  }, [params]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -34,33 +59,68 @@ export default function Chat() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
+  // Fetch user's groups
+  const { data: groups, isLoading: groupsLoading } = useQuery({
+    queryKey: ["/api/groups"],
+    retry: false,
+    enabled: isAuthenticated,
+  });
+
+  // Fetch user's events
   const { data: events, isLoading: eventsLoading } = useQuery({
     queryKey: ["/api/events"],
     retry: false,
     enabled: isAuthenticated,
   });
 
+  // Fetch messages based on selected chat
   const { data: messages, isLoading: messagesLoading } = useQuery({
-    queryKey: ["/api/events", eventId, "messages"],
+    queryKey: selectedChatType === 'group' 
+      ? ["/api/groups", selectedChatId, "messages"]
+      : ["/api/events", selectedChatId, "messages"],
     retry: false,
-    enabled: isAuthenticated && !!eventId,
+    enabled: isAuthenticated && !!selectedChatId,
     refetchInterval: 3000, // Poll every 3 seconds for new messages
   });
 
-  const { data: event } = useQuery({
-    queryKey: ["/api/events", eventId],
+  // Fetch current chat details
+  const { data: currentChat } = useQuery({
+    queryKey: selectedChatType === 'group'
+      ? ["/api/groups", selectedChatId]
+      : ["/api/events", selectedChatId],
     retry: false,
-    enabled: isAuthenticated && !!eventId,
+    enabled: isAuthenticated && !!selectedChatId,
+  });
+
+  // Fetch unread count
+  const { data: unreadData } = useQuery({
+    queryKey: ["/api/messages/unread-count"],
+    retry: false,
+    enabled: isAuthenticated,
+    refetchInterval: 5000, // Poll every 5 seconds for unread count
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      if (!eventId) throw new Error("No event selected");
-      await apiRequest("POST", `/api/events/${eventId}/messages`, { content });
+      if (!selectedChatId) throw new Error("No chat selected");
+      
+      const endpoint = selectedChatType === 'group' 
+        ? `/api/groups/${selectedChatId}/messages`
+        : `/api/events/${selectedChatId}/messages`;
+      
+      const payload = replyTo 
+        ? { content, parentMessageId: replyTo }
+        : { content };
+      
+      await apiRequest("POST", endpoint, payload);
     },
     onSuccess: () => {
       setMessage("");
-      queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "messages"] });
+      setReplyTo(null);
+      const queryKey = selectedChatType === 'group'
+        ? ["/api/groups", selectedChatId, "messages"]
+        : ["/api/events", selectedChatId, "messages"];
+      queryClient.invalidateQueries({ queryKey });
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
@@ -88,6 +148,77 @@ export default function Chat() {
     sendMessageMutation.mutate(message.trim());
   };
 
+  const handleChatSelect = (type: ChatType, id: string) => {
+    setSelectedChatType(type);
+    setSelectedChatId(id);
+    setReplyTo(null);
+    window.history.pushState({}, '', `/chat/${type}/${id}`);
+  };
+
+  const handleReply = (messageId: string) => {
+    setReplyTo(messageId);
+    document.getElementById('message-input')?.focus();
+  };
+
+  const renderMessage = (msg: ThreadedMessage, isReply = false) => (
+    <div key={msg.id} className={`flex gap-3 ${isReply ? 'ml-8 mt-2' : ''}`} data-testid={`message-${msg.id}`}>
+      {msg.user.profileImageUrl ? (
+        <img 
+          src={msg.user.profileImageUrl} 
+          alt={`${msg.user.firstName} ${msg.user.lastName}`}
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+          data-testid={`img-message-avatar-${msg.id}`}
+        />
+      ) : (
+        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+          {(msg.user.firstName?.[0] || msg.user.email?.[0] || '?').toUpperCase()}
+        </div>
+      )}
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <p className="text-sm font-medium" data-testid={`text-message-sender-${msg.id}`}>
+            {msg.user.firstName && msg.user.lastName 
+              ? `${msg.user.firstName} ${msg.user.lastName}`
+              : msg.user.email
+            }
+          </p>
+          <p className="text-xs text-muted-foreground" data-testid={`text-message-time-${msg.id}`}>
+            {format(new Date(msg.createdAt), 'h:mm a')}
+          </p>
+        </div>
+        <div className={`chat-bubble p-3 rounded-lg ${
+          msg.userId === user?.id ? 'own ml-auto bg-primary text-primary-foreground' : 'bg-muted'
+        }`}>
+          <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${msg.id}`}>
+            {msg.content}
+          </p>
+        </div>
+        {!isReply && (
+          <div className="mt-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-2 text-xs"
+              onClick={() => handleReply(msg.id)}
+              data-testid={`button-reply-${msg.id}`}
+            >
+              <i className="fas fa-reply mr-1"></i>
+              Reply
+            </Button>
+          </div>
+        )}
+        
+        {/* Render replies */}
+        {msg.replies && msg.replies.length > 0 && (
+          <div className="mt-3 space-y-3">
+            {msg.replies.map(reply => renderMessage(reply, true))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="app-container">
@@ -112,81 +243,165 @@ export default function Chat() {
       <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
         {/* Mobile Header */}
         <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
-          <h1 className="font-bold text-lg text-foreground">Chat</h1>
+          <h1 className="font-bold text-lg text-foreground">Messages</h1>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="h-full flex gap-4">
-            {/* Event List Sidebar */}
+            {/* Chat List Sidebar */}
             <div className="w-80 hidden lg:block">
               <Card className="h-full">
                 <CardHeader>
-                  <CardTitle>Event Chats</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    Messages
+                    {unreadData?.count > 0 && (
+                      <Badge variant="destructive" data-testid="badge-unread-count">
+                        {unreadData.count}
+                      </Badge>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <ScrollArea className="h-full">
-                    {eventsLoading ? (
-                      <div className="p-4 space-y-3">
-                        {[...Array(5)].map((_, i) => (
-                          <Skeleton key={i} className="h-16" />
-                        ))}
-                      </div>
-                    ) : events && events.length > 0 ? (
-                      <div className="space-y-1">
-                        {events.map((evt: any) => (
-                          <Button
-                            key={evt.id}
-                            variant={eventId === evt.id ? "secondary" : "ghost"}
-                            className="w-full justify-start p-4 h-auto"
-                            onClick={() => window.location.href = `/chat/${evt.id}`}
-                            data-testid={`button-event-chat-${evt.id}`}
-                          >
-                            <div className="text-left">
-                              <p className="font-medium truncate" data-testid={`text-event-name-${evt.id}`}>
-                                {evt.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate" data-testid={`text-event-group-${evt.id}`}>
-                                {evt.group.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground" data-testid={`text-event-date-${evt.id}`}>
-                                {format(new Date(evt.dateTime), 'MMM d, h:mm a')}
-                              </p>
-                            </div>
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-muted-foreground">
-                        <p>No events with chats</p>
-                      </div>
-                    )}
-                  </ScrollArea>
+                  <Tabs value={selectedChatType} onValueChange={(value) => setSelectedChatType(value as ChatType)}>
+                    <TabsList className="grid w-full grid-cols-2 m-4 mb-0">
+                      <TabsTrigger value="group" data-testid="tab-group-chats">Group Chats</TabsTrigger>
+                      <TabsTrigger value="event" data-testid="tab-event-chats">Event Chats</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="group" className="m-0">
+                      <ScrollArea className="h-[500px]">
+                        {groupsLoading ? (
+                          <div className="p-4 space-y-3">
+                            {[...Array(3)].map((_, i) => (
+                              <Skeleton key={i} className="h-16" />
+                            ))}
+                          </div>
+                        ) : groups && groups.length > 0 ? (
+                          <div className="space-y-1">
+                            {groups.map((group: any) => (
+                              <Button
+                                key={group.id}
+                                variant={selectedChatType === 'group' && selectedChatId === group.id ? "secondary" : "ghost"}
+                                className="w-full justify-start p-4 h-auto"
+                                onClick={() => handleChatSelect('group', group.id)}
+                                data-testid={`button-group-chat-${group.id}`}
+                              >
+                                <div className="text-left flex-1">
+                                  <p className="font-medium truncate" data-testid={`text-group-name-${group.id}`}>
+                                    {group.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate" data-testid={`text-group-members-${group.id}`}>
+                                    {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
+                                  </p>
+                                </div>
+                                <i className="fas fa-users text-muted-foreground"></i>
+                              </Button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-muted-foreground">
+                            <p>No groups found</p>
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </TabsContent>
+                    
+                    <TabsContent value="event" className="m-0">
+                      <ScrollArea className="h-[500px]">
+                        {eventsLoading ? (
+                          <div className="p-4 space-y-3">
+                            {[...Array(3)].map((_, i) => (
+                              <Skeleton key={i} className="h-16" />
+                            ))}
+                          </div>
+                        ) : events && events.length > 0 ? (
+                          <div className="space-y-1">
+                            {events.map((evt: any) => (
+                              <Button
+                                key={evt.id}
+                                variant={selectedChatType === 'event' && selectedChatId === evt.id ? "secondary" : "ghost"}
+                                className="w-full justify-start p-4 h-auto"
+                                onClick={() => handleChatSelect('event', evt.id)}
+                                data-testid={`button-event-chat-${evt.id}`}
+                              >
+                                <div className="text-left flex-1">
+                                  <p className="font-medium truncate" data-testid={`text-event-name-${evt.id}`}>
+                                    {evt.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate" data-testid={`text-event-group-${evt.id}`}>
+                                    {evt.group?.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground" data-testid={`text-event-date-${evt.id}`}>
+                                    {format(new Date(evt.dateTime), 'MMM d, h:mm a')}
+                                  </p>
+                                </div>
+                                <i className="fas fa-calendar text-muted-foreground"></i>
+                              </Button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-muted-foreground">
+                            <p>No events found</p>
+                          </div>
+                        )}
+                      </ScrollArea>
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </div>
 
             {/* Chat Area */}
             <div className="flex-1">
-              {eventId ? (
+              {selectedChatId ? (
                 <Card className="h-full flex flex-col">
                   <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle data-testid="text-chat-event-name">
-                          {event?.name || 'Event Chat'}
+                        <CardTitle data-testid="text-chat-title">
+                          {currentChat?.name || 'Chat'}
                         </CardTitle>
-                        {event && (
-                          <p className="text-sm text-muted-foreground" data-testid="text-chat-event-details">
-                            {event.group?.name} • {format(new Date(event.dateTime), 'MMM d, h:mm a')}
+                        {currentChat && (
+                          <p className="text-sm text-muted-foreground" data-testid="text-chat-details">
+                            {selectedChatType === 'group' 
+                              ? `Group Chat`
+                              : `${currentChat.group?.name} • ${format(new Date(currentChat.dateTime), 'MMM d, h:mm a')}`
+                            }
                           </p>
                         )}
                       </div>
-                      <Button variant="outline" size="sm" data-testid="button-event-details">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          const detailsPath = selectedChatType === 'group' 
+                            ? `/groups/${selectedChatId}`
+                            : `/events/${selectedChatId}`;
+                          window.location.href = detailsPath;
+                        }}
+                        data-testid="button-chat-details"
+                      >
                         <i className="fas fa-info-circle mr-2"></i>
                         Details
                       </Button>
                     </div>
+                    {replyTo && (
+                      <div className="flex items-center justify-between bg-muted/50 p-2 rounded-md">
+                        <span className="text-sm text-muted-foreground">
+                          <i className="fas fa-reply mr-1"></i>
+                          Replying to message
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setReplyTo(null)}
+                          data-testid="button-cancel-reply"
+                        >
+                          <i className="fas fa-times"></i>
+                        </Button>
+                      </div>
+                    )}
                   </CardHeader>
                   
                   <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
@@ -206,43 +421,7 @@ export default function Chat() {
                         </div>
                       ) : messages && messages.length > 0 ? (
                         <div className="space-y-4">
-                          {messages.map((msg: any) => (
-                            <div key={msg.id} className="flex gap-3" data-testid={`message-${msg.id}`}>
-                              {msg.user.profileImageUrl ? (
-                                <img 
-                                  src={msg.user.profileImageUrl} 
-                                  alt={`${msg.user.firstName} ${msg.user.lastName}`}
-                                  className="w-8 h-8 rounded-full object-cover"
-                                  data-testid={`img-message-avatar-${msg.id}`}
-                                />
-                              ) : (
-                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium">
-                                  {(msg.user.firstName?.[0] || msg.user.email?.[0] || '?').toUpperCase()}
-                                </div>
-                              )}
-                              
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <p className="text-sm font-medium" data-testid={`text-message-sender-${msg.id}`}>
-                                    {msg.user.firstName && msg.user.lastName 
-                                      ? `${msg.user.firstName} ${msg.user.lastName}`
-                                      : msg.user.email
-                                    }
-                                  </p>
-                                  <p className="text-xs text-muted-foreground" data-testid={`text-message-time-${msg.id}`}>
-                                    {format(new Date(msg.createdAt), 'h:mm a')}
-                                  </p>
-                                </div>
-                                <div className={`chat-bubble p-3 rounded-lg ${
-                                  msg.userId === user?.id ? 'own ml-auto bg-primary text-primary-foreground' : 'bg-muted'
-                                }`}>
-                                  <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${msg.id}`}>
-                                    {msg.content}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                          {messages.map((msg: ThreadedMessage) => renderMessage(msg))}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-center">
@@ -251,7 +430,10 @@ export default function Chat() {
                           </div>
                           <h3 className="font-medium text-foreground mb-2">No messages yet</h3>
                           <p className="text-sm text-muted-foreground max-w-sm">
-                            Start the conversation about this event! Ask questions, suggest restaurants, or just chat with your group.
+                            {selectedChatType === 'group' 
+                              ? "Start chatting with your group! Share updates, plan events, or just stay connected."
+                              : "Start the conversation about this event! Ask questions, suggest restaurants, or coordinate with your group."
+                            }
                           </p>
                         </div>
                       )}
@@ -261,9 +443,10 @@ export default function Chat() {
                     <div className="border-t border-border p-4">
                       <form onSubmit={handleSendMessage} className="flex gap-2">
                         <Input
+                          id="message-input"
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
-                          placeholder="Type your message..."
+                          placeholder={replyTo ? "Type your reply..." : "Type your message..."}
                           disabled={sendMessageMutation.isPending}
                           data-testid="input-message"
                         />
@@ -284,9 +467,9 @@ export default function Chat() {
                     <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
                       <i className="fas fa-comments text-3xl text-muted-foreground"></i>
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Select an event to chat</h3>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Select a chat</h3>
                     <p className="text-muted-foreground max-w-md">
-                      Choose an event from the sidebar to start chatting with your group about the restaurant night.
+                      Choose a group or event chat from the sidebar to start conversations, coordinate plans, and stay connected with your dining groups.
                     </p>
                   </CardContent>
                 </Card>

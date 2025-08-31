@@ -45,7 +45,8 @@ function Router() {
           <Route path="/groups/:groupId" component={GroupDetails} />
           <Route path="/events" component={Events} />
           <Route path="/events/:eventId" component={EventDetails} />
-          <Route path="/chat/:eventId?" component={Chat} />
+          <Route path="/chat" component={Chat} />
+          <Route path="/chat/:chatType/:chatId" component={Chat} />
           <Route path="/profile" component={Profile} />
           <Route component={NotFound} />
         </>

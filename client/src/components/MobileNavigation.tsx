@@ -1,10 +1,18 @@
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 
 export default function MobileNavigation() {
   const [location] = useLocation();
   const { navigateWithLoading, isLoading } = useLoadingNavigation();
+
+  const { data: unreadData } = useQuery({
+    queryKey: ["/api/messages/unread-count"],
+    retry: false,
+    refetchInterval: 5000, // Poll every 5 seconds for unread count
+  });
 
   const navItems = [
     { path: '/', label: 'Home', icon: 'fas fa-home' },
@@ -21,8 +29,8 @@ export default function MobileNavigation() {
           <Button
             key={item.path}
             variant="ghost"
-            className={`flex flex-col items-center gap-1 p-2 h-auto min-h-[44px] ${
-              location === item.path ? 'text-primary' : 'text-muted-foreground'
+            className={`flex flex-col items-center gap-1 p-2 h-auto min-h-[44px] relative ${
+              location === item.path || location.startsWith(item.path) ? 'text-primary' : 'text-muted-foreground'
             }`}
             onClick={() => navigateWithLoading(item.path)}
             disabled={isLoading(item.path)}
@@ -31,7 +39,18 @@ export default function MobileNavigation() {
             {isLoading(item.path) ? (
               <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full"></div>
             ) : (
-              <i className={`${item.icon} text-lg`}></i>
+              <div className="relative">
+                <i className={`${item.icon} text-lg`}></i>
+                {item.path === '/chat' && unreadData?.count > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs flex items-center justify-center"
+                    data-testid="badge-mobile-unread"
+                  >
+                    {unreadData.count > 9 ? '9+' : unreadData.count}
+                  </Badge>
+                )}
+              </div>
             )}
             <span className="text-xs font-medium">{item.label}</span>
           </Button>

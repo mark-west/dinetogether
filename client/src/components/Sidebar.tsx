@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import type { Group } from "@shared/schema";
 import logoImage from "@assets/fulllogo_1756644214427.jpg";
@@ -14,6 +15,12 @@ export default function Sidebar() {
   const { data: groups } = useQuery<Array<Group & { memberCount: number; role: string }>>({
     queryKey: ["/api/groups"],
     retry: false,
+  });
+
+  const { data: unreadData } = useQuery({
+    queryKey: ["/api/messages/unread-count"],
+    retry: false,
+    refetchInterval: 5000, // Poll every 5 seconds for unread count
   });
 
   const navItems = [
@@ -74,7 +81,7 @@ export default function Sidebar() {
         {navItems.map((item) => (
           <Button
             key={item.path}
-            variant={location === item.path ? "default" : "ghost"}
+            variant={location === item.path || location.startsWith(item.path) ? "default" : "ghost"}
             className="w-full justify-start hover:bg-hover"
             onClick={() => navigateWithLoading(item.path)}
             disabled={isLoading(item.path)}
@@ -85,7 +92,14 @@ export default function Sidebar() {
             ) : (
               <i className={`${item.icon} text-sm mr-3`}></i>
             )}
-            <span>{item.label}</span>
+            <div className="flex items-center justify-between w-full">
+              <span>{item.label}</span>
+              {item.path === '/chat' && unreadData?.count > 0 && (
+                <Badge variant="destructive" className="ml-2" data-testid="badge-sidebar-unread">
+                  {unreadData.count}
+                </Badge>
+              )}
+            </div>
           </Button>
         ))}
       </nav>
