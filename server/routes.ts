@@ -12,21 +12,7 @@ import {
   insertGroupMemberSchema,
   insertGroupInviteSchema,
 } from "@shared/schema";
-
-// Email notification function (placeholder - will be enhanced with SendGrid)
-async function sendEventUpdateNotifications(
-  event: Event, 
-  rsvps: Array<EventRsvp & { user: User }>, 
-  type: 'updated' | 'cancelled'
-) {
-  // For now, just log the notification (will be replaced with SendGrid)
-  console.log(`Sending ${type} notifications for event "${event.name}" to ${rsvps.length} users`);
-  for (const rsvp of rsvps) {
-    if (rsvp.user.email) {
-      console.log(`Would notify ${rsvp.user.email} about event ${type}`);
-    }
-  }
-}
+import { sendEventUpdateNotifications } from "./emailService";
 import { nanoid } from "nanoid";
 
 export async function registerRoutes(app: Express): Promise<Server> {
