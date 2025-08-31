@@ -4,6 +4,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import CreateEventModal from "@/components/CreateEventModal";
@@ -19,6 +20,7 @@ import logoImage from "@assets/fulllogo_1756644214427.jpg";
 export default function Dashboard() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { navigateWithLoading, isLoading: isNavigationLoading } = useLoadingNavigation();
   const [showEventModal, setShowEventModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
 
@@ -202,9 +204,13 @@ export default function Dashboard() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => window.location.href = '/events'}
+                onClick={() => navigateWithLoading('/events')}
+                disabled={isNavigationLoading('/events')}
                 data-testid="button-view-all-events"
               >
+                {isNavigationLoading('/events') ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                ) : null}
                 View All
               </Button>
             </div>
@@ -248,9 +254,13 @@ export default function Dashboard() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => window.location.href = '/groups'}
+                onClick={() => navigateWithLoading('/groups')}
+                disabled={isNavigationLoading('/groups')}
                 data-testid="button-manage-groups"
               >
+                {isNavigationLoading('/groups') ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                ) : null}
                 Manage All
               </Button>
             </div>

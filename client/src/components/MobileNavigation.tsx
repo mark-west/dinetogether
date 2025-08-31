@@ -1,8 +1,10 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 
 export default function MobileNavigation() {
   const [location] = useLocation();
+  const { navigateWithLoading, isLoading } = useLoadingNavigation();
 
   const navItems = [
     { path: '/', label: 'Home', icon: 'fas fa-home' },
@@ -22,10 +24,15 @@ export default function MobileNavigation() {
             className={`flex flex-col items-center gap-1 p-2 h-auto min-h-[44px] ${
               location === item.path ? 'text-primary' : 'text-muted-foreground'
             }`}
-            onClick={() => window.location.href = item.path}
+            onClick={() => navigateWithLoading(item.path)}
+            disabled={isLoading(item.path)}
             data-testid={`mobile-nav-${item.label.toLowerCase()}`}
           >
-            <i className={`${item.icon} text-lg`}></i>
+            {isLoading(item.path) ? (
+              <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full"></div>
+            ) : (
+              <i className={`${item.icon} text-lg`}></i>
+            )}
             <span className="text-xs font-medium">{item.label}</span>
           </Button>
         ))}

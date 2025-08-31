@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import GoogleMapComponent from "@/components/GoogleMapComponent";
@@ -23,6 +24,7 @@ export default function EventDetails() {
   const { eventId } = useParams();
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { navigateWithLoading, isLoading: isNavigationLoading } = useLoadingNavigation();
   const [rsvpStatus, setRsvpStatus] = useState<string>('pending');
   const [newSuggestion, setNewSuggestion] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
@@ -324,10 +326,15 @@ export default function EventDetails() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => window.location.href = `/chat/${eventId}`}
+                      onClick={() => navigateWithLoading(`/chat/${eventId}`)}
+                      disabled={isNavigationLoading(`/chat/${eventId}`)}
                       data-testid="button-chat"
                     >
-                      <i className="fas fa-comments mr-2"></i>
+                      {isNavigationLoading(`/chat/${eventId}`) ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                      ) : (
+                        <i className="fas fa-comments mr-2"></i>
+                      )}
                       Chat
                     </Button>
                     {user && event.createdBy === user.id && (

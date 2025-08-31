@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import type { Group } from "@shared/schema";
 import logoImage from "@assets/fulllogo_1756644214427.jpg";
+import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 
 export default function Sidebar() {
   const { user } = useAuth();
   const [location] = useLocation();
+  const { navigateWithLoading, isLoading } = useLoadingNavigation();
   
   const { data: groups } = useQuery<Array<Group & { memberCount: number; role: string }>>({
     queryKey: ["/api/groups"],
@@ -31,14 +33,14 @@ export default function Sidebar() {
             alt="Dine Together" 
             className="w-full h-full rounded-lg object-cover cursor-pointer"
             data-testid="img-sidebar-logo"
-            onClick={() => window.location.href = '/'}
+            onClick={() => navigateWithLoading('/')}
           />
         </div>
         
         {/* User Profile */}
         <div 
           className="flex items-center gap-3 p-3 bg-muted rounded-lg cursor-pointer hover:bg-hover transition-colors"
-          onClick={() => window.location.href = '/profile'}
+          onClick={() => navigateWithLoading('/profile')}
           data-testid="button-profile"
         >
           {(user as any)?.profileImageUrl ? (
@@ -74,10 +76,15 @@ export default function Sidebar() {
             key={item.path}
             variant={location === item.path ? "default" : "ghost"}
             className="w-full justify-start hover:bg-hover"
-            onClick={() => window.location.href = item.path}
+            onClick={() => navigateWithLoading(item.path)}
+            disabled={isLoading(item.path)}
             data-testid={`nav-${item.label.toLowerCase().replace(' ', '-')}`}
           >
-            <i className={`${item.icon} text-sm mr-3`}></i>
+            {isLoading(item.path) ? (
+              <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-3"></div>
+            ) : (
+              <i className={`${item.icon} text-sm mr-3`}></i>
+            )}
             <span>{item.label}</span>
           </Button>
         ))}
@@ -90,10 +97,15 @@ export default function Sidebar() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={() => window.location.href = '/groups'}
+            onClick={() => navigateWithLoading('/groups')}
+            disabled={isLoading('/groups')}
             data-testid="button-add-group"
           >
-            <i className="fas fa-plus text-sm"></i>
+            {isLoading('/groups') ? (
+              <div className="animate-spin h-3 w-3 border-2 border-gray-300 border-t-blue-500 rounded-full"></div>
+            ) : (
+              <i className="fas fa-plus text-sm"></i>
+            )}
           </Button>
         </div>
         
@@ -102,7 +114,7 @@ export default function Sidebar() {
             <div 
               key={group.id} 
               className="flex items-center gap-3 p-2 hover:bg-hover rounded-lg transition-colors cursor-pointer"
-              onClick={() => window.location.href = `/groups/${group.id}`}
+              onClick={() => navigateWithLoading(`/groups/${group.id}`)}
               data-testid={`sidebar-group-${group.id}`}
             >
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs font-medium">
@@ -128,10 +140,15 @@ export default function Sidebar() {
         <Button 
           variant="ghost" 
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-hover"
-          onClick={() => window.location.href = '/api/logout'}
+          onClick={() => navigateWithLoading('/api/logout')}
+          disabled={isLoading('/api/logout')}
           data-testid="button-logout"
         >
-          <i className="fas fa-sign-out-alt text-sm mr-3"></i>
+          {isLoading('/api/logout') ? (
+            <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-red-500 rounded-full mr-3"></div>
+          ) : (
+            <i className="fas fa-sign-out-alt text-sm mr-3"></i>
+          )}
           <span>Log Out</span>
         </Button>
       </div>

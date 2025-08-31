@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 
 export default function Landing() {
+  const { navigateWithLoading, isLoading } = useLoadingNavigation();
+  
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -32,10 +35,18 @@ export default function Landing() {
           
           <Button 
             className="w-full" 
-            onClick={() => window.location.href = '/api/login'}
+            onClick={() => navigateWithLoading('/api/login')}
+            disabled={isLoading('/api/login')}
             data-testid="button-login"
           >
-            Get Started
+            {isLoading('/api/login') ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                Getting Started...
+              </>
+            ) : (
+              'Get Started'
+            )}
           </Button>
         </CardContent>
       </Card>
