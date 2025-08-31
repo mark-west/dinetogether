@@ -86,8 +86,11 @@ export function useGooglePlaces() {
       };
 
       if (location) {
-        request.location = new window.google.maps.LatLng(location.lat, location.lng);
-        request.radius = 5000; // 5km radius
+        // Use new locationBias instead of deprecated location/radius
+        request.locationBias = {
+          center: { lat: location.lat, lng: location.lng },
+          radius: 5000 // 5km radius
+        };
       }
 
       placesService.textSearch(request, (results: any[], status: any) => {
@@ -136,8 +139,11 @@ export function useGooglePlaces() {
       };
 
       if (location) {
-        request.location = new window.google.maps.LatLng(location.lat, location.lng);
-        request.radius = 15000; // Reduced radius from 20km to 15km
+        // Use new locationBias instead of deprecated location/radius
+        request.locationBias = {
+          center: { lat: location.lat, lng: location.lng },
+          radius: 15000 // 15km radius
+        };
       }
 
       autocompleteService.getPlacePredictions(
