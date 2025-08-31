@@ -10,15 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InvitePage() {
-  const { inviteCode } = useParams();
+  const params = useParams();
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isAccepting, setIsAccepting] = useState(false);
+  
+  // Get invite code from URL params or direct from URL path
+  const inviteCode = params.inviteCode || window.location.pathname.split('/invite/')[1];
+  
+  console.log('Invite page params:', params);
+  console.log('Extracted invite code:', inviteCode);
 
   const { data: inviteData, isLoading: inviteLoading, error } = useQuery<{invite: any; group: any}>({
     queryKey: [`/api/invites/${inviteCode}`],
     retry: false,
-    enabled: !!inviteCode,
+    enabled: !!inviteCode && inviteCode !== 'undefined',
   });
 
   const acceptInviteMutation = useMutation({
