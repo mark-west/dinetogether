@@ -101,14 +101,29 @@ export const restaurantSuggestions = pgTable("restaurant_suggestions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Messages for event chats
+// Messages for event chats with threading support
 export const messages = pgTable("messages", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
+  parentMessageId: uuid("parent_message_id").references(() => messages.id, { onDelete: 'cascade' }), // For threading
+  messageType: varchar("message_type", { length: 50 }).notNull().default('text'), // 'text', 'restaurant_suggestion', 'system'
+  metadata: jsonb("metadata"), // For storing additional data like restaurant info
+  editedAt: timestamp("edited_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Event message read status
+export const messageReads = pgTable("message_reads", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  messageId: uuid("message_id").notNull().references(() => messages.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  readAt: timestamp("read_at").defaultNow(),
+}, (table) => ({
+  unique: unique().on(table.messageId, table.userId),
+}));
 
 // Group chat messages with threading support
 export const groupMessages = pgTable("group_messages", {
@@ -156,6 +171,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   eventRsvps: many(eventRsvps),
   restaurantSuggestions: many(restaurantSuggestions),
   messages: many(messages),
+  groupMessages: many(groupMessages),
+  messageReads: many(messageReads),
+  groupMessageReads: many(groupMessageReads),
   sentInvites: many(groupInvites, { relationName: 'sentInvites' }),
   acceptedInvites: many(groupInvites, { relationName: 'acceptedInvites' }),
 }));
@@ -168,6 +186,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   members: many(groupMembers),
   events: many(events),
   invites: many(groupInvites),
+  groupMessages: many(groupMessages),
 }));
 
 export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
@@ -217,13 +236,60 @@ export const restaurantSuggestionsRelations = relations(restaurantSuggestions, (
   }),
 }));
 
-export const messagesRelations = relations(messages, ({ one }) => ({
+export const messagesRelations = relations(messages, ({ one, many }) => ({
   event: one(events, {
     fields: [messages.eventId],
     references: [events.id],
   }),
   user: one(users, {
     fields: [messages.userId],
+    references: [users.id],
+  }),
+  parentMessage: one(messages, {
+    fields: [messages.parentMessageId],
+    references: [messages.id],
+    relationName: 'parentMessage',
+  }),
+  replies: many(messages, { relationName: 'parentMessage' }),
+  reads: many(messageReads),
+}));
+
+export const messageReadsRelations = relations(messageReads, ({ one }) => ({
+  message: one(messages, {
+    fields: [messageReads.messageId],
+    references: [messages.id],
+  }),
+  user: one(users, {
+    fields: [messageReads.userId],
+    references: [users.id],
+  }),
+}));
+
+export const groupMessagesRelations = relations(groupMessages, ({ one, many }) => ({
+  group: one(groups, {
+    fields: [groupMessages.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [groupMessages.userId],
+    references: [users.id],
+  }),
+  parentMessage: one(groupMessages, {
+    fields: [groupMessages.parentMessageId],
+    references: [groupMessages.id],
+    relationName: 'parentMessage',
+  }),
+  replies: many(groupMessages, { relationName: 'parentMessage' }),
+  reads: many(groupMessageReads),
+}));
+
+export const groupMessageReadsRelations = relations(groupMessageReads, ({ one }) => ({
+  groupMessage: one(groupMessages, {
+    fields: [groupMessageReads.groupMessageId],
+    references: [groupMessages.id],
+  }),
+  user: one(users, {
+    fields: [groupMessageReads.userId],
     references: [users.id],
   }),
 }));
@@ -274,6 +340,23 @@ export const insertSuggestionSchema = createInsertSchema(restaurantSuggestions).
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGroupMessageSchema = createInsertSchema(groupMessages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMessageReadSchema = createInsertSchema(messageReads).omit({
+  id: true,
+  readAt: true,
+});
+
+export const insertGroupMessageReadSchema = createInsertSchema(groupMessageReads).omit({
+  id: true,
+  readAt: true,
 });
 
 export const insertGroupMemberSchema = createInsertSchema(groupMembers).omit({
