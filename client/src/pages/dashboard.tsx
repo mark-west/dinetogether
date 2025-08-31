@@ -160,7 +160,7 @@ export default function Dashboard() {
                     <Skeleton className="h-8 w-8" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground" data-testid="text-group-count">
-                      {stats?.groupCount || 0}
+                      {(stats as any)?.groupCount || 0}
                     </p>
                   )}
                 </CardContent>
@@ -176,7 +176,7 @@ export default function Dashboard() {
                     <Skeleton className="h-8 w-8" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground" data-testid="text-event-count">
-                      {stats?.eventCount || 0}
+                      {(stats as any)?.eventCount || 0}
                     </p>
                   )}
                 </CardContent>
@@ -192,7 +192,7 @@ export default function Dashboard() {
                     <Skeleton className="h-8 w-8" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground" data-testid="text-attended-count">
-                      {stats?.attendedCount || 0}
+                      {(stats as any)?.attendedCount || 0}
                     </p>
                   )}
                 </CardContent>
@@ -208,7 +208,7 @@ export default function Dashboard() {
                     <Skeleton className="h-8 w-8" />
                   ) : (
                     <p className="text-2xl font-bold text-foreground" data-testid="text-rating">
-                      {stats?.averageRating?.toFixed(1) || '0.0'}
+                      {(stats as any)?.averageRating?.toFixed(1) || '0.0'}
                     </p>
                   )}
                 </CardContent>
@@ -236,9 +236,9 @@ export default function Dashboard() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : upcomingEvents && upcomingEvents.length > 0 ? (
+            ) : upcomingEvents && Array.isArray(upcomingEvents) && upcomingEvents.length > 0 ? (
               <div className="space-y-3">
-                {upcomingEvents.map((event: any) => (
+                {(upcomingEvents as any[]).map((event: any) => (
                   <Card 
                     key={event.id} 
                     className="hover:shadow-md transition-shadow cursor-pointer" 
@@ -335,9 +335,9 @@ export default function Dashboard() {
                   <Skeleton key={i} className="h-32" />
                 ))}
               </div>
-            ) : groups && groups.length > 0 ? (
+            ) : groups && Array.isArray(groups) && groups.length > 0 ? (
               <div className="grid md:grid-cols-2 gap-4">
-                {groups.slice(0, 4).map((group: any) => (
+                {(groups as any[]).slice(0, 4).map((group: any) => (
                   <Card 
                     key={group.id} 
                     className="hover:shadow-md transition-shadow cursor-pointer" 
@@ -410,7 +410,7 @@ export default function Dashboard() {
       {showEventModal && (
         <CreateEventModal 
           onClose={() => setShowEventModal(false)}
-          groups={groups || []}
+          groups={(groups as any[]) || []}
         />
       )}
       
