@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inviteCode: group.inviteCode,
         groupId: group.id,
         groupName: group.name,
-        inviteUrl: `https://dinetogether.app/invite/${group.inviteCode}`,
+        inviteUrl: `${req.protocol}://${req.hostname}/invite/${group.inviteCode}`,
       });
     } catch (error) {
       console.error("Error getting invite:", error);
@@ -532,7 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inviteCode: group.inviteCode,
         groupId: group.id,
         groupName: group.name,
-        inviteUrl: `https://dinetogether.app/invite/${group.inviteCode}`,
+        inviteUrl: `${req.protocol}://${req.hostname}/invite/${group.inviteCode}`,
         status: 'active',
         createdAt: group.createdAt,
       }]);

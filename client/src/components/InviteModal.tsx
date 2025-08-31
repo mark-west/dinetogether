@@ -26,7 +26,7 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
   });
 
   const invite = Array.isArray(invites) ? invites[0] : null; // There's only one permanent invite per group
-  const inviteLink = invite?.inviteUrl || `https://dinetogether.app/invite/${invite?.inviteCode}`;
+  const inviteLink = invite?.inviteUrl || `${window.location.origin}/invite/${invite?.inviteCode}`;
 
   // Generate QR code when component loads
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
 
   const generateQRCode = async (inviteCode: string) => {
     try {
-      const link = `https://dinetogether.app/invite/${inviteCode}`;
+      const link = `${window.location.origin}/invite/${inviteCode}`;
       const qrCodeDataUrl = await QRCode.toDataURL(link, {
         width: 256,
         margin: 2,
