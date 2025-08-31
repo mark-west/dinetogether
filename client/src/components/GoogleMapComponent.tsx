@@ -184,11 +184,13 @@ export default function GoogleMapComponent({
   }, [markers]);
 
   if (error) {
+    console.error('Google Maps error:', error);
     return (
       <div className={`${className} bg-muted rounded-lg flex items-center justify-center`}>
         <div className="text-center text-muted-foreground">
           <i className="fas fa-map-marker-alt text-2xl mb-2"></i>
           <p className="text-sm">Map unavailable</p>
+          <p className="text-xs mt-1">Please check your internet connection</p>
         </div>
       </div>
     );

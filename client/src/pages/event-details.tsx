@@ -218,14 +218,17 @@ export default function EventDetails() {
 
   const mapMarkers = [];
   if (event.restaurantLat && event.restaurantLng) {
-    mapMarkers.push({
-      position: { 
-        lat: parseFloat(event.restaurantLat), 
-        lng: parseFloat(event.restaurantLng) 
-      },
-      title: event.restaurantName || event.name,
-      info: `<div><strong>${event.restaurantName || event.name}</strong><br/>${event.restaurantAddress || ''}</div>`
-    });
+    const lat = parseFloat(event.restaurantLat);
+    const lng = parseFloat(event.restaurantLng);
+    
+    // Only add marker if coordinates are valid numbers
+    if (!isNaN(lat) && !isNaN(lng)) {
+      mapMarkers.push({
+        position: { lat, lng },
+        title: event.restaurantName || event.name,
+        info: `<div><strong>${event.restaurantName || event.name}</strong><br/>${event.restaurantAddress || ''}</div>`
+      });
+    }
   }
 
   return (
@@ -364,7 +367,7 @@ export default function EventDetails() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Map Display - show map if API works, fallback if not */}
+                {/* Map Display - always try to show map if we have coordinates */}
                 {mapMarkers.length > 0 ? (
                   <GoogleMapComponent
                     center={mapMarkers[0].position}
@@ -372,12 +375,19 @@ export default function EventDetails() {
                     zoom={15}
                     className="w-full h-64 rounded-lg"
                   />
+                ) : event.restaurantAddress ? (
+                  <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="text-center p-6">
+                      <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
+                      <p className="text-sm text-muted-foreground">Map not available for this location</p>
+                      <p className="text-xs text-muted-foreground mt-1">Address details below</p>
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
                     <div className="text-center p-6">
                       <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
-                      <p className="text-sm text-muted-foreground">Map unavailable</p>
-                      <p className="text-xs text-muted-foreground mt-1">Location details below</p>
+                      <p className="text-sm text-muted-foreground">No location specified</p>
                     </div>
                   </div>
                 )}
