@@ -135,6 +135,10 @@ export default function Chat() {
         ? ["/api/groups", selectedChatId, "messages"]
         : ["/api/events", selectedChatId, "messages"];
       queryClient.invalidateQueries({ queryKey });
+      
+      // Also update unread counts since new messages affect other users' unread counts
+      queryClient.invalidateQueries({ queryKey: ["/api/chats/all-unread-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread-count"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
