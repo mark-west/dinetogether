@@ -101,66 +101,78 @@ export default function Groups() {
               {groups.map((group: any) => (
                 <Card 
                   key={group.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer" 
-                  onClick={() => window.location.href = `/groups/${group.id}`}
+                  className="hover:shadow-md transition-shadow" 
                   data-testid={`card-group-${group.id}`}
                 >
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    <div className="flex items-start gap-3">
+                      {group.photoUrl ? (
+                        <img 
+                          src={group.photoUrl} 
+                          alt={`${group.name} photo`}
+                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                          data-testid={`img-group-photo-${group.id}`}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                           {group.name.charAt(0).toUpperCase()}
                         </div>
-                        <div>
-                          <CardTitle className="text-lg" data-testid={`text-group-name-${group.id}`}>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <CardTitle className="text-lg leading-tight" data-testid={`text-group-name-${group.id}`}>
                             {group.name}
                           </CardTitle>
-                          <p className="text-sm text-muted-foreground" data-testid={`text-member-count-${group.id}`}>
-                            {group.memberCount} members
-                          </p>
+                          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap flex-shrink-0 ${
+                            group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
+                          }`} data-testid={`text-role-${group.id}`}>
+                            {group.role === 'admin' ? 'Admin' : 'Member'}
+                          </span>
                         </div>
+                        <p className="text-sm text-muted-foreground" data-testid={`text-member-count-${group.id}`}>
+                          {group.memberCount} member{group.memberCount !== 1 ? 's' : ''}
+                        </p>
                       </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        group.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-green-100 text-green-800'
-                      }`} data-testid={`text-role-${group.id}`}>
-                        {group.role === 'admin' ? 'Admin' : 'Member'}
-                      </span>
                     </div>
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
                     {group.description && (
-                      <p className="text-sm text-muted-foreground" data-testid={`text-description-${group.id}`}>
+                      <p className="text-sm text-muted-foreground line-clamp-2" data-testid={`text-description-${group.id}`}>
                         {group.description}
                       </p>
                     )}
                     
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="text-sm text-muted-foreground">
                       <span>Created {format(new Date(group.createdAt), 'MMM d, yyyy')}</span>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1"
-                        onClick={() => window.location.href = `/groups/${group.id}`}
+                        className="flex-1 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = `/groups/${group.id}`;
+                        }}
                         data-testid={`button-view-group-${group.id}`}
                       >
-                        <i className="fas fa-eye mr-2"></i>
+                        <i className="fas fa-eye mr-1"></i>
                         View
                       </Button>
                       {group.role === 'admin' && (
                         <Button 
                           variant="outline" 
                           size="sm" 
+                          className="flex-1 text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             window.location.href = `/groups/${group.id}?tab=members&invite=true`;
                           }}
                           data-testid={`button-invite-${group.id}`}
                         >
-                          <i className="fas fa-user-plus mr-2"></i>
+                          <i className="fas fa-user-plus mr-1"></i>
                           Invite
                         </Button>
                       )}
