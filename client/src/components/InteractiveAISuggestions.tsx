@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { AISparklesIcon } from '@/components/icons/AISparklesIcon';
 
 interface PreferenceForm {
   foodType: string;
@@ -106,7 +107,7 @@ export function InteractiveAISuggestions({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center">
-              <i className="fas fa-sparkles text-white text-lg"></i>
+              <AISparklesIcon size={24} className="text-white" />
             </div>
             <div>
               <CardTitle className="text-xl font-semibold text-foreground">{title}</CardTitle>
@@ -120,7 +121,7 @@ export function InteractiveAISuggestions({
               className="gradient-bg"
               data-testid="button-start-suggestions"
             >
-              <i className="fas fa-sparkles mr-2"></i>
+              <AISparklesIcon size={16} className="mr-2" />
               Get Suggestions
             </Button>
           )}
@@ -266,7 +267,7 @@ export function InteractiveAISuggestions({
                 {generateMutation.isPending ? (
                   <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full mr-2"></div>
                 ) : (
-                  <i className="fas fa-sparkles mr-2"></i>
+                  <AISparklesIcon size={16} className="mr-2" />
                 )}
                 Generate Suggestions
               </Button>
