@@ -19,6 +19,7 @@ export default function MobileNavigation() {
     { path: '/groups', label: 'Groups', icon: 'fas fa-users' },
     { path: '/events', label: 'Events', icon: 'fas fa-calendar' },
     { path: '/profile', label: 'Profile', icon: 'fas fa-user' },
+    { path: '/admin', label: 'Admin', icon: 'fas fa-cog' },
   ];
 
   return (

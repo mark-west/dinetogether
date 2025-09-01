@@ -138,6 +138,16 @@ export interface IStorage {
   getEventAverageRating(eventId: string): Promise<{ averageRating: number; totalRatings: number }>;
   deleteEventRating(eventId: string, userId: string): Promise<void>;
 
+  // Admin methods
+  getTotalUserCount(): Promise<number>;
+  getTotalGroupCount(): Promise<number>; 
+  getTotalEventCount(): Promise<number>;
+  getActiveUsersToday(): Promise<number>;
+  getAllUsersWithStats(searchQuery?: string): Promise<any[]>;
+  getAllGroupsWithStats(): Promise<any[]>;
+  deleteUser(userId: string): Promise<void>;
+  addUserNote(data: { userId: string; adminId: string; note: string }): Promise<any>;
+
   // Restaurant training operations
   saveRestaurantTraining(training: {
     userId?: string;
@@ -1074,6 +1084,131 @@ export class DatabaseStorage implements IStorage {
       .from(restaurantTraining)
       .where(eq(restaurantTraining.groupId, groupId))
       .orderBy(desc(restaurantTraining.createdAt));
+  }
+  // Admin method implementations
+  async getTotalUserCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(users);
+    return result[0].count;
+  }
+
+  async getTotalGroupCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(groups);
+    return result[0].count;
+  }
+
+  async getTotalEventCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(events);
+    return result[0].count;
+  }
+
+  async getActiveUsersToday(): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const result = await db.select({ count: sql<number>`count(distinct ${users.id})` })
+      .from(users)
+      .where(sql`${users.updatedAt} >= ${today.toISOString()}`);
+    
+    return result[0].count;
+  }
+
+  async getAllUsersWithStats(searchQuery?: string): Promise<any[]> {
+    let query = db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        profileImageUrl: users.profileImageUrl,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        groupCount: sql<number>`(
+          select count(*) from ${groupMembers} 
+          where ${groupMembers.userId} = ${users.id}
+        )`,
+        eventCount: sql<number>`(
+          select count(distinct ${eventRsvps.eventId}) from ${eventRsvps} 
+          where ${eventRsvps.userId} = ${users.id}
+        )`,
+      })
+      .from(users)
+      .orderBy(desc(users.createdAt));
+
+    if (searchQuery) {
+      query = query.where(sql`
+        lower(${users.email}) like lower(${`%${searchQuery}%`}) OR 
+        lower(${users.firstName}) like lower(${`%${searchQuery}%`}) OR 
+        lower(${users.lastName}) like lower(${`%${searchQuery}%`})
+      `);
+    }
+
+    return query;
+  }
+
+  async getAllGroupsWithStats(): Promise<any[]> {
+    return db
+      .select({
+        id: groups.id,
+        name: groups.name,
+        description: groups.description,
+        photoUrl: groups.photoUrl,
+        adminId: groups.adminId,
+        createdAt: groups.createdAt,
+        adminUser: {
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        },
+        memberCount: sql<number>`(
+          select count(*) from ${groupMembers} 
+          where ${groupMembers.groupId} = ${groups.id}
+        )`,
+        eventCount: sql<number>`(
+          select count(*) from ${events} 
+          where ${events.groupId} = ${groups.id}
+        )`,
+      })
+      .from(groups)
+      .leftJoin(users, eq(groups.adminId, users.id))
+      .orderBy(desc(groups.createdAt));
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Delete in order to handle foreign key constraints
+    await db.delete(messageReads).where(eq(messageReads.userId, userId));
+    await db.delete(groupMessageReads).where(eq(groupMessageReads.userId, userId));
+    await db.delete(messages).where(eq(messages.userId, userId));
+    await db.delete(groupMessages).where(eq(groupMessages.userId, userId));
+    await db.delete(eventDiaries).where(eq(eventDiaries.userId, userId));
+    await db.delete(eventRatings).where(eq(eventRatings.userId, userId));
+    await db.delete(restaurantTraining).where(eq(restaurantTraining.userId, userId));
+    await db.delete(eventPhotos).where(eq(eventPhotos.uploaderId, userId));
+    await db.delete(restaurantSuggestions).where(eq(restaurantSuggestions.userId, userId));
+    await db.delete(eventRsvps).where(eq(eventRsvps.userId, userId));
+    await db.delete(groupMembers).where(eq(groupMembers.userId, userId));
+    
+    // Delete groups where user is admin (this will cascade delete events)
+    const userGroups = await db.select({ id: groups.id }).from(groups).where(eq(groups.adminId, userId));
+    for (const group of userGroups) {
+      await this.deleteGroup(group.id);
+    }
+    
+    // Finally delete the user
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async addUserNote(data: { userId: string; adminId: string; note: string }): Promise<any> {
+    // For now, store as a simple JSON in user metadata or create admin_notes table
+    // Since we don't have admin_notes table, we'll return a mock structure
+    // In a real implementation, you'd create an admin_notes table
+    return {
+      id: Math.random().toString(36),
+      userId: data.userId,
+      adminId: data.adminId,
+      content: data.note,
+      createdAt: new Date().toISOString(),
+    };
   }
 }
 

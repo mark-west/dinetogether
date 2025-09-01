@@ -1439,6 +1439,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes - Simple access control for now
+  // TODO: Implement proper admin role checking
+  const isAdmin = (req: any, res: any, next: any) => {
+    const userId = req.user?.claims?.sub;
+    // For now, allow specific admin user IDs - replace with proper role-based access
+    const adminUserIds = ['47063225']; // Add your user ID here
+    
+    if (!adminUserIds.includes(userId)) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    next();
+  };
+
+  // Admin stats endpoint
+  app.get('/api/admin/stats', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const totalUsers = await storage.getTotalUserCount();
+      const totalGroups = await storage.getTotalGroupCount();
+      const totalEvents = await storage.getTotalEventCount();
+      const activeToday = await storage.getActiveUsersToday();
+      
+      res.json({
+        totalUsers,
+        totalGroups,
+        totalEvents,
+        activeToday
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      res.status(500).json({ message: 'Failed to fetch admin stats' });
+    }
+  });
+
+  // Admin get all users with search
+  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const searchQuery = req.query.search as string;
+      const users = await storage.getAllUsersWithStats(searchQuery);
+      res.json(users);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  // Admin get all groups
+  app.get('/api/admin/groups', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const groups = await storage.getAllGroupsWithStats();
+      res.json(groups);
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      res.status(500).json({ message: 'Failed to fetch groups' });
+    }
+  });
+
+  // Admin delete user
+  app.delete('/api/admin/users/:userId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      await storage.deleteUser(userId);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
+
+  // Admin delete group
+  app.delete('/api/admin/groups/:groupId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { groupId } = req.params;
+      await storage.deleteGroup(groupId);
+      res.json({ message: 'Group deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting group:', error);
+      res.status(500).json({ message: 'Failed to delete group' });
+    }
+  });
+
+  // Admin add note to user
+  app.post('/api/admin/users/:userId/notes', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { note } = req.body;
+      const adminId = req.user?.claims?.sub;
+      
+      const noteData = await storage.addUserNote({
+        userId,
+        adminId,
+        note,
+      });
+      
+      res.json(noteData);
+    } catch (error) {
+      console.error('Error adding admin note:', error);
+      res.status(500).json({ message: 'Failed to add note' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
