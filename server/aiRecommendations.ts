@@ -458,20 +458,67 @@ export async function generateCustomRecommendations(
     
     console.log('Found nearby restaurants for fallback:', nearbyRestaurants.length);
     
+    // Filter restaurants based on user preferences
+    let filteredRestaurants = nearbyRestaurants;
+    
+    // Filter by food type if specified
+    if (preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
+      const preferredType = preferences.foodType.toLowerCase();
+      console.log('Filtering by food type:', preferredType);
+      
+      filteredRestaurants = nearbyRestaurants.filter((restaurant: any) => {
+        const restaurantTypes = (restaurant.types || []).join(' ').toLowerCase();
+        const restaurantName = restaurant.name.toLowerCase();
+        const restaurantCuisine = (restaurant.cuisine || '').toLowerCase();
+        
+        // Check if restaurant matches the preferred food type
+        return restaurantTypes.includes(preferredType) || 
+               restaurantName.includes(preferredType) ||
+               restaurantCuisine.includes(preferredType);
+      });
+      
+      console.log(`Found ${filteredRestaurants.length} restaurants matching "${preferences.foodType}"`);
+    }
+    
+    // Filter by price range if specified
+    if (preferences.priceRange && preferences.priceRange !== 'any') {
+      const priceMap = { 'budget': [1], 'moderate': [2], 'upscale': [3, 4] };
+      const allowedPriceLevels = priceMap[preferences.priceRange as keyof typeof priceMap] || [1, 2, 3, 4];
+      
+      filteredRestaurants = filteredRestaurants.filter((restaurant: any) => 
+        allowedPriceLevels.includes(restaurant.price_level || 2)
+      );
+      
+      console.log(`After price filtering (${preferences.priceRange}):`, filteredRestaurants.length);
+    }
+    
+    // If no matches found, fall back to all restaurants but mention the limitation
+    if (filteredRestaurants.length === 0 && preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
+      console.log('No matches found for preferences, showing all nearby restaurants');
+      filteredRestaurants = nearbyRestaurants.slice(0, 6);
+    }
+    
     // Convert Google Places results to CustomRecommendation format
-    const recommendations: CustomRecommendation[] = nearbyRestaurants.slice(0, 6).map((restaurant: any) => ({
-      name: restaurant.name,
-      type: restaurant.cuisine || restaurant.types?.[0]?.replace('_', ' ') || 'Restaurant',
-      rating: restaurant.rating || 4.0,
-      priceRange: '$'.repeat(restaurant.price_level || 2),
-      description: `${restaurant.name} - A local restaurant serving ${restaurant.cuisine || 'delicious food'} in your area.`,
-      confidence: 0.7,
-      reasons: [
-        'Located within 30 miles of your location',
-        'Based on Google Places data',
-        'Real restaurant you can visit'
-      ]
-    }));
+    const recommendations: CustomRecommendation[] = filteredRestaurants.slice(0, 6).map((restaurant: any) => {
+      const matchesPreference = preferences.foodType && preferences.foodType.toLowerCase() !== 'any';
+      const preferenceNote = matchesPreference ? 
+        `Matches your preference for ${preferences.foodType} cuisine` : 
+        'Local restaurant in your area';
+        
+      return {
+        name: restaurant.name,
+        type: restaurant.cuisine || restaurant.types?.[0]?.replace('_', ' ') || 'Restaurant',
+        rating: restaurant.rating || 4.0,
+        priceRange: '$'.repeat(restaurant.price_level || 2),
+        description: `${restaurant.name} - ${preferenceNote}. ${restaurant.vicinity || 'Located nearby'}.`,
+        confidence: matchesPreference ? 0.9 : 0.7,
+        reasons: [
+          'Located within 30 miles of your location',
+          matchesPreference ? `Serves ${preferences.foodType} cuisine` : 'Based on Google Places data',
+          'Real restaurant you can visit'
+        ]
+      };
+    });
     
     console.log('Converted to recommendations:', recommendations.length);
     return recommendations;
