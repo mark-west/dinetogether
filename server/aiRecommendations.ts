@@ -611,10 +611,14 @@ export async function generateCustomRecommendations(
     // Filter restaurants based on user preferences
     let filteredRestaurants = nearbyRestaurants;
     
+    console.log(`PREFERENCE FILTERING: foodType=${preferences.foodType}, priceRange=${preferences.priceRange}`);
+    
     // Filter by food type if specified
     if (preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
       const preferredType = preferences.foodType.toLowerCase();
+      console.log(`FILTERING by food type: ${preferredType}`);
       
+      const beforeCount = filteredRestaurants.length;
       filteredRestaurants = nearbyRestaurants.filter((restaurant: any) => {
         const restaurantTypes = (restaurant.types || []).join(' ').toLowerCase();
         const restaurantName = restaurant.name.toLowerCase();
@@ -625,17 +629,20 @@ export async function generateCustomRecommendations(
                restaurantName.includes(preferredType) ||
                restaurantCuisine.includes(preferredType);
       });
-      
+      console.log(`FOOD FILTER: ${beforeCount} -> ${filteredRestaurants.length} restaurants`);
     }
     
     // Filter by price range if specified
     if (preferences.priceRange && preferences.priceRange !== 'any') {
       const priceMap = { 'budget': [1], 'moderate': [2], 'upscale': [3, 4] };
       const allowedPriceLevels = priceMap[preferences.priceRange as keyof typeof priceMap] || [1, 2, 3, 4];
+      console.log(`FILTERING by price range: ${preferences.priceRange} -> levels ${allowedPriceLevels}`);
       
+      const beforeCount = filteredRestaurants.length;
       filteredRestaurants = filteredRestaurants.filter((restaurant: any) => 
         allowedPriceLevels.includes(restaurant.price_level || 2)
       );
+      console.log(`PRICE FILTER: ${beforeCount} -> ${filteredRestaurants.length} restaurants`);
     }
     
     // If no matches found, fall back to all restaurants
