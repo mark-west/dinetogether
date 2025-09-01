@@ -95,7 +95,10 @@ export function InteractiveAISuggestions({
 
   const handleTrainingComplete = () => {
     setShowTraining(false);
-    // Could trigger a suggestion generation here based on training data
+    // Show success message briefly then reset to normal state
+    setTimeout(() => {
+      // Could trigger automatic suggestions here based on training data
+    }, 500);
   };
 
   const handleRecommendationClick = (recommendation: Recommendation, index: number) => {
@@ -160,7 +163,7 @@ export function InteractiveAISuggestions({
           <RestaurantTraining 
             variant={variant}
             groupId={groupId}
-            onComplete={handleTrainingComplete}
+            onTrainingComplete={handleTrainingComplete}
           />
         )}
 
