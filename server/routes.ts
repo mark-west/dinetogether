@@ -1156,12 +1156,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Restaurant training routes
-  app.get('/api/training/restaurants', isAuthenticated, async (req: any, res) => {
+  app.get('/api/training/restaurants/:variant/:groupId?', isAuthenticated, async (req: any, res) => {
     try {
       console.log('=== TRAINING RESTAURANTS ENDPOINT CALLED ===');
-      const { variant, groupId } = req.query;
+      const { variant, groupId } = req.params;
       const userId = req.user?.claims?.sub;
-      console.log('Query params:', { variant, groupId, userId });
+      console.log('URL params:', { variant, groupId, userId });
       
       // Default location (Atlanta, GA) - in production this could be user's location
       const latitude = 33.7490;
