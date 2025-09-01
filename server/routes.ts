@@ -22,11 +22,11 @@ import {
   generateRestaurantRecommendations, 
   analyzeUserDiningPatterns, 
   enrichWithExternalReviews,
-  generateCustomRecommendations,
   generateGroupRecommendations,
   type UserPreferences,
   type CustomPreferences
 } from "./aiRecommendations";
+import AIRecommendationsService from "./aiRecommendationsService";
 
 // Helper function to fetch nearby restaurants from Google Places API
 async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
@@ -1185,8 +1185,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(latitude) || isNaN(longitude)) {
         return res.status(400).json({ message: "User location is required" });
       }
-      const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
-      
+      // Use the new clean AI recommendations service
+      const aiService = new AIRecommendationsService();
+      const recommendations = await aiService.generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });
     } catch (error) {

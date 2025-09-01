@@ -9,26 +9,22 @@ import { RestaurantIcon, LocationIcon } from "./ui/app-icons";
 import { getRestaurantWebsiteUrl, getWebsiteLinkText } from '@/lib/restaurantUtils';
 
 interface Recommendation {
+  id: string;
   name: string;
   type: string;
-  cuisine?: string;
   priceRange: string;
   rating: number;
-  estimatedRating?: number;
   description: string;
-  location?: string;
-  address?: string;
-  reasonForRecommendation?: string;
-  confidence: number;
-  confidenceScore?: number;
-  reasons: string[];
+  address: string;
   phoneNumber?: string;
   website?: string;
-  openingHours?: any;
-  reviews?: any[];
-  userRatingsTotal?: number;
+  hours?: string;
+  confidence: number;
+  reasons: string[];
+  menuHighlights: string[];
+  reviewCount?: number;
   businessStatus?: string;
-  placeId?: string;
+  placeId: string;
 }
 
 interface DiningAnalysis {
@@ -71,28 +67,29 @@ export function AIRecommendations() {
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
     
     
-    // Store comprehensive restaurant data in sessionStorage including all Google Places data
+    // Store comprehensive restaurant data in sessionStorage using the new clean data structure
     const restaurantData = {
-      id: restaurantId,
+      id: restaurant.id || restaurantId,
       name: restaurant.name,
-      type: restaurant.type || restaurant.cuisine,
+      type: restaurant.type,
       priceRange: restaurant.priceRange,
-      description: restaurant.description || restaurant.reasonForRecommendation,
-      address: restaurant.location || restaurant.address,
+      description: restaurant.description,
+      address: restaurant.address,
       phone: restaurant.phoneNumber || '',
       website: restaurant.website || '',
-      hours: formatOpeningHours(restaurant.openingHours),
-      rating: restaurant.rating || restaurant.estimatedRating,
-      reviewCount: restaurant.userRatingsTotal,
-      menuHighlights: extractMenuHighlights(restaurant.reviews),
+      hours: restaurant.hours || '',
+      rating: restaurant.rating,
+      reviewCount: restaurant.reviewCount,
+      menuHighlights: restaurant.menuHighlights || [],
       features: [
         'AI-generated recommendation', 
         'Google Maps verified',
         ...(restaurant.website ? ['Website available'] : []),
         ...(restaurant.phoneNumber ? ['Phone available'] : []),
-        ...(restaurant.openingHours ? ['Hours available'] : [])
+        ...(restaurant.hours ? ['Hours available'] : [])
       ],
-      reviews: restaurant.reviews || [],
+      confidence: restaurant.confidence,
+      reasons: restaurant.reasons,
       businessStatus: restaurant.businessStatus,
       placeId: restaurant.placeId
     };
@@ -101,47 +98,6 @@ export function AIRecommendations() {
     navigate(`/restaurant/${restaurantId}?back=/recommendations`);
   };
 
-  // Helper function to format opening hours for display
-  const formatOpeningHours = (openingHours: any) => {
-    if (!openingHours) return '';
-    
-    const currentStatus = openingHours.open_now ? 'Open Now' : 'Currently Closed';
-    
-    if (openingHours.weekday_text && openingHours.weekday_text.length > 0) {
-      // Get today's hours
-      const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
-      const todaysHours = openingHours.weekday_text[today === 0 ? 6 : today - 1]; // Adjust for Sunday
-      return `${currentStatus} • ${todaysHours}`;
-    }
-    
-    return currentStatus;
-  };
-
-  // Helper function to extract menu highlights from reviews
-  const extractMenuHighlights = (reviews: any[]) => {
-    if (!reviews || reviews.length === 0) return [];
-    
-    const highlights: string[] = [];
-    const foodKeywords = ['pizza', 'pasta', 'burger', 'steak', 'chicken', 'fish', 'salad', 'soup', 'dessert', 'coffee', 'wine', 'beer', 'cocktail'];
-    
-    reviews.forEach(review => {
-      if (review.text) {
-        const text = review.text.toLowerCase();
-        foodKeywords.forEach(keyword => {
-          if (text.includes(keyword) && !highlights.some(h => h.toLowerCase().includes(keyword))) {
-            // Extract sentence containing the food item
-            const sentences = review.text.split(/[.!?]/);
-            const relevantSentence = sentences.find((s: string) => s.toLowerCase().includes(keyword));
-            if (relevantSentence && relevantSentence.trim().length > 10 && highlights.length < 3) {
-              highlights.push(relevantSentence.trim());
-            }
-          }
-        });
-      }
-    });
-    
-    return highlights;
-  };
 
   const renderStars = (rating: number) => {
     return (
