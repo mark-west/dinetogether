@@ -764,7 +764,7 @@ export class DatabaseStorage implements IStorage {
       groupCount: stats.groupCount,
       eventCount: stats.eventCount,
       attendedCount: stats.attendedCount,
-      averageRating: 4.8, // Mock for now
+      averageRating: 0, // No mock data - real rating only
     };
   }
 

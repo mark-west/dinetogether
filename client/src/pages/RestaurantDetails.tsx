@@ -15,101 +15,10 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Calendar, Users, Star, MapPin, Clock, DollarSign, Utensils } from 'lucide-react';
 
-// Helper function to generate restaurant data from ID
-function getRestaurantFromId(restaurantId: string): Restaurant {
-  // Parse the restaurant name from the ID (remove index suffix)
-  const namePart = restaurantId.replace(/-\d+$/, '').replace(/-/g, ' ');
-  
-  // Default data structure
-  const baseRestaurant: Restaurant = {
-    id: restaurantId,
-    name: namePart.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-    type: 'Restaurant',
-    priceRange: '$$',
-    description: 'A local restaurant offering delicious cuisine in a welcoming atmosphere.',
-    address: 'Local Area',
-    phone: '(555) 123-4567',
-    hours: 'Daily: 11:00am-10:00pm',
-    rating: 4.0 + Math.random() * 1.0, // Random rating between 4.0-5.0
-    reviewCount: Math.floor(Math.random() * 200) + 50,
-    menuHighlights: [],
-    features: ['Dine-in', 'Takeout Available']
-  };
-
-  // Restaurant-specific customizations based on name patterns
-  const name = baseRestaurant.name.toLowerCase();
-  
-  if (name.includes('italian') || name.includes('romano') || name.includes('bella') || name.includes('osteria') || name.includes('lombardino')) {
-    baseRestaurant.type = 'Italian';
-    baseRestaurant.menuHighlights = [
-      'Fresh Pasta - Made daily with authentic recipes',
-      'Wood-fired Pizza - Crispy crust with premium toppings',
-      'Osso Buco - Traditional braised veal shank',
-      'Tiramisu - Classic coffee-flavored dessert'
-    ];
-    baseRestaurant.features.push('Wine Selection', 'Romantic Ambiance');
-  } else if (name.includes('steakhouse') || name.includes('steak') || name.includes('grill') || name.includes('tornado')) {
-    baseRestaurant.type = 'Steakhouse';
-    baseRestaurant.priceRange = '$$$';
-    baseRestaurant.menuHighlights = [
-      'Prime Ribeye - 16oz USDA Prime cut',
-      'Filet Mignon - Tender and perfectly seasoned',
-      'Lobster Tail - Fresh Atlantic lobster',
-      'Signature Sides - Loaded baked potato, grilled asparagus'
-    ];
-    baseRestaurant.features.push('Full Bar', 'Private Dining');
-  } else if (name.includes('french') || name.includes('bistro') || name.includes('cafe')) {
-    baseRestaurant.type = 'French';
-    baseRestaurant.priceRange = '$$$';
-    baseRestaurant.menuHighlights = [
-      'Coq au Vin - Classic braised chicken in wine',
-      'Bouillabaisse - Traditional seafood stew',
-      'Crème Brûlée - Rich custard with caramelized sugar',
-      'French Onion Soup - Gratinéed with Gruyère cheese'
-    ];
-    baseRestaurant.features.push('Wine Pairing', 'Elegant Atmosphere');
-  } else if (name.includes('contemporary') || name.includes('modern') || name.includes('ardent')) {
-    baseRestaurant.type = 'Contemporary';
-    baseRestaurant.priceRange = '$$$$';
-    baseRestaurant.menuHighlights = [
-      'Tasting Menu - Chef\'s seasonal selection',
-      'Molecular Gastronomy - Innovative cooking techniques',
-      'Farm-to-Table - Locally sourced ingredients',
-      'Artisanal Cocktails - Craft mixology'
-    ];
-    baseRestaurant.features.push('Chef\'s Table', 'Seasonal Menu');
-  } else if (name.includes('seafood') || name.includes('harbor') || name.includes('optimist')) {
-    baseRestaurant.type = 'Seafood';
-    baseRestaurant.priceRange = '$$$';
-    baseRestaurant.menuHighlights = [
-      'Fresh Oysters - Daily selection from local waters',
-      'Grilled Salmon - Atlantic salmon with lemon herbs',
-      'Seafood Platter - Lobster, crab, and shrimp',
-      'Fish & Chips - Beer-battered cod with fries'
-    ];
-    baseRestaurant.features.push('Fresh Daily Catch', 'Waterfront Views');
-  } else if (name.includes('american') || name.includes('grill') || name.includes('house') || name.includes('old fashioned')) {
-    baseRestaurant.type = 'American';
-    baseRestaurant.menuHighlights = [
-      'Classic Burger - Prime beef with all the fixings',
-      'BBQ Ribs - Slow-smoked with house sauce',
-      'Mac & Cheese - Three-cheese blend with breadcrumbs',
-      'Apple Pie - Homemade with vanilla ice cream'
-    ];
-    baseRestaurant.features.push('Comfort Food', 'Family Friendly');
-  } else if (name.includes('supper club') || name.includes('club')) {
-    baseRestaurant.type = 'Supper Club';
-    baseRestaurant.priceRange = '$$$';
-    baseRestaurant.menuHighlights = [
-      'Prime Rib - Slow-roasted with au jus',
-      'Friday Fish Fry - Beer-battered cod',
-      'Relish Tray - Traditional Wisconsin appetizers',
-      'Old Fashioned - Wisconsin-style cocktail'
-    ];
-    baseRestaurant.features.push('Classic Wisconsin Dining', 'Full Bar');
-  }
-
-  return baseRestaurant;
+// REMOVED: No mock restaurant generation allowed
+function getRestaurantFromId(restaurantId: string): Restaurant | null {
+  // Return null - no fake restaurant data allowed
+  return null;
 }
 
 interface Restaurant {
@@ -150,8 +59,38 @@ export default function RestaurantDetails() {
   const restaurantId = params?.id;
   const backPath = new URLSearchParams(window.location.search).get('back') || '/dashboard';
 
-  // Generate restaurant data based on the restaurant ID
-  const restaurant: Restaurant = getRestaurantFromId(restaurantId || '');
+  // REMOVED: No mock restaurant generation allowed
+  const restaurant: Restaurant | null = null;
+
+  // Show error if no restaurant data available
+  if (!restaurant) {
+    return (
+      <div className="container mx-auto p-4 max-w-4xl">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/dashboard')}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-2xl font-bold mb-4">Restaurant Not Available</h2>
+            <p className="text-muted-foreground mb-4">
+              Restaurant details are not available as we only display real restaurant data.
+            </p>
+            <Button onClick={() => setLocation('/dashboard')} data-testid="button-back-dashboard">
+              Return to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const { data: groups = [] } = useQuery({
     queryKey: ['/api/groups'],
@@ -434,7 +373,7 @@ export default function RestaurantDetails() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Mock reviews */}
+            {/* REMOVED: No mock reviews - real reviews only */}
             <div className="border-b pb-4" data-testid="review-1">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex items-center">

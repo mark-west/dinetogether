@@ -268,18 +268,7 @@ function createLocalRecommendationPrompt(userPreferences: UserPreferences, local
   return prompt;
 }
 
-// Helper function to convert Google Places restaurants to recommendation format
-function convertToRecommendations(restaurants: any[]): RestaurantRecommendation[] {
-  return restaurants.map(restaurant => ({
-    name: restaurant.name,
-    cuisine: restaurant.cuisine,
-    priceRange: restaurant.priceRange,
-    estimatedRating: restaurant.rating,
-    location: restaurant.address,
-    reasonForRecommendation: `Local restaurant with ${restaurant.rating} star rating`,
-    confidenceScore: 0.7
-  }));
-}
+// REMOVED: No dummy data allowed
 
 function createRecommendationPrompt(userPreferences: UserPreferences, location: string): string {
   const { ratedRestaurants, visitHistory, preferredCuisines, pricePreference } = userPreferences;
@@ -378,19 +367,12 @@ Provide analysis in JSON format: {
   }
 }
 
-// Mock function for external review integration (Google/Yelp)
-// In a real implementation, this would call actual APIs
+// REMOVED: No dummy external ratings allowed
 export async function enrichWithExternalReviews(
   recommendations: RestaurantRecommendation[]
 ): Promise<RestaurantRecommendation[]> {
-  // Simulate external API calls with realistic review data
-  return recommendations.map(restaurant => ({
-    ...restaurant,
-    externalRating: {
-      google: Math.round((Math.random() * 2 + 3) * 10) / 10, // 3.0-5.0 range
-      yelp: Math.round((Math.random() * 2 + 3) * 10) / 10
-    }
-  }));
+  // Return as-is - no dummy external ratings
+  return recommendations;
 }
 
 // Generate custom recommendations based on user preferences

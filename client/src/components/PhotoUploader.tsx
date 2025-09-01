@@ -67,21 +67,14 @@ export default function PhotoUploader({
     setIsUploading(true);
     
     try {
-      // For now, create a mock upload URL since object storage isn't set up
-      // In a real implementation, this would:
-      // 1. Get a presigned upload URL from the backend
-      // 2. Upload the file to object storage
-      // 3. Return the public URL
-      
-      // Mock implementation - in production this would be the actual uploaded URL
-      const mockUploadUrl = previewUrl; // Use the preview URL as a placeholder
-      
+      // REMOVED: No mock photo uploads allowed
       toast({
-        title: "Photo uploaded",
-        description: "Your photo has been uploaded successfully!",
+        title: "Photo upload not available",
+        description: "Photo upload feature is not configured yet.",
+        variant: "destructive",
       });
       
-      onPhotoSelect(mockUploadUrl);
+      // Do not call onPhotoSelect with fake data
       onClose();
       
     } catch (error) {
