@@ -3,6 +3,7 @@ import { useRoute, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Calendar, Users, Star, MapPin, Clock, Phone, Globe, DollarSign, Utensils } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Star, MapPin, Clock, DollarSign, Utensils } from 'lucide-react';
 
 interface Restaurant {
   id: string;
@@ -21,10 +22,15 @@ interface Restaurant {
   priceRange: string;
   description: string;
   address?: string;
+  phone?: string;
   phoneNumber?: string;
   website?: string;
+  websiteUri?: string;
+  hours?: string;
   openingHours?: any;
   rating?: number;
+  estimatedRating?: number;
+  reviewCount?: number;
   userRatingsTotal?: number;
   menuHighlights?: string[];
   features?: string[];
@@ -55,11 +61,9 @@ export default function RestaurantDetails() {
 
   const restaurantId = params?.id;
   const backPath = new URLSearchParams(window.location.search).get('back') || '/dashboard';
-
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user groups for event creation
   const { data: groups = [] } = useQuery({
     queryKey: ['/api/groups'],
     enabled: !!user
@@ -96,12 +100,11 @@ export default function RestaurantDetails() {
 
   useEffect(() => {
     if (restaurantId) {
-      // Get restaurant data from sessionStorage
       const storedData = sessionStorage.getItem(`restaurant_${restaurantId}`);
       if (storedData) {
         try {
           const restaurantData = JSON.parse(storedData);
-          console.log('Restaurant data:', restaurantData);
+          console.log('FULL API DATA RECEIVED:', restaurantData);
           setRestaurant(restaurantData);
         } catch (error) {
           console.error('Error parsing restaurant data:', error);
@@ -127,36 +130,69 @@ export default function RestaurantDetails() {
 
     createEventMutation.mutate({
       ...eventForm,
-      restaurantName: restaurant?.name || '',
-      restaurantAddress: restaurant?.address || '',
+      restaurantName: restaurant?.name,
+      restaurantAddress: restaurant?.address,
       dateTime: new Date(eventForm.dateTime).toISOString(),
     });
   };
 
-  const formatHours = (openingHours: any) => {
-    if (!openingHours) return 'Hours not available';
+  const formatGoogleOpeningHours = (openingHours: any) => {
+    if (!openingHours) return '';
     
     if (typeof openingHours === 'string') {
       return openingHours;
     }
     
-    // Handle weekday_text format
-    if (openingHours.weekday_text) {
+    if (openingHours.weekdayText || openingHours.weekday_text) {
+      const weekdayText = openingHours.weekdayText || openingHours.weekday_text;
       const today = new Date().getDay();
-      const googleDay = today === 0 ? 6 : today - 1; // Convert to Google's format
-      return openingHours.weekday_text[googleDay] || 'Hours not available';
+      const googleDayIndex = today === 0 ? 6 : today - 1;
+      const todaysHours = weekdayText[googleDayIndex];
+      return todaysHours || 'Hours not available';
+    }
+    
+    if (openingHours.periods) {
+      const today = new Date().getDay();
+      const todaysPeriod = openingHours.periods.find((p: any) => p.open?.day === today);
+      if (todaysPeriod) {
+        const openTime = todaysPeriod.open?.time || 'Unknown';
+        const closeTime = todaysPeriod.close?.time || 'Unknown';
+        return `${openTime} - ${closeTime}`;
+      }
+    }
+    
+    if (openingHours.openNow !== undefined || openingHours.open_now !== undefined) {
+      const isOpen = openingHours.openNow || openingHours.open_now;
+      return isOpen ? 'Currently Open' : 'Currently Closed';
     }
     
     return 'Hours not available';
+  };
+
+  const priceRangeText = {
+    '$': 'Budget-friendly',
+    '$$': 'Moderate',
+    '$$$': 'Upscale',
+    '$$$$': 'Fine dining'
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
         <div className="max-w-4xl mx-auto pt-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-32 mb-6"></div>
-            <div className="h-64 bg-gray-200 rounded mb-6"></div>
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-32"></div>
+            <Card>
+              <CardHeader>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -183,174 +219,227 @@ export default function RestaurantDetails() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-4xl mx-auto pt-8">
-        {/* Back Button */}
-        <Button 
-          onClick={handleBack} 
-          variant="ghost" 
-          className="mb-6"
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Results
-        </Button>
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBack}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Results
+          </Button>
+        </div>
 
-        {/* Restaurant Header Card */}
-        <Card className="mb-6 overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6">
-            <div className="flex justify-between items-start">
+        {/* Restaurant Overview */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-2" data-testid="text-restaurant-name">
-                  {restaurant.name}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3 mb-3">
-                  <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <CardTitle className="text-2xl" data-testid="text-restaurant-name">
+                    {restaurant.name}
+                  </CardTitle>
+                  {restaurant.website && (
+                    <button
+                      onClick={() => window.open(restaurant.website, '_blank')}
+                      className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                      title="Visit Restaurant Website"
+                      data-testid="button-restaurant-website"
+                    >
+                      <i className="fas fa-globe"></i>
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
+                  <Badge variant="secondary" data-testid="badge-cuisine-type">
                     <Utensils className="w-3 h-3 mr-1" />
                     {restaurant.type}
                   </Badge>
-                  <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                  <Badge variant="outline" data-testid="badge-price-range">
                     <DollarSign className="w-3 h-3 mr-1" />
-                    {restaurant.priceRange}
+                    {restaurant.priceRange} - {priceRangeText[restaurant.priceRange as keyof typeof priceRangeText]}
                   </Badge>
-                  {restaurant.rating && (
-                    <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-md">
-                      <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-                      <span className="font-medium">{restaurant.rating}</span>
-                      {restaurant.userRatingsTotal && (
-                        <span className="text-white/80">({restaurant.userRatingsTotal})</span>
+                  {(restaurant.rating || restaurant.estimatedRating) && (
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <span data-testid="text-rating">
+                        {restaurant.rating || restaurant.estimatedRating}
+                      </span>
+                      {(restaurant.reviewCount || restaurant.userRatingsTotal) && (
+                        <span className="text-muted-foreground">
+                          ({restaurant.reviewCount || restaurant.userRatingsTotal} reviews)
+                        </span>
                       )}
                     </div>
                   )}
                 </div>
-                <p className="text-white/90 text-lg" data-testid="text-description">
+                <p className="text-muted-foreground mb-4" data-testid="text-description">
                   {restaurant.description}
                 </p>
               </div>
-              <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-                <DialogTrigger asChild>
-                  <Button 
-                    size="lg" 
-                    className="bg-white text-blue-600 hover:bg-white/90"
-                    data-testid="button-create-event"
-                  >
-                    <Calendar className="w-5 h-5 mr-2" />
-                    Create Event
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Create Dining Event</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Event Title *</Label>
-                      <Input
-                        id="title"
-                        value={eventForm.title}
-                        onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
-                        placeholder="Dinner at..."
-                        data-testid="input-event-title"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={eventForm.description}
-                        onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
-                        placeholder="Optional event description"
-                        data-testid="textarea-event-description"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="groupId">Select Group *</Label>
-                      <Select value={eventForm.groupId} onValueChange={(value) => setEventForm({...eventForm, groupId: value})}>
-                        <SelectTrigger data-testid="select-group">
-                          <SelectValue placeholder="Choose a group" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {groups.map((group: Group) => (
-                            <SelectItem key={group.id} value={group.id}>
-                              {group.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="dateTime">Date & Time *</Label>
-                      <Input
-                        id="dateTime"
-                        type="datetime-local"
-                        value={eventForm.dateTime}
-                        onChange={(e) => setEventForm({...eventForm, dateTime: e.target.value})}
-                        data-testid="input-event-datetime"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="maxAttendees">Max Attendees</Label>
-                      <Input
-                        id="maxAttendees"
-                        type="number"
-                        min="2"
-                        max="20"
-                        value={eventForm.maxAttendees}
-                        onChange={(e) => setEventForm({...eventForm, maxAttendees: parseInt(e.target.value)})}
-                        data-testid="input-max-attendees"
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleCreateEvent} 
-                      className="w-full" 
-                      disabled={createEventMutation.isPending}
-                      data-testid="button-submit-event"
-                    >
-                      {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+              
+              <div className="flex flex-col gap-2">
+                <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="gradient-bg" data-testid="button-create-event">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Create Event Here
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Create Dining Event</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="title">Event Title *</Label>
+                        <Input
+                          id="title"
+                          value={eventForm.title}
+                          onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                          placeholder="Dinner at..."
+                          data-testid="input-event-title"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={eventForm.description}
+                          onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                          placeholder="Optional event description"
+                          data-testid="textarea-event-description"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="groupId">Select Group *</Label>
+                        <Select value={eventForm.groupId} onValueChange={(value) => setEventForm({...eventForm, groupId: value})}>
+                          <SelectTrigger data-testid="select-group">
+                            <SelectValue placeholder="Choose a group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {groups.map((group: Group) => (
+                              <SelectItem key={group.id} value={group.id}>
+                                {group.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="dateTime">Date & Time *</Label>
+                        <Input
+                          id="dateTime"
+                          type="datetime-local"
+                          value={eventForm.dateTime}
+                          onChange={(e) => setEventForm({...eventForm, dateTime: e.target.value})}
+                          data-testid="input-event-datetime"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="maxAttendees">Max Attendees</Label>
+                        <Input
+                          id="maxAttendees"
+                          type="number"
+                          min="2"
+                          max="20"
+                          value={eventForm.maxAttendees}
+                          onChange={(e) => setEventForm({...eventForm, maxAttendees: parseInt(e.target.value)})}
+                          data-testid="input-max-attendees"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleCreateEvent} 
+                        className="w-full" 
+                        disabled={createEventMutation.isPending}
+                        data-testid="button-submit-event"
+                      >
+                        {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-          </div>
+          </CardHeader>
         </Card>
 
-        {/* Contact Information Card */}
+        {/* DEBUG: Show Raw API Data */}
+        <Card className="mb-6 bg-yellow-50 border-yellow-200">
+          <CardHeader>
+            <CardTitle className="text-lg text-yellow-800">🔍 API Data Debug</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <strong>Phone Fields:</strong>
+                <ul className="mt-1 space-y-1">
+                  <li>phoneNumber: <code className="bg-white px-1 rounded">{restaurant.phoneNumber || 'null'}</code></li>
+                  <li>phone: <code className="bg-white px-1 rounded">{restaurant.phone || 'null'}</code></li>
+                </ul>
+              </div>
+              <div>
+                <strong>Website Fields:</strong>
+                <ul className="mt-1 space-y-1">
+                  <li>website: <code className="bg-white px-1 rounded">{restaurant.website || 'null'}</code></li>
+                  <li>websiteUri: <code className="bg-white px-1 rounded">{restaurant.websiteUri || 'null'}</code></li>
+                </ul>
+              </div>
+              <div>
+                <strong>Hours Fields:</strong>
+                <ul className="mt-1 space-y-1">
+                  <li>openingHours: <code className="bg-white px-1 rounded">{restaurant.openingHours ? 'Object' : 'null'}</code></li>
+                  <li>hours: <code className="bg-white px-1 rounded">{restaurant.hours || 'null'}</code></li>
+                </ul>
+              </div>
+            </div>
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm font-medium">Raw JSON Data</summary>
+              <pre className="mt-2 p-2 bg-white text-xs overflow-auto max-h-40 rounded">
+                {JSON.stringify(restaurant, null, 2)}
+              </pre>
+            </details>
+          </CardContent>
+        </Card>
+
+        {/* Restaurant Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-blue-500" />
-                Contact & Location
-              </CardTitle>
+              <CardTitle className="text-lg">Contact & Hours</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {restaurant.address && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <MapPin className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm" data-testid="text-address">{restaurant.address}</span>
                 </div>
               )}
               
-              {restaurant.phoneNumber && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Phone className="w-5 h-5 text-green-500 flex-shrink-0" />
+              {/* Try ALL possible phone fields */}
+              {(restaurant.phone || restaurant.phoneNumber) && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Phone:</span>
                   <a 
-                    href={`tel:${restaurant.phoneNumber}`} 
-                    className="text-sm text-blue-600 hover:underline font-medium"
+                    href={`tel:${restaurant.phone || restaurant.phoneNumber}`} 
+                    className="text-sm text-primary hover:underline" 
                     data-testid="link-phone"
                   >
-                    {restaurant.phoneNumber}
+                    {restaurant.phone || restaurant.phoneNumber}
                   </a>
                 </div>
               )}
               
-              {restaurant.website && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Globe className="w-5 h-5 text-blue-500 flex-shrink-0" />
+              {/* Try ALL possible website fields */}
+              {(restaurant.website || restaurant.websiteUri) && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Website:</span>
                   <a 
-                    href={restaurant.website} 
+                    href={restaurant.website || restaurant.websiteUri} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-sm text-blue-600 hover:underline font-medium"
+                    className="text-sm text-primary hover:underline"
                     data-testid="link-website"
                   >
                     Visit Website
@@ -358,24 +447,33 @@ export default function RestaurantDetails() {
                 </div>
               )}
               
-              {restaurant.openingHours && (
-                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Clock className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+              {/* Try ALL possible hours fields */}
+              {(restaurant.hours || restaurant.openingHours) && (
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 mt-0.5 text-muted-foreground" />
                   <div className="text-sm" data-testid="text-hours">
-                    {formatHours(restaurant.openingHours)}
+                    {restaurant.hours || formatGoogleOpeningHours(restaurant.openingHours)}
                   </div>
+                </div>
+              )}
+              
+              {restaurant.businessStatus && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Status:</span>
+                  <Badge 
+                    variant={restaurant.businessStatus === 'OPERATIONAL' ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {restaurant.businessStatus === 'OPERATIONAL' ? 'Open' : restaurant.businessStatus}
+                  </Badge>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Restaurant Features */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-500" />
-                Details & Features
-              </CardTitle>
+              <CardTitle className="text-lg">Features & Highlights</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {restaurant.features && restaurant.features.length > 0 && (
@@ -403,23 +501,11 @@ export default function RestaurantDetails() {
                   </div>
                 </div>
               )}
-              
-              {restaurant.businessStatus && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Status:</span>
-                  <Badge 
-                    variant={restaurant.businessStatus === 'OPERATIONAL' ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {restaurant.businessStatus === 'OPERATIONAL' ? 'Open' : restaurant.businessStatus}
-                  </Badge>
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Reviews Section */}
+        {/* Reviews */}
         {restaurant.reviews && restaurant.reviews.length > 0 && (
           <Card>
             <CardHeader>

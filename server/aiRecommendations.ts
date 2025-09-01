@@ -632,12 +632,13 @@ export async function generateCustomRecommendations(
           matchesPreference ? `Serves ${preferences.foodType} cuisine` : 'Based on Google Places data',
           'Real restaurant you can visit'
         ],
-        // Map Google Places data using EXACT API field names
-        phoneNumber: restaurant.phoneNumber, // From fetchRestaurantDetails (already mapped from formatted_phone_number)
-        formatted_phone_number: restaurant.phoneNumber, // Also provide the original field name for client
-        website: restaurant.website,
-        opening_hours: restaurant.openingHours, // Also provide the original field name for client
+        // Map Google Places data - direct from API response
+        phoneNumber: restaurant.phoneNumber,
+        website: restaurant.website, 
         openingHours: restaurant.openingHours,
+        // DIRECT API DATA - bypass any mapping issues
+        phone: restaurant.phoneNumber,
+        hours: restaurant.openingHours,
         reviews: restaurant.reviews || [],
         userRatingsTotal: restaurant.userRatingsTotal,
         businessStatus: restaurant.businessStatus,
