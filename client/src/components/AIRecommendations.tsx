@@ -75,6 +75,17 @@ export function AIRecommendations() {
     // Generate a restaurant ID from the name and index
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
     
+    // DEBUG: Log the complete restaurant object to see what fields are available
+    console.log('DEBUG: Complete restaurant object:', restaurant);
+    console.log('DEBUG: Contact data inspection:', {
+      phoneNumber: restaurant.phoneNumber,
+      formattedPhoneNumber: restaurant.formattedPhoneNumber,  
+      website: restaurant.website,
+      websiteUri: restaurant.websiteUri,
+      openingHours: restaurant.openingHours,
+      regularOpeningHours: restaurant.regularOpeningHours,
+      allKeys: Object.keys(restaurant)
+    });
     
     // Store comprehensive restaurant data in sessionStorage including all Google Places data
     const restaurantData = {
