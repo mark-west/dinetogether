@@ -135,15 +135,22 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
 async function fetchEnhancedRestaurantsForAI(latitude: number, longitude: number, radius: number) {
   const basicRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
   
+  console.log(`Enhancement process: Found ${basicRestaurants.length} basic restaurants`);
   if (basicRestaurants.length === 0) return [];
   
   // Fetch detailed information for top restaurants (limit to avoid too many API calls)
   const topRestaurants = basicRestaurants.slice(0, 10);
   const enhancedRestaurants = [];
   
-  for (const restaurant of topRestaurants) {
+  console.log(`Enhancing top ${topRestaurants.length} restaurants with detailed Google Places data`);
+  
+  for (let i = 0; i < topRestaurants.length; i++) {
+    const restaurant = topRestaurants[i];
+    console.log(`[${i+1}/${topRestaurants.length}] Fetching details for: ${restaurant.name} (ID: ${restaurant.id})`);
+    
     const details = await fetchRestaurantDetails(restaurant.id);
     if (details) {
+      console.log(`✓ Got details for ${restaurant.name} - Phone: ${details.phoneNumber ? 'YES' : 'NO'}, Website: ${details.website ? 'YES' : 'NO'}`);
       enhancedRestaurants.push({
         ...restaurant,
         ...details,
@@ -156,9 +163,14 @@ async function fetchEnhancedRestaurantsForAI(latitude: number, longitude: number
         openingHours: details.openingHours || restaurant.openingHours,
         address: details.address || restaurant.address || restaurant.vicinity
       });
+    } else {
+      console.log(`✗ No details found for ${restaurant.name}`);
+      // Still include the restaurant but without enhanced data
+      enhancedRestaurants.push(restaurant);
     }
   }
   
+  console.log(`Enhancement complete: ${enhancedRestaurants.length} restaurants enhanced`);
   return enhancedRestaurants;
 }
 
