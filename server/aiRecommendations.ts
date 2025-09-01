@@ -7,40 +7,41 @@ const hasOpenAI = !!process.env.OPENAI_API_KEY;
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 /**
- * Fetches detailed restaurant information from Google Places API using GooglePlacesService
+ * Fetches detailed restaurant information from Google Places API
  */
 async function fetchRestaurantDetails(placeId: string) {
-  if (!process.env.GOOGLE_MAPS_API_KEY) return null;
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  if (!API_KEY) return null;
+
+  const fields = [
+    'name', 'rating', 'user_ratings_total', 'price_level', 'website',
+    'formatted_phone_number', 'opening_hours', 'reviews', 'types',
+    'formatted_address', 'geometry', 'photos', 'business_status'
+  ].join(',');
+
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
 
   try {
-    // Import GooglePlacesService properly
-    const { GooglePlacesService } = await import('./googlePlacesService');
-    const placesService = new GooglePlacesService();
+    const response = await fetch(url);
+    const data = await response.json();
     
-    const placeDetails = await placesService.getPlaceDetails(placeId);
-    
-    if (placeDetails) {
+    if (data.status === 'OK' && data.result) {
+      const place = data.result;
       return {
         placeId: placeId,
-        name: placeDetails.displayName?.text || '',
-        rating: placeDetails.rating || 0,
-        userRatingsTotal: placeDetails.userRatingCount || 0,
-        priceLevel: placeDetails.priceLevel,
-        // Map the correct Google Places API field names
-        website: placeDetails.websiteUri,
-        phoneNumber: placeDetails.nationalPhoneNumber || placeDetails.internationalPhoneNumber,
-        address: placeDetails.formattedAddress,
-        openingHours: placeDetails.regularOpeningHours,
-        reviews: placeDetails.reviews ? placeDetails.reviews.slice(0, 3) : [], // Top 3 reviews
-        types: placeDetails.types || [],
-        geometry: placeDetails.location ? {
-          location: {
-            lat: placeDetails.location.latitude,
-            lng: placeDetails.location.longitude
-          }
-        } : undefined,
-        photos: placeDetails.photos,
-        businessStatus: placeDetails.businessStatus
+        name: place.name,
+        rating: place.rating || 0,
+        userRatingsTotal: place.user_ratings_total || 0,
+        priceLevel: place.price_level,
+        website: place.website,
+        phoneNumber: place.formatted_phone_number,
+        address: place.formatted_address,
+        openingHours: place.opening_hours,
+        reviews: place.reviews ? place.reviews.slice(0, 3) : [], // Top 3 reviews
+        types: place.types,
+        geometry: place.geometry,
+        photos: place.photos,
+        businessStatus: place.business_status
       };
     }
   } catch (error) {
