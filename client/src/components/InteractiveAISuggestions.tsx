@@ -436,7 +436,7 @@ export function InteractiveAISuggestions({
                   </p>
                   
                   <div className="flex flex-wrap gap-1">
-                    {recommendation.reasons.map((reason, i) => (
+                    {(recommendation.reasons || []).map((reason, i) => (
                       <Badge key={i} variant="outline" className="text-xs">
                         {reason}
                       </Badge>
