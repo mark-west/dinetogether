@@ -114,6 +114,59 @@ function getPriceRange(priceLevel: number | undefined): string {
   }
 }
 
+// Helper function to get location-based fallback restaurants
+function getLocationBasedFallbackRestaurants(latitude: number, longitude: number) {
+  // Determine region based on coordinates
+  const isWisconsin = latitude > 42.0 && latitude < 47.0 && longitude > -93.0 && longitude < -86.0;
+  const isGeorgia = latitude > 30.0 && latitude < 35.0 && longitude > -86.0 && longitude < -80.0;
+  const isCalifornia = latitude > 32.0 && latitude < 42.0 && longitude > -125.0 && longitude < -114.0;
+  const isNewYork = latitude > 40.0 && latitude < 45.0 && longitude > -80.0 && longitude < -71.0;
+  const isTexas = latitude > 25.0 && latitude < 36.0 && longitude > -107.0 && longitude < -93.0;
+  const isFlorida = latitude > 24.0 && latitude < 31.0 && longitude > -88.0 && longitude < -79.0;
+
+  if (isWisconsin) {
+    return [
+      { id: 'wi-1', name: 'The Hale House', type: 'Contemporary American', priceRange: '$$$', description: 'Madison • Rating: 4.5', rating: 4.5, address: 'Madison' },
+      { id: 'wi-2', name: 'Sanford Restaurant', type: 'American', priceRange: '$$$', description: 'Milwaukee • Rating: 4.3', rating: 4.3, address: 'Milwaukee' },
+      { id: 'wi-3', name: 'Ardent', type: 'Contemporary', priceRange: '$$$$', description: 'Milwaukee • Rating: 4.6', rating: 4.6, address: 'Milwaukee' },
+      { id: 'wi-4', name: 'L\'Etoile Restaurant', type: 'French', priceRange: '$$$$', description: 'Madison • Rating: 4.4', rating: 4.4, address: 'Madison' },
+      { id: 'wi-5', name: 'Bartolotta\'s Lake Park Bistro', type: 'French', priceRange: '$$$', description: 'Milwaukee • Rating: 4.2', rating: 4.2, address: 'Milwaukee' },
+      { id: 'wi-6', name: 'Forequarter', type: 'Contemporary', priceRange: '$$$', description: 'Milwaukee • Rating: 4.3', rating: 4.3, address: 'Milwaukee' },
+      { id: 'wi-7', name: 'Merchant Public House', type: 'American', priceRange: '$$', description: 'Madison • Rating: 4.1', rating: 4.1, address: 'Madison' },
+      { id: 'wi-8', name: 'The Old Fashioned', type: 'American', priceRange: '$$', description: 'Madison • Rating: 4.4', rating: 4.4, address: 'Madison' }
+    ];
+  }
+
+  if (isGeorgia) {
+    return [
+      { id: 'ga-1', name: 'The Optimist', type: 'Seafood', priceRange: '$$$', description: 'Atlanta • Rating: 4.4', rating: 4.4, address: 'Atlanta' },
+      { id: 'ga-2', name: 'Gunshow', type: 'American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.3', rating: 4.3, address: 'Atlanta' },
+      { id: 'ga-3', name: 'Staplehouse', type: 'New American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.5', rating: 4.5, address: 'Atlanta' },
+      { id: 'ga-4', name: 'Lazy Betty', type: 'Contemporary', priceRange: '$$$$', description: 'Atlanta • Rating: 4.6', rating: 4.6, address: 'Atlanta' },
+      { id: 'ga-5', name: 'Bacchanalia', type: 'Contemporary American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.2', rating: 4.2, address: 'Atlanta' }
+    ];
+  }
+
+  if (isCalifornia) {
+    return [
+      { id: 'ca-1', name: 'French Laundry', type: 'French', priceRange: '$$$$', description: 'Yountville • Rating: 4.6', rating: 4.6, address: 'Yountville' },
+      { id: 'ca-2', name: 'Chez Panisse', type: 'California Cuisine', priceRange: '$$$$', description: 'Berkeley • Rating: 4.3', rating: 4.3, address: 'Berkeley' },
+      { id: 'ca-3', name: 'Providence', type: 'Seafood', priceRange: '$$$$', description: 'Los Angeles • Rating: 4.5', rating: 4.5, address: 'Los Angeles' },
+      { id: 'ca-4', name: 'State Bird Provisions', type: 'Contemporary', priceRange: '$$$', description: 'San Francisco • Rating: 4.4', rating: 4.4, address: 'San Francisco' },
+      { id: 'ca-5', name: 'Republique', type: 'French', priceRange: '$$$', description: 'Los Angeles • Rating: 4.2', rating: 4.2, address: 'Los Angeles' }
+    ];
+  }
+
+  // Default to a mixed selection for other regions
+  return [
+    { id: 'default-1', name: 'The Capital Grille', type: 'Steakhouse', priceRange: '$$$$', description: 'Fine Dining • Rating: 4.3', rating: 4.3, address: 'Downtown' },
+    { id: 'default-2', name: 'Fleming\'s Prime Steakhouse', type: 'Steakhouse', priceRange: '$$$$', description: 'Upscale • Rating: 4.2', rating: 4.2, address: 'Business District' },
+    { id: 'default-3', name: 'The Cheesecake Factory', type: 'American', priceRange: '$$', description: 'Casual Dining • Rating: 4.0', rating: 4.0, address: 'Shopping Center' },
+    { id: 'default-4', name: 'Ruth\'s Chris Steak House', type: 'Steakhouse', priceRange: '$$$$', description: 'Fine Dining • Rating: 4.3', rating: 4.3, address: 'Downtown' },
+    { id: 'default-5', name: 'Seasons 52', type: 'American', priceRange: '$$$', description: 'Fresh Grille • Rating: 4.1', rating: 4.1, address: 'Suburban' }
+  ];
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -1179,56 +1232,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (!restaurants || restaurants.length === 0) {
-        console.log('No restaurants found from Google Places API, using fallback');
-        // Fallback to sample Atlanta restaurants if Google Places fails
-        const fallbackRestaurants = [
-          {
-            id: 'fallback-1',
-            name: 'The Optimist',
-            type: 'Seafood',
-            priceRange: '$$$',
-            description: 'West End • Rating: 4.4',
-            rating: 4.4,
-            address: 'West End'
-          },
-          {
-            id: 'fallback-2',
-            name: 'Gunshow',
-            type: 'American',
-            priceRange: '$$$$',
-            description: 'Glenwood Park • Rating: 4.3',
-            rating: 4.3,
-            address: 'Glenwood Park'
-          },
-          {
-            id: 'fallback-3',
-            name: 'Staplehouse',
-            type: 'New American',
-            priceRange: '$$$$',
-            description: 'Old Fourth Ward • Rating: 4.5',
-            rating: 4.5,
-            address: 'Old Fourth Ward'
-          },
-          {
-            id: 'fallback-4',
-            name: 'Lazy Betty',
-            type: 'Contemporary',
-            priceRange: '$$$$',
-            description: 'Candler Park • Rating: 4.6',
-            rating: 4.6,
-            address: 'Candler Park'
-          },
-          {
-            id: 'fallback-5',
-            name: 'Bacchanalia',
-            type: 'Contemporary American',
-            priceRange: '$$$$',
-            description: 'Westside • Rating: 4.2',
-            rating: 4.2,
-            address: 'Westside'
-          }
-        ];
-        res.json(fallbackRestaurants);
+        console.log('No restaurants found from Google Places API, using location-based fallback');
+        const fallbackRestaurants = getLocationBasedFallbackRestaurants(latitude, longitude);
+        
+        // Randomize the order so users see different restaurants each time
+        const shuffledRestaurants = fallbackRestaurants.sort(() => Math.random() - 0.5);
+        res.json(shuffledRestaurants);
         return;
       }
 
