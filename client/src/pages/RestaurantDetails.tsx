@@ -29,11 +29,15 @@ interface Restaurant {
   description: string;
   address?: string;
   phone?: string;
+  website?: string;
   hours?: string;
   rating?: number;
   reviewCount?: number;
   menuHighlights?: string[];
   features?: string[];
+  reviews?: any[];
+  businessStatus?: string;
+  placeId?: string;
 }
 
 interface Group {
@@ -378,7 +382,23 @@ export default function RestaurantDetails() {
             {restaurant.phone && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Phone:</span>
-                <span className="text-sm" data-testid="text-phone">{restaurant.phone}</span>
+                <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline" data-testid="link-phone">
+                  {restaurant.phone}
+                </a>
+              </div>
+            )}
+            {restaurant.website && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Website:</span>
+                <a 
+                  href={restaurant.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-sm text-primary hover:underline"
+                  data-testid="link-website"
+                >
+                  Visit Website
+                </a>
               </div>
             )}
             {restaurant.hours && (

@@ -56,24 +56,76 @@ export function AIRecommendations() {
     // Generate a restaurant ID from the name and index
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
     
-    // Store restaurant data in sessionStorage to pass it to the details page
+    // Store comprehensive restaurant data in sessionStorage including all Google Places data
     const restaurantData = {
       id: restaurantId,
       name: restaurant.name,
       type: restaurant.cuisine,
       priceRange: restaurant.priceRange,
       description: restaurant.reasonForRecommendation,
-      address: restaurant.location,
-      phone: restaurant.phoneNumber || '',
-      hours: restaurant.openingHours ? (restaurant.openingHours.open_now ? 'Open Now' : 'Currently Closed') : '',
-      rating: restaurant.estimatedRating,
+      address: restaurant.location || restaurant.address,
+      phone: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
+      website: restaurant.website || '',
+      hours: formatOpeningHours(restaurant.openingHours),
+      rating: restaurant.estimatedRating || restaurant.rating,
       reviewCount: restaurant.userRatingsTotal,
-      menuHighlights: [], // AI recommendations don't include menu details
-      features: ['Real-time AI recommendation', 'Google Maps verified']
+      menuHighlights: extractMenuHighlights(restaurant.reviews),
+      features: [
+        'AI-generated recommendation', 
+        'Google Maps verified',
+        ...(restaurant.website ? ['Website available'] : []),
+        ...(restaurant.phoneNumber ? ['Phone available'] : []),
+        ...(restaurant.openingHours ? ['Hours available'] : [])
+      ],
+      reviews: restaurant.reviews || [],
+      businessStatus: restaurant.businessStatus,
+      placeId: restaurant.placeId
     };
     
     sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
     navigate(`/restaurant/${restaurantId}?back=/recommendations`);
+  };
+
+  // Helper function to format opening hours for display
+  const formatOpeningHours = (openingHours: any) => {
+    if (!openingHours) return '';
+    
+    const currentStatus = openingHours.open_now ? 'Open Now' : 'Currently Closed';
+    
+    if (openingHours.weekday_text && openingHours.weekday_text.length > 0) {
+      // Get today's hours
+      const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const todaysHours = openingHours.weekday_text[today === 0 ? 6 : today - 1]; // Adjust for Sunday
+      return `${currentStatus} • ${todaysHours}`;
+    }
+    
+    return currentStatus;
+  };
+
+  // Helper function to extract menu highlights from reviews
+  const extractMenuHighlights = (reviews: any[]) => {
+    if (!reviews || reviews.length === 0) return [];
+    
+    const highlights: string[] = [];
+    const foodKeywords = ['pizza', 'pasta', 'burger', 'steak', 'chicken', 'fish', 'salad', 'soup', 'dessert', 'coffee', 'wine', 'beer', 'cocktail'];
+    
+    reviews.forEach(review => {
+      if (review.text) {
+        const text = review.text.toLowerCase();
+        foodKeywords.forEach(keyword => {
+          if (text.includes(keyword) && !highlights.some(h => h.toLowerCase().includes(keyword))) {
+            // Extract sentence containing the food item
+            const sentences = review.text.split(/[.!?]/);
+            const relevantSentence = sentences.find((s: string) => s.toLowerCase().includes(keyword));
+            if (relevantSentence && relevantSentence.trim().length > 10 && highlights.length < 3) {
+              highlights.push(relevantSentence.trim());
+            }
+          }
+        });
+      }
+    });
+    
+    return highlights;
   };
 
   const renderStars = (rating: number) => {

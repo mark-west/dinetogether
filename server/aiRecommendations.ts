@@ -289,7 +289,7 @@ export async function generateRestaurantRecommendations(
           - Website availability and contact information
           - Match with user's historical preferences and ratings
           
-          Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "cuisine": "Cuisine Type", "priceRange": "$$", "estimatedRating": 4.2, "location": "Address/Area", "reasonForRecommendation": "Detailed explanation incorporating Google Maps data", "confidenceScore": 0.85}] }`
+          Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "cuisine": "Cuisine Type", "priceRange": "$$", "estimatedRating": 4.2, "location": "Address/Area", "reasonForRecommendation": "Detailed explanation incorporating Google Maps data", "confidenceScore": 0.85, "phoneNumber": "Phone from data", "website": "Website from data", "openingHours": "Hours object from data", "reviews": "Reviews array from data", "userRatingsTotal": "Review count from data", "placeId": "Place ID from data"}] }`
         },
         {
           role: "user",
@@ -302,7 +302,33 @@ export async function generateRestaurantRecommendations(
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.recommendations || convertToRecommendations(localRestaurants.slice(0, 8));
+    
+    if (result.recommendations && result.recommendations.length > 0) {
+      // Merge AI recommendations with original Google Places data
+      const enrichedRecommendations = result.recommendations.map((aiRec: any) => {
+        const originalRestaurant = localRestaurants.find((r: any) => 
+          r.name.toLowerCase() === aiRec.name.toLowerCase()
+        );
+        
+        return {
+          ...aiRec,
+          // Ensure Google Places data is preserved
+          phoneNumber: originalRestaurant?.phoneNumber || aiRec.phoneNumber,
+          website: originalRestaurant?.website || aiRec.website,
+          openingHours: originalRestaurant?.openingHours || aiRec.openingHours,
+          reviews: originalRestaurant?.reviews || aiRec.reviews || [],
+          userRatingsTotal: originalRestaurant?.userRatingsTotal || aiRec.userRatingsTotal,
+          placeId: originalRestaurant?.placeId || aiRec.placeId,
+          address: originalRestaurant?.address || aiRec.location,
+          businessStatus: originalRestaurant?.businessStatus,
+          rating: originalRestaurant?.rating || aiRec.estimatedRating
+        };
+      });
+      
+      return enrichedRecommendations;
+    }
+    
+    return convertToRecommendations(localRestaurants.slice(0, 8));
   } catch (error) {
     console.error("Error generating AI recommendations:", error);
     // Return local restaurants without AI processing if available
