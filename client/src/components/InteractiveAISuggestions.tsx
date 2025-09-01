@@ -11,6 +11,7 @@ import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { AISparklesIcon } from '@/components/icons/AISparklesIcon';
 import { RestaurantTraining } from '@/components/RestaurantTraining';
+import { Globe } from 'lucide-react';
 
 interface PreferenceForm {
   foodType: string;
@@ -428,6 +429,25 @@ export function InteractiveAISuggestions({
                         {reason}
                       </Badge>
                     ))}
+                  </div>
+                  
+                  {/* Website Button */}
+                  <div className="flex gap-2 mt-4 pt-3 border-t">
+                    <Button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
+                        const websiteUrl = await getRestaurantWebsiteUrl(recommendation.name, recommendation.address || recommendation.location);
+                        window.open(websiteUrl, '_blank');
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      data-testid={`button-website-${recommendation.id}`}
+                    >
+                      <Globe className="w-4 h-4 mr-2" />
+                      Visit Website
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

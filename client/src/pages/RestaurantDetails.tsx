@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Calendar, Users, Star, MapPin, DollarSign, Utensils, Sparkles } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Star, MapPin, DollarSign, Utensils, Sparkles, Globe } from 'lucide-react';
 
 interface Restaurant {
   id: string;
@@ -423,6 +423,21 @@ export default function RestaurantDetails() {
             >
               <Calendar className="w-5 h-5 mr-2" />
               Plan Dining Event
+            </Button>
+            
+            <Button 
+              onClick={async () => {
+                const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
+                const websiteUrl = await getRestaurantWebsiteUrl(restaurant.name, displayAddress);
+                window.open(websiteUrl, '_blank');
+              }}
+              variant="outline" 
+              className="flex-1"
+              size="lg"
+              data-testid="button-visit-website"
+            >
+              <Globe className="w-5 h-5 mr-2" />
+              Visit Website
             </Button>
             
             <Button 
