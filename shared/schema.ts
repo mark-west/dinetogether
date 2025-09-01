@@ -115,6 +115,22 @@ export const messages = pgTable("messages", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Restaurant training preferences
+export const restaurantTraining = pgTable("restaurant_training", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  groupId: uuid("group_id").references(() => groups.id),
+  restaurantId: varchar("restaurant_id").notNull(),
+  restaurantName: varchar("restaurant_name", { length: 255 }).notNull(),
+  restaurantType: varchar("restaurant_type", { length: 100 }),
+  priceRange: varchar("price_range", { length: 50 }),
+  rating: integer("rating"), // 1-5 stars
+  interest: varchar("interest", { length: 20 }), // 'interested' or 'nah'
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  unique().on(table.userId, table.groupId, table.restaurantId)
+]);
+
 // Event message read status
 export const messageReads = pgTable("message_reads", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -464,6 +480,10 @@ export const insertEventRatingSchema = createInsertSchema(eventRatings).omit({
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+// Restaurant Training types
+export type RestaurantTraining = typeof restaurantTraining.$inferSelect;
+export type InsertRestaurantTraining = typeof restaurantTraining.$inferInsert;
 export type Group = typeof groups.$inferSelect;
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type Event = typeof events.$inferSelect;

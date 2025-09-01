@@ -13,6 +13,7 @@ import {
   eventPhotos,
   eventDiaries,
   eventRatings,
+  restaurantTraining,
   type User,
   type UpsertUser,
   type Group,
@@ -41,6 +42,8 @@ import {
   type InsertEventDiary,
   type EventRating,
   type InsertEventRating,
+  type RestaurantTraining,
+  type InsertRestaurantTraining,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, ne, isNull } from "drizzle-orm";
@@ -134,6 +137,17 @@ export interface IStorage {
   getUserRatings(userId: string): Promise<Array<EventRating & { event: Event }>>;
   getEventAverageRating(eventId: string): Promise<{ averageRating: number; totalRatings: number }>;
   deleteEventRating(eventId: string, userId: string): Promise<void>;
+
+  // Restaurant training operations
+  saveRestaurantTraining(training: {
+    userId?: string;
+    groupId?: string;
+    restaurantId: string;
+    rating?: number;
+    interest?: string;
+  }): Promise<RestaurantTraining>;
+  getUserTrainingData(userId: string): Promise<RestaurantTraining[]>;
+  getGroupTrainingData(groupId: string): Promise<RestaurantTraining[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1006,6 +1020,57 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEventRating(eventId: string, userId: string): Promise<void> {
     await db.delete(eventRatings).where(and(eq(eventRatings.eventId, eventId), eq(eventRatings.userId, userId)));
+  }
+
+  // Restaurant training operations
+  async saveRestaurantTraining(training: {
+    userId?: string;
+    groupId?: string;
+    restaurantId: string;
+    rating?: number;
+    interest?: string;
+  }): Promise<RestaurantTraining> {
+    const trainingData: InsertRestaurantTraining = {
+      userId: training.userId || null,
+      groupId: training.groupId || null,
+      restaurantId: training.restaurantId,
+      restaurantName: `Restaurant ${training.restaurantId}`, // This would come from the restaurant data in real implementation
+      restaurantType: 'Various',
+      priceRange: '$$',
+      rating: training.rating || null,
+      interest: training.interest || null,
+    };
+
+    const [result] = await db
+      .insert(restaurantTraining)
+      .values(trainingData)
+      .onConflictDoUpdate({
+        target: [restaurantTraining.userId, restaurantTraining.groupId, restaurantTraining.restaurantId],
+        set: {
+          rating: trainingData.rating,
+          interest: trainingData.interest,
+          createdAt: new Date(),
+        },
+      })
+      .returning();
+
+    return result;
+  }
+
+  async getUserTrainingData(userId: string): Promise<RestaurantTraining[]> {
+    return await db
+      .select()
+      .from(restaurantTraining)
+      .where(eq(restaurantTraining.userId, userId))
+      .orderBy(desc(restaurantTraining.createdAt));
+  }
+
+  async getGroupTrainingData(groupId: string): Promise<RestaurantTraining[]> {
+    return await db
+      .select()
+      .from(restaurantTraining)
+      .where(eq(restaurantTraining.groupId, groupId))
+      .orderBy(desc(restaurantTraining.createdAt));
   }
 }
 

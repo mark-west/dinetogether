@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { AISparklesIcon } from '@/components/icons/AISparklesIcon';
+import { RestaurantTraining } from '@/components/RestaurantTraining';
 
 interface PreferenceForm {
   foodType: string;
@@ -53,6 +54,7 @@ export function InteractiveAISuggestions({
   
   const [showForm, setShowForm] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [showTraining, setShowTraining] = useState(false);
 
   const generateMutation = useMutation({
     mutationFn: async (prefs: PreferenceForm) => {
@@ -85,6 +87,15 @@ export function InteractiveAISuggestions({
     setShowForm(false);
   };
 
+  const handleTrainAI = () => {
+    setShowTraining(true);
+  };
+
+  const handleTrainingComplete = () => {
+    setShowTraining(false);
+    // Could trigger a suggestion generation here based on training data
+  };
+
   const dietaryOptions = [
     'Vegetarian', 'Vegan', 'Gluten-Free', 'Dairy-Free', 
     'Keto', 'Paleo', 'Halal', 'Kosher'
@@ -113,20 +124,37 @@ export function InteractiveAISuggestions({
             </div>
           </div>
           
-          {!showForm && !recommendations.length && (
-            <Button 
-              onClick={() => setShowForm(true)}
-              className="gradient-bg"
-              data-testid="button-start-suggestions"
-            >
-              <AISparklesIcon size={16} className="mr-2" />
-              Get Suggestions
-            </Button>
+          {!showForm && !recommendations.length && !showTraining && (
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowForm(true)}
+                className="gradient-bg"
+                data-testid="button-start-suggestions"
+              >
+                <AISparklesIcon size={16} className="mr-2" />
+                Get Suggestions
+              </Button>
+              <Button 
+                onClick={handleTrainAI}
+                variant="outline"
+                data-testid="button-train-ai"
+              >
+                Train AI
+              </Button>
+            </div>
           )}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {showTraining && (
+          <RestaurantTraining 
+            variant={variant}
+            groupId={groupId}
+            onComplete={handleTrainingComplete}
+          />
+        )}
+
         {showForm && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

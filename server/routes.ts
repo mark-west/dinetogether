@@ -1062,6 +1062,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Restaurant training routes
+  app.get('/api/training/restaurants', isAuthenticated, async (req: any, res) => {
+    try {
+      const { variant, groupId } = req.query;
+      const userId = req.user?.claims?.sub;
+      
+      // Generate sample restaurants for training
+      const sampleRestaurants = [
+        {
+          id: 'sample-1',
+          name: 'The Italian Corner',
+          type: 'Italian',
+          priceRange: '$$',
+          description: 'Authentic Italian cuisine with homemade pasta and wood-fired pizzas'
+        },
+        {
+          id: 'sample-2', 
+          name: 'Spice Garden',
+          type: 'Indian',
+          priceRange: '$$$',
+          description: 'Traditional Indian dishes with aromatic spices and vegetarian options'
+        },
+        {
+          id: 'sample-3',
+          name: 'Burger Express',
+          type: 'American',
+          priceRange: '$',
+          description: 'Gourmet burgers made with locally sourced ingredients'
+        },
+        {
+          id: 'sample-4',
+          name: 'Sakura Sushi',
+          type: 'Japanese',
+          priceRange: '$$$$',
+          description: 'Fresh sushi and sashimi prepared by experienced chefs'
+        },
+        {
+          id: 'sample-5',
+          name: 'Taco Libre',
+          type: 'Mexican',
+          priceRange: '$$',
+          description: 'Authentic tacos and margaritas in a vibrant atmosphere'
+        }
+      ];
+
+      res.json(sampleRestaurants);
+    } catch (error) {
+      console.error('Error getting training restaurants:', error);
+      res.status(500).json({ message: 'Failed to get training restaurants' });
+    }
+  });
+
+  app.post('/api/training/rate', isAuthenticated, async (req: any, res) => {
+    try {
+      const { restaurantId, rating, interest } = req.body;
+      const userId = req.user?.claims?.sub;
+
+      const trainingData = await storage.saveRestaurantTraining({
+        userId,
+        restaurantId,
+        rating,
+        interest
+      });
+
+      res.json(trainingData);
+    } catch (error) {
+      console.error('Error saving restaurant rating:', error);
+      res.status(500).json({ message: 'Failed to save rating' });
+    }
+  });
+
+  app.post('/api/training/group/:groupId/rate', isAuthenticated, async (req: any, res) => {
+    try {
+      const { groupId } = req.params;
+      const { restaurantId, rating, interest } = req.body;
+      const userId = req.user?.claims?.sub;
+
+      const trainingData = await storage.saveRestaurantTraining({
+        userId,
+        groupId,
+        restaurantId,
+        rating,
+        interest
+      });
+
+      res.json(trainingData);
+    } catch (error) {
+      console.error('Error saving group restaurant rating:', error);
+      res.status(500).json({ message: 'Failed to save rating' });
+    }
+  });
+
   // Group-based custom recommendation endpoint
   app.post('/api/recommendations/group/:groupId/custom', isAuthenticated, async (req: any, res) => {
     try {
