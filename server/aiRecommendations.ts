@@ -462,6 +462,13 @@ export async function generateCustomRecommendations(
     let filteredRestaurants = nearbyRestaurants;
     
     // Filter by food type if specified
+    console.log('Debug foodType check:', {
+      foodType: preferences.foodType,
+      hasValue: !!preferences.foodType,
+      toLowerCase: preferences.foodType?.toLowerCase(),
+      notAny: preferences.foodType?.toLowerCase() !== 'any'
+    });
+    
     if (preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
       const preferredType = preferences.foodType.toLowerCase();
       console.log('Filtering by food type:', preferredType);
