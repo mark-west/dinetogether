@@ -15,6 +15,97 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventCard } from "@/components/ui/event-card";
 import { PlusIcon, CalendarIcon } from "@/components/ui/app-icons";
 
+// Star Rating Component
+function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
+  const starSize = size === "md" ? "text-base" : "text-sm";
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <i
+          key={star}
+          className={`fas fa-star ${starSize} ${
+            star <= rating ? 'text-yellow-400' : 'text-gray-300'
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Past Event Card with Rating
+function PastEventCard({ event }: { event: any }) {
+  const { data: averageRating } = useQuery({
+    queryKey: [`/api/events/${event.id}/average-rating`],
+    retry: false,
+  });
+
+  return (
+    <Card 
+      className="opacity-75 hover:shadow-md transition-shadow cursor-pointer" 
+      onClick={() => window.location.href = `/events/${event.id}`}
+      data-testid={`card-past-event-${event.id}`}
+    >
+      <CardContent className="p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          {event.restaurantImageUrl ? (
+            <img 
+              src={event.restaurantImageUrl} 
+              alt={event.restaurantName} 
+              className="w-full sm:w-20 h-48 sm:h-20 rounded-lg object-cover"
+              data-testid={`img-past-restaurant-${event.id}`}
+            />
+          ) : (
+            <div className="w-full sm:w-20 h-48 sm:h-20 bg-muted rounded-lg flex items-center justify-center">
+              <i className="fas fa-utensils text-muted-foreground text-xl"></i>
+            </div>
+          )}
+          
+          <div className="flex-1 min-w-0 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-foreground truncate" data-testid={`text-past-event-name-${event.id}`}>
+                  {event.name}
+                </h3>
+                <p className="text-sm text-muted-foreground" data-testid={`text-past-restaurant-${event.id}`}>
+                  {event.restaurantName || 'Restaurant TBD'}
+                </p>
+                <p className="text-sm text-muted-foreground" data-testid={`text-past-group-${event.id}`}>
+                  {event.group.name}
+                </p>
+              </div>
+              <div className="flex flex-col items-start sm:items-end gap-2">
+                {averageRating?.averageRating > 0 && (
+                  <div className="flex items-center gap-2">
+                    <StarRating rating={averageRating.averageRating} size="md" />
+                    <span className="text-sm font-medium text-foreground">
+                      {averageRating.averageRating.toFixed(1)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({averageRating.totalRatings})
+                    </span>
+                  </div>
+                )}
+                <Badge variant="outline" className="shrink-0" data-testid={`status-past-${event.id}`}>
+                  Completed
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <i className="fas fa-calendar"></i>
+                <span data-testid={`text-past-date-${event.id}`}>
+                  {format(new Date(event.dateTime), 'MMM d, yyyy')}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Events() {
   const { isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -162,57 +253,7 @@ export default function Events() {
               ) : pastEvents.length > 0 ? (
                 <div className="space-y-4">
                   {pastEvents.map((event: any) => (
-                    <Card 
-                      key={event.id} 
-                      className="opacity-75 hover:shadow-md transition-shadow cursor-pointer" 
-                      onClick={() => window.location.href = `/events/${event.id}`}
-                      data-testid={`card-past-event-${event.id}`}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                          {event.restaurantImageUrl ? (
-                            <img 
-                              src={event.restaurantImageUrl} 
-                              alt={event.restaurantName} 
-                              className="w-20 h-20 rounded-lg object-cover"
-                              data-testid={`img-past-restaurant-${event.id}`}
-                            />
-                          ) : (
-                            <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
-                              <i className="fas fa-utensils text-muted-foreground text-xl"></i>
-                            </div>
-                          )}
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h3 className="text-lg font-semibold text-foreground" data-testid={`text-past-event-name-${event.id}`}>
-                                  {event.name}
-                                </h3>
-                                <p className="text-sm text-muted-foreground" data-testid={`text-past-restaurant-${event.id}`}>
-                                  {event.restaurantName || 'Restaurant TBD'}
-                                </p>
-                                <p className="text-sm text-muted-foreground" data-testid={`text-past-group-${event.id}`}>
-                                  {event.group.name}
-                                </p>
-                              </div>
-                              <Badge variant="outline" data-testid={`status-past-${event.id}`}>
-                                Completed
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-2">
-                                <i className="fas fa-calendar"></i>
-                                <span data-testid={`text-past-date-${event.id}`}>
-                                  {format(new Date(event.dateTime), 'EEEE, MMM d, yyyy')}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <PastEventCard key={event.id} event={event} />
                   ))}
                 </div>
               ) : (

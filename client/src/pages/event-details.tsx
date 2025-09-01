@@ -617,7 +617,6 @@ export default function EventDetails() {
   const { toast } = useToast();
   const { navigateWithLoading, isLoading: isNavigationLoading } = useLoadingNavigation();
   const [rsvpStatus, setRsvpStatus] = useState<string>('pending');
-  const [newSuggestion, setNewSuggestion] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
@@ -646,17 +645,18 @@ export default function EventDetails() {
     enabled: isAuthenticated && !!eventId,
   });
 
-  const { data: suggestions, isLoading: suggestionsLoading } = useQuery({
-    queryKey: ["/api/events", eventId, "suggestions"],
-    retry: false,
-    enabled: isAuthenticated && !!eventId,
-  });
 
   const { data: messages, isLoading: messagesLoading } = useQuery({
     queryKey: ["/api/events", eventId, "messages"],
     retry: false,
     enabled: isAuthenticated && !!eventId,
     refetchInterval: 5000,
+  });
+
+  const { data: averageRating = { averageRating: 0, totalRatings: 0 } } = useQuery({
+    queryKey: [`/api/events/${eventId}/average-rating`],
+    retry: false,
+    enabled: !!eventId,
   });
 
   const rsvpMutation = useMutation({
@@ -691,40 +691,6 @@ export default function EventDetails() {
     },
   });
 
-  const suggestionMutation = useMutation({
-    mutationFn: async (suggestionText: string) => {
-      await apiRequest("POST", `/api/events/${eventId}/suggestions`, {
-        restaurantName: suggestionText,
-        notes: "",
-      });
-    },
-    onSuccess: () => {
-      setNewSuggestion('');
-      toast({
-        title: "Success",
-        description: "Restaurant suggestion added!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/events", eventId, "suggestions"] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to add suggestion",
-        variant: "destructive",
-      });
-    },
-  });
 
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -763,11 +729,6 @@ export default function EventDetails() {
     }
   }, [rsvps, user]);
 
-  const handleAddSuggestion = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSuggestion.trim()) return;
-    suggestionMutation.mutate(newSuggestion.trim());
-  };
 
   if (isLoading || eventLoading) {
     return (
@@ -901,6 +862,17 @@ export default function EventDetails() {
                         {rsvps?.filter((r: any) => r.status === 'confirmed').length || 0} attending
                       </span>
                     </div>
+                    {averageRating?.averageRating > 0 && (
+                      <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <StarRating rating={averageRating.averageRating} />
+                        <span className="font-medium text-foreground">
+                          {averageRating.averageRating.toFixed(1)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({averageRating.totalRatings} rating{averageRating.totalRatings !== 1 ? 's' : ''})
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {event.description && (
@@ -1045,12 +1017,9 @@ export default function EventDetails() {
 
           {/* Tabs for Attendees, Suggestions, Photos, Diaries, Ratings */}
           <Tabs defaultValue="attendees" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="attendees" data-testid="tab-attendees">
                 Attendees ({rsvps?.filter((r: any) => r.status === 'confirmed').length || 0})
-              </TabsTrigger>
-              <TabsTrigger value="suggestions" data-testid="tab-suggestions">
-                Suggestions ({suggestions?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="photos" data-testid="tab-photos">
                 Photos
@@ -1123,108 +1092,6 @@ export default function EventDetails() {
               )}
             </TabsContent>
             
-            <TabsContent value="suggestions" className="space-y-4">
-              {/* Add suggestion form */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Suggest a Restaurant</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleAddSuggestion} className="space-y-4">
-                    <Textarea
-                      value={newSuggestion}
-                      onChange={(e) => setNewSuggestion(e.target.value)}
-                      placeholder="Suggest a restaurant name, address, or any details..."
-                      rows={3}
-                      data-testid="input-new-suggestion"
-                    />
-                    <Button 
-                      type="submit" 
-                      disabled={!newSuggestion.trim() || suggestionMutation.isPending}
-                      data-testid="button-add-suggestion"
-                    >
-                      <i className="fas fa-plus mr-2"></i>
-                      {suggestionMutation.isPending ? "Adding..." : "Add Suggestion"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-
-              {/* Existing suggestions */}
-              {suggestionsLoading ? (
-                <div className="space-y-3">
-                  {[...Array(2)].map((_, i) => (
-                    <Skeleton key={i} className="h-20" />
-                  ))}
-                </div>
-              ) : suggestions && suggestions.length > 0 ? (
-                <div className="space-y-3">
-                  {suggestions.map((suggestion: any) => (
-                    <Card key={suggestion.id} data-testid={`suggestion-${suggestion.id}`}>
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          {suggestion.user.profileImageUrl ? (
-                            <img 
-                              src={suggestion.user.profileImageUrl} 
-                              alt={`${suggestion.user.firstName} ${suggestion.user.lastName}`}
-                              className="w-8 h-8 rounded-full object-cover"
-                              data-testid={`img-suggestion-avatar-${suggestion.id}`}
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium">
-                              {(suggestion.user.firstName?.[0] || suggestion.user.email?.[0] || '?').toUpperCase()}
-                            </div>
-                          )}
-                          
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <p className="font-medium text-sm" data-testid={`text-suggestion-restaurant-${suggestion.id}`}>
-                                  {suggestion.restaurantName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  by {suggestion.user.firstName && suggestion.user.lastName 
-                                    ? `${suggestion.user.firstName} ${suggestion.user.lastName}`
-                                    : suggestion.user.email
-                                  }
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <i className="fas fa-thumbs-up"></i>
-                                <span data-testid={`text-suggestion-votes-${suggestion.id}`}>
-                                  {suggestion.votes || 0}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            {suggestion.restaurantAddress && (
-                              <p className="text-sm text-muted-foreground mb-2" data-testid={`text-suggestion-address-${suggestion.id}`}>
-                                <i className="fas fa-map-marker-alt mr-1"></i>
-                                {suggestion.restaurantAddress}
-                              </p>
-                            )}
-                            
-                            {suggestion.notes && (
-                              <p className="text-sm text-muted-foreground" data-testid={`text-suggestion-notes-${suggestion.id}`}>
-                                {suggestion.notes}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className="fas fa-lightbulb text-2xl text-muted-foreground"></i>
-                  </div>
-                  <h3 className="font-medium text-foreground mb-2">No suggestions yet</h3>
-                  <p className="text-sm text-muted-foreground">Help the group decide by suggesting restaurants!</p>
-                </div>
-              )}
-            </TabsContent>
 
             <TabsContent value="photos" className="space-y-4">
               <PhotosTab eventId={eventId} />
