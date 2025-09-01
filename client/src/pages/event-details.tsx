@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InteractiveStarRating } from "@/components/InteractiveStarRating";
 
 // Star Rating Component
 function StarRating({ rating, interactive = false, onRatingChange }: { 
@@ -659,6 +660,45 @@ export default function EventDetails() {
     enabled: !!eventId,
   });
 
+  const { data: userRating } = useQuery({
+    queryKey: [`/api/events/${eventId}/rating`],
+    retry: false,
+    enabled: isAuthenticated && !!eventId,
+  });
+
+  const saveRatingMutation = useMutation({
+    mutationFn: async (rating: number) => {
+      return apiRequest("POST", `/api/events/${eventId}/rating`, {
+        rating,
+        review: "",
+        isPublic: true
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/rating`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/average-rating`] });
+      toast({ title: "Rating saved successfully!" });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({ title: "Failed to save rating", variant: "destructive" });
+    },
+  });
+
+  const handleRatingChange = (rating: number) => {
+    saveRatingMutation.mutate(rating);
+  };
+
   const rsvpMutation = useMutation({
     mutationFn: async (status: string) => {
       await apiRequest("POST", `/api/events/${eventId}/rsvp`, { status });
@@ -862,17 +902,33 @@ export default function EventDetails() {
                         {rsvps?.filter((r: any) => r.status === 'confirmed').length || 0} attending
                       </span>
                     </div>
-                    {averageRating?.averageRating > 0 && (
-                      <div className="flex items-center gap-2 justify-center sm:justify-start">
-                        <StarRating rating={averageRating.averageRating} />
-                        <span className="font-medium text-foreground">
-                          {averageRating.averageRating.toFixed(1)}
-                        </span>
-                        <span className="text-muted-foreground">
-                          ({averageRating.totalRatings} rating{averageRating.totalRatings !== 1 ? 's' : ''})
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-2 justify-center sm:justify-start">
+                      {averageRating?.averageRating > 0 && (
+                        <div className="flex items-center gap-2">
+                          <StarRating rating={averageRating.averageRating} />
+                          <span className="font-medium text-foreground">
+                            {averageRating.averageRating.toFixed(1)}
+                          </span>
+                          <span className="text-muted-foreground">
+                            ({averageRating.totalRatings} rating{averageRating.totalRatings !== 1 ? 's' : ''})
+                          </span>
+                        </div>
+                      )}
+                      {isAuthenticated && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">Your rating:</span>
+                          <InteractiveStarRating
+                            currentRating={userRating?.rating || 0}
+                            onRatingChange={handleRatingChange}
+                            disabled={saveRatingMutation.isPending}
+                            size="sm"
+                          />
+                          {saveRatingMutation.isPending && (
+                            <div className="animate-spin h-3 w-3 border border-gray-300 border-t-blue-500 rounded-full"></div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   {event.description && (
@@ -1017,7 +1073,7 @@ export default function EventDetails() {
 
           {/* Tabs for Attendees, Suggestions, Photos, Diaries, Ratings */}
           <Tabs defaultValue="attendees" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="attendees" data-testid="tab-attendees">
                 Attendees ({rsvps?.filter((r: any) => r.status === 'confirmed').length || 0})
               </TabsTrigger>
@@ -1026,9 +1082,6 @@ export default function EventDetails() {
               </TabsTrigger>
               <TabsTrigger value="diaries" data-testid="tab-diaries">
                 Diaries
-              </TabsTrigger>
-              <TabsTrigger value="ratings" data-testid="tab-ratings">
-                Ratings
               </TabsTrigger>
             </TabsList>
             
@@ -1101,9 +1154,6 @@ export default function EventDetails() {
               <DiariesTab eventId={eventId} />
             </TabsContent>
 
-            <TabsContent value="ratings" className="space-y-4">
-              <RatingsTab eventId={eventId} />
-            </TabsContent>
           </Tabs>
         </div>
       </div>
