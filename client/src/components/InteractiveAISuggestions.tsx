@@ -148,13 +148,16 @@ export function InteractiveAISuggestions({
       type: recommendation.type,
       priceRange: recommendation.priceRange,
       description: recommendation.description,
-      address: '', // InteractiveAI suggestions may not have address
+      address: recommendation.address || recommendation.location || '',
+      location: recommendation.address || recommendation.location || '',
       phone: '',
       hours: '',
+      openingHours: recommendation.openingHours || null,
       rating: recommendation.rating,
       reviewCount: 0,
       menuHighlights: [],
-      features: ['AI-generated recommendation', 'Personalized suggestion']
+      features: ['AI-generated recommendation', 'Personalized suggestion'],
+      confidence: recommendation.confidence || 0.85
     };
     
     sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));

@@ -396,13 +396,46 @@ export default function RestaurantDetails() {
                 </h3>
                 <div className="text-muted-foreground text-sm space-y-1" data-testid="text-restaurant-hours">
                   {restaurant.openingHours.open_now !== undefined && (
-                    <p className={`font-medium ${restaurant.openingHours.open_now ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`font-medium mb-2 ${restaurant.openingHours.open_now ? 'text-green-600' : 'text-red-600'}`}>
                       {restaurant.openingHours.open_now ? '🟢 Open Now' : '🔴 Closed'}
                     </p>
                   )}
-                  {restaurant.openingHours.weekday_text?.map((hours: string, index: number) => (
-                    <p key={index}>{hours}</p>
-                  )) || <p>Hours information available on website</p>}
+                  {restaurant.openingHours.weekday_text && restaurant.openingHours.weekday_text.length > 0 ? (
+                    <div className="space-y-1">
+                      {restaurant.openingHours.weekday_text.map((hours: string, index: number) => (
+                        <p key={index} className="text-sm">{hours}</p>
+                      ))}
+                    </div>
+                  ) : restaurant.openingHours.periods && restaurant.openingHours.periods.length > 0 ? (
+                    <div className="space-y-1">
+                      {restaurant.openingHours.periods.map((period: any, index: number) => {
+                        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const openDay = days[period.open?.day];
+                        const openTime = period.open ? `${String(period.open.hour).padStart(2, '0')}:${String(period.open.minute).padStart(2, '0')}` : '';
+                        const closeTime = period.close ? `${String(period.close.hour).padStart(2, '0')}:${String(period.close.minute).padStart(2, '0')}` : '';
+                        return (
+                          <p key={index} className="text-sm">
+                            {openDay}: {openTime} - {closeTime || 'Open 24 hours'}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm">Hours information available on website</p>
+                      <Button 
+                        onClick={async () => {
+                          const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
+                          const websiteUrl = await getRestaurantWebsiteUrl(restaurant.name, displayAddress);
+                          window.open(websiteUrl, '_blank');
+                        }}
+                        variant="link" 
+                        className="p-0 h-auto text-xs"
+                      >
+                        View Website for Hours
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
