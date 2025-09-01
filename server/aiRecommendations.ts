@@ -644,6 +644,7 @@ export async function generateCustomRecommendations(
       };
     });
     
+    console.log('DEBUG: Final recommendations being returned to client:', JSON.stringify(recommendations.slice(0, 1), null, 2));
     return recommendations;
   } catch (fallbackError) {
     console.error('Google Places fallback also failed:', fallbackError);
