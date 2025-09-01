@@ -305,19 +305,6 @@ export function InteractiveAISuggestions({
               </div>
             </div>
 
-            {/* Group Size */}
-            <div className="space-y-3">
-              <Label>Group Size: {preferences.groupSize} people</Label>
-              <Slider
-                value={[preferences.groupSize]}
-                onValueChange={(value) => setPreferences(prev => ({ ...prev, groupSize: value[0] }))}
-                max={20}
-                min={1}
-                step={1}
-                className="w-full"
-                data-testid="slider-group-size"
-              />
-            </div>
 
             {/* Dietary Restrictions */}
             <div className="space-y-3">
