@@ -26,23 +26,23 @@ export default function Landing() {
         
         {/* Features */}
         <div className="space-y-4 w-full">
-          <div className="flex flex-col items-center space-y-2 text-white">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <i className="fas fa-users text-base"></i>
+          <div className="flex items-center space-x-3 text-white">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-users text-sm"></i>
             </div>
             <span className="text-base font-medium">Create dining groups</span>
           </div>
           
-          <div className="flex flex-col items-center space-y-2 text-white">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <i className="fas fa-calendar text-base"></i>
+          <div className="flex items-center space-x-3 text-white">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-calendar text-sm"></i>
             </div>
             <span className="text-base font-medium">Plan restaurant visits</span>
           </div>
           
-          <div className="flex flex-col items-center space-y-2 text-white">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <i className="fas fa-comments text-base"></i>
+          <div className="flex items-center space-x-3 text-white">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-comments text-sm"></i>
             </div>
             <span className="text-base font-medium">Chat and coordinate</span>
           </div>
