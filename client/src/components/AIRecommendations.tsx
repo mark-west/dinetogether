@@ -10,14 +10,18 @@ import { getRestaurantWebsiteUrl, getWebsiteLinkText } from '@/lib/restaurantUti
 
 interface Recommendation {
   name: string;
-  cuisine: string;
+  type: string; // Server sends 'type', not 'cuisine'
+  cuisine?: string; // Keep as optional fallback
   priceRange: string;
-  estimatedRating: number;
-  rating?: number;
+  rating: number; // Server sends 'rating'
+  estimatedRating?: number; // Keep as optional fallback
   location: string;
   address?: string;
-  reasonForRecommendation: string;
-  confidenceScore: number;
+  description: string; // Server sends 'description', not 'reasonForRecommendation'
+  reasonForRecommendation?: string; // Keep as optional fallback
+  confidence: number; // Server sends 'confidence', not 'confidenceScore'
+  confidenceScore?: number; // Keep as optional fallback
+  reasons: string[];
   phoneNumber?: string;
   formattedPhoneNumber?: string;
   website?: string;
@@ -76,10 +80,10 @@ export function AIRecommendations() {
     const restaurantData = {
       id: restaurantId,
       name: restaurant.name,
-      type: restaurant.cuisine,
+      type: restaurant.type || restaurant.cuisine || 'Restaurant',
       priceRange: restaurant.priceRange,
-      description: restaurant.reasonForRecommendation,
-      address: restaurant.location || restaurant.address,
+      description: restaurant.description || restaurant.reasonForRecommendation || '',
+      address: restaurant.location || restaurant.address || '',
       // Store both field name formats to handle different data structures
       phone: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
       phoneNumber: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
@@ -87,10 +91,10 @@ export function AIRecommendations() {
       websiteUri: restaurant.website || '',
       hours: formatOpeningHours(restaurant.openingHours),
       openingHours: restaurant.openingHours,
-      rating: restaurant.estimatedRating || restaurant.rating,
-      estimatedRating: restaurant.estimatedRating,
-      reviewCount: restaurant.userRatingsTotal,
-      userRatingsTotal: restaurant.userRatingsTotal,
+      rating: restaurant.rating || restaurant.estimatedRating || 0,
+      estimatedRating: restaurant.rating || restaurant.estimatedRating || 0,
+      reviewCount: restaurant.userRatingsTotal || 0,
+      userRatingsTotal: restaurant.userRatingsTotal || 0,
       menuHighlights: extractMenuHighlights(restaurant.reviews),
       features: [
         'AI-generated recommendation', 
