@@ -1163,10 +1163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user?.claims?.sub;
       console.log('URL params:', { variant, groupId, userId });
       
-      // Default location (Atlanta, GA) - in production this could be user's location
-      const latitude = 33.7490;
-      const longitude = -84.3880;
+      // Get coordinates from query parameters or default to Atlanta, GA
+      const latitude = parseFloat(req.query.lat as string) || 33.7490;
+      const longitude = parseFloat(req.query.lng as string) || -84.3880;
       const radius = 48280; // 30 miles radius
+      
+      console.log('Using coordinates:', { latitude, longitude });
       
       console.log('About to call fetchNearbyRestaurants...');
       const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);

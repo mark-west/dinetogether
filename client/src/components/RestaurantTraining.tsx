@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +28,47 @@ export function RestaurantTraining({
 }: RestaurantTrainingProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ratings, setRatings] = useState<Record<string, { rating?: number; interest?: 'interested' | 'nah' }>>({});
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Get user's location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+          setLocationError('Unable to get location. Using default area.');
+          // Fallback to Atlanta coordinates
+          setLocation({ lat: 33.7490, lng: -84.3880 });
+        }
+      );
+    } else {
+      setLocationError('Geolocation not supported. Using default area.');
+      setLocation({ lat: 33.7490, lng: -84.3880 });
+    }
+  }, []);
 
   // Fetch training restaurants
   const { data: restaurants = [], isLoading } = useQuery({
-    queryKey: ['/api/training/restaurants', variant, groupId],
-    enabled: true
+    queryKey: ['/api/training/restaurants', variant, groupId, location?.lat, location?.lng],
+    queryFn: async () => {
+      if (!location) return [];
+      
+      const params = new URLSearchParams();
+      params.set('lat', location.lat.toString());
+      params.set('lng', location.lng.toString());
+      
+      const url = `/api/training/restaurants/${variant}${groupId ? `/${groupId}` : ''}?${params}`;
+      const response = await fetch(url);
+      return response.json();
+    },
+    enabled: !!location
   });
 
   // Submit rating mutation
