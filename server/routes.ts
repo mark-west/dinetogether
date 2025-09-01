@@ -114,6 +114,17 @@ function getPriceRange(priceLevel: number | undefined): string {
   }
 }
 
+// Helper function to randomly select restaurants from a pool
+function getRandomRestaurants(restaurantPool: any[], count: number) {
+  // Create a copy and shuffle using Fisher-Yates algorithm for better randomness
+  const shuffled = [...restaurantPool];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
 // Helper function to get location-based fallback restaurants
 function getLocationBasedFallbackRestaurants(latitude: number, longitude: number) {
   // Determine region based on coordinates
@@ -125,26 +136,57 @@ function getLocationBasedFallbackRestaurants(latitude: number, longitude: number
   const isFlorida = latitude > 24.0 && latitude < 31.0 && longitude > -88.0 && longitude < -79.0;
 
   if (isWisconsin) {
-    return [
+    // Expanded Wisconsin restaurant pool (20+ restaurants)
+    const wisconsinRestaurants = [
+      // Madison restaurants
       { id: 'wi-1', name: 'The Hale House', type: 'Contemporary American', priceRange: '$$$', description: 'Madison • Rating: 4.5', rating: 4.5, address: 'Madison' },
-      { id: 'wi-2', name: 'Sanford Restaurant', type: 'American', priceRange: '$$$', description: 'Milwaukee • Rating: 4.3', rating: 4.3, address: 'Milwaukee' },
-      { id: 'wi-3', name: 'Ardent', type: 'Contemporary', priceRange: '$$$$', description: 'Milwaukee • Rating: 4.6', rating: 4.6, address: 'Milwaukee' },
-      { id: 'wi-4', name: 'L\'Etoile Restaurant', type: 'French', priceRange: '$$$$', description: 'Madison • Rating: 4.4', rating: 4.4, address: 'Madison' },
-      { id: 'wi-5', name: 'Bartolotta\'s Lake Park Bistro', type: 'French', priceRange: '$$$', description: 'Milwaukee • Rating: 4.2', rating: 4.2, address: 'Milwaukee' },
-      { id: 'wi-6', name: 'Forequarter', type: 'Contemporary', priceRange: '$$$', description: 'Milwaukee • Rating: 4.3', rating: 4.3, address: 'Milwaukee' },
-      { id: 'wi-7', name: 'Merchant Public House', type: 'American', priceRange: '$$', description: 'Madison • Rating: 4.1', rating: 4.1, address: 'Madison' },
-      { id: 'wi-8', name: 'The Old Fashioned', type: 'American', priceRange: '$$', description: 'Madison • Rating: 4.4', rating: 4.4, address: 'Madison' }
+      { id: 'wi-2', name: 'L\'Etoile Restaurant', type: 'French', priceRange: '$$$$', description: 'Madison • Rating: 4.4', rating: 4.4, address: 'Madison' },
+      { id: 'wi-3', name: 'Merchant Public House', type: 'American', priceRange: '$$', description: 'Madison • Rating: 4.1', rating: 4.1, address: 'Madison' },
+      { id: 'wi-4', name: 'The Old Fashioned', type: 'American', priceRange: '$$', description: 'Madison • Rating: 4.4', rating: 4.4, address: 'Madison' },
+      { id: 'wi-5', name: 'Graze', type: 'Contemporary American', priceRange: '$$$', description: 'Madison • Rating: 4.2', rating: 4.2, address: 'Madison' },
+      { id: 'wi-6', name: 'Tornado Steak Lodge', type: 'Steakhouse', priceRange: '$$$$', description: 'Madison • Rating: 4.3', rating: 4.3, address: 'Madison' },
+      { id: 'wi-7', name: 'Osteria Papavero', type: 'Italian', priceRange: '$$$', description: 'Madison • Rating: 4.5', rating: 4.5, address: 'Madison' },
+      { id: 'wi-8', name: 'Lombardino\'s Restaurant', type: 'Italian', priceRange: '$$', description: 'Madison • Rating: 4.0', rating: 4.0, address: 'Madison' },
+      
+      // Milwaukee restaurants
+      { id: 'wi-9', name: 'Sanford Restaurant', type: 'American', priceRange: '$$$', description: 'Milwaukee • Rating: 4.3', rating: 4.3, address: 'Milwaukee' },
+      { id: 'wi-10', name: 'Ardent', type: 'Contemporary', priceRange: '$$$$', description: 'Milwaukee • Rating: 4.6', rating: 4.6, address: 'Milwaukee' },
+      { id: 'wi-11', name: 'Bartolotta\'s Lake Park Bistro', type: 'French', priceRange: '$$$', description: 'Milwaukee • Rating: 4.2', rating: 4.2, address: 'Milwaukee' },
+      { id: 'wi-12', name: 'Forequarter', type: 'Contemporary', priceRange: '$$$', description: 'Milwaukee • Rating: 4.3', rating: 4.3, address: 'Milwaukee' },
+      { id: 'wi-13', name: 'c.1880', type: 'Contemporary', priceRange: '$$$$', description: 'Milwaukee • Rating: 4.4', rating: 4.4, address: 'Milwaukee' },
+      { id: 'wi-14', name: 'Harbor House', type: 'Seafood', priceRange: '$$$', description: 'Milwaukee • Rating: 4.1', rating: 4.1, address: 'Milwaukee' },
+      { id: 'wi-15', name: 'Wolf Peach', type: 'Contemporary', priceRange: '$$', description: 'Milwaukee • Rating: 4.2', rating: 4.2, address: 'Milwaukee' },
+      { id: 'wi-16', name: 'Baccanalia', type: 'Italian', priceRange: '$$', description: 'Milwaukee • Rating: 4.0', rating: 4.0, address: 'Milwaukee' },
+      
+      // Green Bay and other Wisconsin cities
+      { id: 'wi-17', name: 'Black and Tan Grille', type: 'American', priceRange: '$$', description: 'Green Bay • Rating: 4.2', rating: 4.2, address: 'Green Bay' },
+      { id: 'wi-18', name: 'Taverne in the Sky', type: 'Contemporary', priceRange: '$$$', description: 'Green Bay • Rating: 4.3', rating: 4.3, address: 'Green Bay' },
+      { id: 'wi-19', name: 'White Dog Black Cat Cafe', type: 'American', priceRange: '$$', description: 'Bayfield • Rating: 4.4', rating: 4.4, address: 'Bayfield' },
+      { id: 'wi-20', name: 'The Brick House', type: 'American', priceRange: '$$', description: 'Eau Claire • Rating: 4.1', rating: 4.1, address: 'Eau Claire' },
+      { id: 'wi-21', name: 'Turk\'s Inn', type: 'Supper Club', priceRange: '$$$', description: 'Wisconsin Dells • Rating: 4.2', rating: 4.2, address: 'Wisconsin Dells' },
+      { id: 'wi-22', name: 'Ishnala Supper Club', type: 'Supper Club', priceRange: '$$$', description: 'Wisconsin Dells • Rating: 4.3', rating: 4.3, address: 'Wisconsin Dells' },
+      { id: 'wi-23', name: 'The Pineapple Room', type: 'American', priceRange: '$$', description: 'Stevens Point • Rating: 4.0', rating: 4.0, address: 'Stevens Point' },
+      { id: 'wi-24', name: 'Sprecher Restaurant & Pub', type: 'German', priceRange: '$$', description: 'Glendale • Rating: 4.1', rating: 4.1, address: 'Glendale' }
     ];
+    
+    // Randomly select 8-12 restaurants from the pool each time
+    return getRandomRestaurants(wisconsinRestaurants, 8 + Math.floor(Math.random() * 5));
   }
 
   if (isGeorgia) {
-    return [
+    const georgiaRestaurants = [
       { id: 'ga-1', name: 'The Optimist', type: 'Seafood', priceRange: '$$$', description: 'Atlanta • Rating: 4.4', rating: 4.4, address: 'Atlanta' },
       { id: 'ga-2', name: 'Gunshow', type: 'American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.3', rating: 4.3, address: 'Atlanta' },
       { id: 'ga-3', name: 'Staplehouse', type: 'New American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.5', rating: 4.5, address: 'Atlanta' },
       { id: 'ga-4', name: 'Lazy Betty', type: 'Contemporary', priceRange: '$$$$', description: 'Atlanta • Rating: 4.6', rating: 4.6, address: 'Atlanta' },
-      { id: 'ga-5', name: 'Bacchanalia', type: 'Contemporary American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.2', rating: 4.2, address: 'Atlanta' }
+      { id: 'ga-5', name: 'Bacchanalia', type: 'Contemporary American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.2', rating: 4.2, address: 'Atlanta' },
+      { id: 'ga-6', name: 'Canoe', type: 'American', priceRange: '$$$', description: 'Atlanta • Rating: 4.1', rating: 4.1, address: 'Atlanta' },
+      { id: 'ga-7', name: 'The Grey Market', type: 'American', priceRange: '$$', description: 'Savannah • Rating: 4.3', rating: 4.3, address: 'Savannah' },
+      { id: 'ga-8', name: 'South City Kitchen', type: 'Southern', priceRange: '$$', description: 'Atlanta • Rating: 4.0', rating: 4.0, address: 'Atlanta' },
+      { id: 'ga-9', name: 'Pano\'s & Paul\'s', type: 'American', priceRange: '$$$$', description: 'Atlanta • Rating: 4.4', rating: 4.4, address: 'Atlanta' },
+      { id: 'ga-10', name: 'Ecco Midtown', type: 'European', priceRange: '$$$', description: 'Atlanta • Rating: 4.2', rating: 4.2, address: 'Atlanta' }
     ];
+    return getRandomRestaurants(georgiaRestaurants, 6 + Math.floor(Math.random() * 3));
   }
 
   if (isCalifornia) {
@@ -1240,14 +1282,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('First fallback restaurant:', fallbackRestaurants[0]);
         }
         
-        // Randomize the order so users see different restaurants each time
-        const shuffledRestaurants = fallbackRestaurants.sort(() => Math.random() - 0.5);
-        console.log('Shuffled restaurants being returned:', shuffledRestaurants.length);
-        res.json(shuffledRestaurants);
+        // The fallback restaurants are already randomized by the helper function
+        console.log('Randomized restaurants being returned:', fallbackRestaurants.length);
+        res.json(fallbackRestaurants);
         return;
       }
 
-      res.json(restaurants);
+      // Apply randomization to Google Places restaurants as well
+      const randomizedRestaurants = getRandomRestaurants(restaurants, Math.min(12, restaurants.length));
+      res.json(randomizedRestaurants);
     } catch (error) {
       console.error('Error getting training restaurants:', error);
       res.status(500).json({ message: 'Failed to get training restaurants' });
