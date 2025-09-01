@@ -1189,18 +1189,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User location is required" });
       }
       
-      console.log(`CALLING generateCustomRecommendations with lat: ${latitude}, lng: ${longitude}`);
-      
-      // TEMPORARY FIX: Use simple search for Mexican restaurants
-      if (preferences.foodType === 'mexican') {
-        const { findMexicanRestaurants } = await import('./aiRecommendationsSimple');
-        const mexicanResults = await findMexicanRestaurants(latitude, longitude);
-        console.log(`MEXICAN SEARCH: Found ${mexicanResults.length} restaurants`);
-        return res.json({ recommendations: mexicanResults });
-      }
-      
-      const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
-      console.log(`ROUTE RESPONSE: Returning ${recommendations?.length || 0} recommendations`);
+      // Use new clean implementation
+      const { generateCustomRecommendations: newGenerateRecommendations } = await import('./aiRecommendationsNew');
+      const recommendations = await newGenerateRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });
     } catch (error) {
