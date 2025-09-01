@@ -105,6 +105,14 @@ export default function RestaurantDetails() {
         try {
           const restaurantData = JSON.parse(storedData);
           console.log('FULL API DATA RECEIVED:', restaurantData);
+          console.log('SERVER DEBUG INFO:', restaurantData._serverDebug);
+          console.log('CONTACT DATA CHECK:', {
+            phone: restaurantData.phone,
+            phoneNumber: restaurantData.phoneNumber, 
+            website: restaurantData.website,
+            websiteUri: restaurantData.websiteUri,
+            hours: restaurantData.hours
+          });
           setRestaurant(restaurantData);
         } catch (error) {
           console.error('Error parsing restaurant data:', error);
