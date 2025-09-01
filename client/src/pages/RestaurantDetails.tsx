@@ -29,10 +29,16 @@ interface Restaurant {
   description: string;
   address?: string;
   phone?: string;
+  phoneNumber?: string; // Google Places format
   website?: string;
+  websiteUri?: string; // Google Places format
   hours?: string;
+  openingHours?: any; // Google Places format
+  regularOpeningHours?: any; // Google Places format
   rating?: number;
+  estimatedRating?: number; // AI-generated rating
   reviewCount?: number;
+  userRatingsTotal?: number; // Google Places format
   menuHighlights?: string[];
   features?: string[];
   reviews?: any[];
@@ -201,6 +207,45 @@ export default function RestaurantDetails() {
     '$$$$': 'Fine dining'
   };
 
+  // Helper function to format Google Places opening hours
+  const formatGoogleOpeningHours = (openingHours: any) => {
+    if (!openingHours) return '';
+    
+    // Handle different Google Places API formats
+    if (typeof openingHours === 'string') {
+      return openingHours;
+    }
+    
+    // Handle opening hours object with weekday_text
+    if (openingHours.weekdayText || openingHours.weekday_text) {
+      const weekdayText = openingHours.weekdayText || openingHours.weekday_text;
+      const today = new Date().getDay();
+      // Convert Sunday (0) to Saturday (6) for Google's format
+      const googleDayIndex = today === 0 ? 6 : today - 1;
+      const todaysHours = weekdayText[googleDayIndex];
+      return todaysHours || 'Hours not available';
+    }
+    
+    // Handle periods format
+    if (openingHours.periods) {
+      const today = new Date().getDay();
+      const todaysPeriod = openingHours.periods.find((p: any) => p.open?.day === today);
+      if (todaysPeriod) {
+        const openTime = todaysPeriod.open?.time || 'Unknown';
+        const closeTime = todaysPeriod.close?.time || 'Unknown';
+        return `${openTime} - ${closeTime}`;
+      }
+    }
+    
+    // Handle current open status
+    if (openingHours.openNow !== undefined || openingHours.open_now !== undefined) {
+      const isOpen = openingHours.openNow || openingHours.open_now;
+      return isOpen ? 'Currently Open' : 'Currently Closed';
+    }
+    
+    return 'Hours not available';
+  };
+
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       {/* Header */}
@@ -249,11 +294,17 @@ export default function RestaurantDetails() {
                   <DollarSign className="w-3 h-3 mr-1" />
                   {restaurant.priceRange} - {priceRangeText[restaurant.priceRange as keyof typeof priceRangeText]}
                 </Badge>
-                {restaurant.rating && (
+                {(restaurant.rating || restaurant.estimatedRating) && (
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span data-testid="text-rating">{restaurant.rating}</span>
-                    <span className="text-muted-foreground">({restaurant.reviewCount} reviews)</span>
+                    <span data-testid="text-rating">
+                      {restaurant.rating || restaurant.estimatedRating}
+                    </span>
+                    {(restaurant.reviewCount || restaurant.userRatingsTotal) && (
+                      <span className="text-muted-foreground">
+                        ({restaurant.reviewCount || restaurant.userRatingsTotal} reviews)
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -379,19 +430,27 @@ export default function RestaurantDetails() {
                 <span className="text-sm" data-testid="text-address">{restaurant.address}</span>
               </div>
             )}
-            {restaurant.phone && (
+            
+            {/* Handle both phone field variations from Google Places */}
+            {(restaurant.phone || restaurant.phoneNumber) && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Phone:</span>
-                <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline" data-testid="link-phone">
-                  {restaurant.phone}
+                <a 
+                  href={`tel:${restaurant.phone || restaurant.phoneNumber}`} 
+                  className="text-sm text-primary hover:underline" 
+                  data-testid="link-phone"
+                >
+                  {restaurant.phone || restaurant.phoneNumber}
                 </a>
               </div>
             )}
-            {restaurant.website && (
+            
+            {/* Handle both website field variations from Google Places */}
+            {(restaurant.website || restaurant.websiteUri) && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Website:</span>
                 <a 
-                  href={restaurant.website} 
+                  href={restaurant.website || restaurant.websiteUri} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-sm text-primary hover:underline"
@@ -401,10 +460,27 @@ export default function RestaurantDetails() {
                 </a>
               </div>
             )}
-            {restaurant.hours && (
+            
+            {/* Handle hours from Google Places format */}
+            {(restaurant.hours || restaurant.openingHours || restaurant.regularOpeningHours) && (
               <div className="flex items-start gap-2">
                 <Clock className="w-4 h-4 mt-0.5 text-muted-foreground" />
-                <span className="text-sm" data-testid="text-hours">{restaurant.hours}</span>
+                <div className="text-sm" data-testid="text-hours">
+                  {restaurant.hours || formatGoogleOpeningHours(restaurant.openingHours || restaurant.regularOpeningHours)}
+                </div>
+              </div>
+            )}
+            
+            {/* Display business status if available */}
+            {restaurant.businessStatus && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Status:</span>
+                <Badge 
+                  variant={restaurant.businessStatus === 'OPERATIONAL' ? 'default' : 'secondary'}
+                  data-testid="badge-business-status"
+                >
+                  {restaurant.businessStatus === 'OPERATIONAL' ? 'Open' : 'Status Unknown'}
+                </Badge>
               </div>
             )}
           </CardContent>
