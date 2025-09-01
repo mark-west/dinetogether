@@ -1182,10 +1182,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const latitude = parseFloat(req.query.lat as string);
       const longitude = parseFloat(req.query.lng as string);
       
+      console.log(`ROUTE DEBUG: Custom recommendations requested for coordinates: ${latitude}, ${longitude}`);
+      
       if (isNaN(latitude) || isNaN(longitude)) {
         return res.status(400).json({ message: "User location is required" });
       }
+      
+      console.log(`CALLING generateCustomRecommendations with lat: ${latitude}, lng: ${longitude}`);
       const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
+      console.log(`ROUTE RESPONSE: Returning ${recommendations?.length || 0} recommendations`);
       
       res.json({ recommendations });
     } catch (error) {
