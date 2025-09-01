@@ -58,7 +58,7 @@ export async function generateCustomRecommendations(
         id: place.place_id,
         name: place.name,
         type: preferences.foodType || 'Restaurant',
-        priceRange: place.price_level ? '$'.repeat(place.price_level) : '$$',
+        priceRange: place.price_level ? '$'.repeat(Math.min(place.price_level, 3)) : '$',
         rating: place.rating || 4.0,
         estimatedRating: place.rating || 4.0,
         location: address,

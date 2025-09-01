@@ -11,7 +11,7 @@ import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { AISparklesIcon } from '@/components/icons/AISparklesIcon';
 import { RestaurantTraining } from '@/components/RestaurantTraining';
-import { Globe, MapPin } from 'lucide-react';
+import { Globe, MapPin, Clock } from 'lucide-react';
 
 interface PreferenceForm {
   foodType: string;
@@ -32,6 +32,7 @@ interface Recommendation {
   reasons: string[];
   address?: string;
   location?: string;
+  openingHours?: any;
 }
 
 interface InteractiveAISuggestionsProps {
@@ -425,15 +426,26 @@ export function InteractiveAISuggestions({
                     {recommendation.description}
                   </p>
                   
-                  {/* Address */}
-                  {(recommendation.address || recommendation.location) && (
-                    <div className="flex items-start gap-1 mb-3">
-                      <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-muted-foreground">
-                        {recommendation.address || recommendation.location}
-                      </p>
-                    </div>
-                  )}
+                  {/* Address & Hours */}
+                  <div className="space-y-2 mb-3">
+                    {(recommendation.address || recommendation.location) && (
+                      <div className="flex items-start gap-1">
+                        <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-muted-foreground">
+                          {recommendation.address || recommendation.location}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {recommendation.openingHours?.open_now !== undefined && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-muted-foreground" />
+                        <p className={`text-xs font-medium ${recommendation.openingHours.open_now ? 'text-green-600' : 'text-red-600'}`}>
+                          {recommendation.openingHours.open_now ? 'Open Now' : 'Closed'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   
                   <div className="flex flex-wrap gap-1">
                     {(recommendation.reasons || []).map((reason, i) => (

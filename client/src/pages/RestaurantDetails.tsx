@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Calendar, Users, Star, MapPin, DollarSign, Utensils, Sparkles, Globe } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Star, MapPin, DollarSign, Utensils, Sparkles, Globe, Clock } from 'lucide-react';
 
 interface Restaurant {
   id: string;
@@ -374,18 +374,39 @@ export default function RestaurantDetails() {
 
           <Separator />
 
-          {/* Location */}
-          {displayAddress && (
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Location
-              </h3>
-              <p className="text-muted-foreground" data-testid="text-restaurant-address">
-                {displayAddress}
-              </p>
-            </div>
-          )}
+          {/* Location & Hours */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {displayAddress && (
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Location
+                </h3>
+                <p className="text-muted-foreground" data-testid="text-restaurant-address">
+                  {displayAddress}
+                </p>
+              </div>
+            )}
+            
+            {restaurant.openingHours && (
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Hours
+                </h3>
+                <div className="text-muted-foreground text-sm space-y-1" data-testid="text-restaurant-hours">
+                  {restaurant.openingHours.open_now !== undefined && (
+                    <p className={`font-medium ${restaurant.openingHours.open_now ? 'text-green-600' : 'text-red-600'}`}>
+                      {restaurant.openingHours.open_now ? '🟢 Open Now' : '🔴 Closed'}
+                    </p>
+                  )}
+                  {restaurant.openingHours.weekday_text?.map((hours: string, index: number) => (
+                    <p key={index}>{hours}</p>
+                  )) || <p>Hours information available on website</p>}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* AI Match Score */}
           {restaurant.confidence && (
