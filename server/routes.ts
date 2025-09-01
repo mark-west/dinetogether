@@ -114,134 +114,6 @@ function getPriceRange(priceLevel: number | undefined): string {
   }
 }
 
-// Helper function to randomly select restaurants from a pool
-function getRandomRestaurants(restaurantPool: any[], count: number) {
-  // Create a copy and shuffle using Fisher-Yates algorithm for better randomness
-  const shuffled = [...restaurantPool];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, Math.min(count, shuffled.length));
-}
-
-// Helper function to get location name based on coordinates
-function getLocationName(latitude: number, longitude: number): string {
-  // Simple coordinate-based location detection for major regions
-  if (latitude > 42.0 && latitude < 47.0 && longitude > -93.0 && longitude < -86.0) {
-    return 'Wisconsin';
-  } else if (latitude > 30.0 && latitude < 35.0 && longitude > -86.0 && longitude < -80.0) {
-    return 'Georgia';
-  } else if (latitude > 32.0 && latitude < 42.0 && longitude > -125.0 && longitude < -114.0) {
-    return 'California';
-  } else if (latitude > 40.0 && latitude < 45.0 && longitude > -80.0 && longitude < -71.0) {
-    return 'New York';
-  } else if (latitude > 25.0 && latitude < 36.0 && longitude > -107.0 && longitude < -93.0) {
-    return 'Texas';
-  } else if (latitude > 24.0 && latitude < 31.0 && longitude > -88.0 && longitude < -79.0) {
-    return 'Florida';
-  } else {
-    // Generate location name based on general geographic indicators
-    if (latitude > 49) return 'Northern Region';
-    else if (latitude < 25) return 'Southern Region';
-    else if (longitude < -100) return 'Western Region';
-    else if (longitude > -80) return 'Eastern Region';
-    else return 'Central Region';
-  }
-}
-
-// Helper function to generate diverse restaurant types with varied pricing
-function generateDiverseRestaurantPool(locationName: string = 'Local Area') {
-  const restaurantTypes = [
-    // Budget restaurants ($)
-    { type: 'Fast Casual', priceRange: '$', names: ['Corner Cafe', 'Daily Grind', 'The Local Spot', 'Neighborhood Eatery'] },
-    { type: 'Pizza', priceRange: '$', names: ['Tony\'s Pizza', 'Corner Slice', 'Pizza Palace', 'Artisan Pies'] },
-    { type: 'Mexican', priceRange: '$', names: ['Casa Mesa', 'El Corazón', 'Tacos & More', 'Verde Kitchen'] },
-    { type: 'Asian', priceRange: '$', names: ['Golden Bowl', 'Noodle House', 'Rice Garden', 'Pho Station'] },
-    { type: 'American Diner', priceRange: '$', names: ['Main Street Diner', 'Sunrise Cafe', 'The Corner Booth', 'Classic Diner'] },
-    
-    // Moderate restaurants ($$)
-    { type: 'Italian', priceRange: '$$', names: ['Bella Vista', 'Romano\'s', 'Olive Branch', 'Villa Italiana'] },
-    { type: 'American', priceRange: '$$', names: ['The Grill House', 'Heritage Kitchen', 'Hometown Bistro', 'Fireside Restaurant'] },
-    { type: 'Steakhouse', priceRange: '$$', names: ['Country Steakhouse', 'The Cattle Ranch', 'Prime Cuts', 'Stockyard Grill'] },
-    { type: 'Seafood', priceRange: '$$', names: ['Harbor Grill', 'Catch of the Day', 'Coastal Kitchen', 'The Fish Market'] },
-    { type: 'Mediterranean', priceRange: '$$', names: ['Olive Grove', 'Mediterranean Breeze', 'Santorini', 'The Olive Tree'] },
-    
-    // Upscale restaurants ($$$)
-    { type: 'Contemporary', priceRange: '$$$', names: ['The Modern Kitchen', 'Artisan Table', 'Elevated Dining', 'The Curator'] },
-    { type: 'French', priceRange: '$$$', names: ['Le Jardin', 'Bistro Moderne', 'Chez Laurent', 'The French Corner'] },
-    { type: 'Wine Bar', priceRange: '$$$', names: ['The Vintner', 'Cork & Glass', 'Vintage Reserve', 'The Cellar'] },
-    
-    // Fine dining ($$$$)
-    { type: 'Fine Dining', priceRange: '$$$$', names: ['The Metropolitan', 'Signature', 'The Capital Table', 'Executive Chef\'s'] }
-  ];
-  
-  const restaurants: any[] = [];
-  let idCounter = 1;
-  
-  restaurantTypes.forEach(category => {
-    category.names.forEach(name => {
-      restaurants.push({
-        id: `loc-${idCounter++}`,
-        name,
-        type: category.type,
-        priceRange: category.priceRange,
-        description: `${locationName} • Rating: ${(3.5 + Math.random() * 1.5).toFixed(1)}`,
-        rating: 3.5 + Math.random() * 1.5,
-        address: locationName
-      });
-    });
-  });
-  
-  return restaurants;
-}
-
-// Helper function to get location-based fallback restaurants
-function getLocationBasedFallbackRestaurants(latitude: number, longitude: number) {
-  // Try to determine the general location name for better fallback
-  let locationName = 'Local Area';
-  
-  // Simple coordinate-based location detection for major regions
-  if (latitude > 42.0 && latitude < 47.0 && longitude > -93.0 && longitude < -86.0) {
-    locationName = 'Wisconsin';
-  } else if (latitude > 30.0 && latitude < 35.0 && longitude > -86.0 && longitude < -80.0) {
-    locationName = 'Georgia';
-  } else if (latitude > 32.0 && latitude < 42.0 && longitude > -125.0 && longitude < -114.0) {
-    locationName = 'California';
-  } else if (latitude > 40.0 && latitude < 45.0 && longitude > -80.0 && longitude < -71.0) {
-    locationName = 'New York';
-  } else if (latitude > 25.0 && latitude < 36.0 && longitude > -107.0 && longitude < -93.0) {
-    locationName = 'Texas';
-  } else if (latitude > 24.0 && latitude < 31.0 && longitude > -88.0 && longitude < -79.0) {
-    locationName = 'Florida';
-  } else {
-    // Generate location name based on general geographic indicators
-    if (latitude > 49) locationName = 'Northern Region';
-    else if (latitude < 25) locationName = 'Southern Region';
-    else if (longitude < -100) locationName = 'Western Region';
-    else if (longitude > -80) locationName = 'Eastern Region';
-    else locationName = 'Central Region';
-  }
-  
-  // Generate diverse restaurant pool with balanced pricing
-  const allRestaurants = generateDiverseRestaurantPool(locationName);
-  
-  // Return a randomized selection ensuring price range diversity
-  const budgetRestaurants = allRestaurants.filter(r => r.priceRange === '$');
-  const moderateRestaurants = allRestaurants.filter(r => r.priceRange === '$$');
-  const upscaleRestaurants = allRestaurants.filter(r => r.priceRange === '$$$');
-  const luxuryRestaurants = allRestaurants.filter(r => r.priceRange === '$$$$');
-  
-  const selection = [
-    ...getRandomRestaurants(budgetRestaurants, 3),      // 3 budget options
-    ...getRandomRestaurants(moderateRestaurants, 4),    // 4 moderate options  
-    ...getRandomRestaurants(upscaleRestaurants, 2),     // 2 upscale options
-    ...getRandomRestaurants(luxuryRestaurants, 1)       // 1 luxury option
-  ];
-  
-  return getRandomRestaurants(selection, 8 + Math.floor(Math.random() * 3)); // 8-10 total
-
-}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -1309,37 +1181,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (!restaurants || restaurants.length === 0) {
-        console.log('No restaurants found from Google Places API, using location-based fallback');
-        // Generate diverse restaurants with balanced pricing for any location
-        const locationName = getLocationName(latitude, longitude);
-        const allRestaurants = generateDiverseRestaurantPool(locationName);
-        
-        // Ensure price range diversity: budget, moderate, upscale, luxury
-        const budgetRestaurants = allRestaurants.filter(r => r.priceRange === '$');
-        const moderateRestaurants = allRestaurants.filter(r => r.priceRange === '$$');
-        const upscaleRestaurants = allRestaurants.filter(r => r.priceRange === '$$$');
-        const luxuryRestaurants = allRestaurants.filter(r => r.priceRange === '$$$$');
-        
-        const fallbackRestaurants = [
-          ...getRandomRestaurants(budgetRestaurants, 3),      // 3 budget options
-          ...getRandomRestaurants(moderateRestaurants, 4),    // 4 moderate options  
-          ...getRandomRestaurants(upscaleRestaurants, 2),     // 2 upscale options
-          ...getRandomRestaurants(luxuryRestaurants, 1)       // 1 luxury option
-        ];
-        console.log('Location-based fallback restaurants:', fallbackRestaurants.length, 'restaurants');
-        if (fallbackRestaurants.length > 0) {
-          console.log('First fallback restaurant:', fallbackRestaurants[0]);
-        }
-        
-        // The fallback restaurants are already randomized by the helper function
-        console.log('Randomized restaurants being returned:', fallbackRestaurants.length);
-        res.json(fallbackRestaurants);
+        console.log('No real restaurants found in the area - cannot provide training data');
+        res.status(404).json({ 
+          message: 'No restaurants found in your area. Please check your internet connection and try again, or contact support if the issue persists.',
+          error: 'NO_RESTAURANTS_FOUND'
+        });
         return;
       }
 
-      // Apply randomization to Google Places restaurants as well
-      const randomizedRestaurants = getRandomRestaurants(restaurants, Math.min(12, restaurants.length));
-      res.json(randomizedRestaurants);
+      // Return real restaurants from Google Places API
+      res.json(restaurants.slice(0, 12));
     } catch (error) {
       console.error('Error getting training restaurants:', error);
       res.status(500).json({ message: 'Failed to get training restaurants' });
