@@ -89,69 +89,17 @@ export function AIRecommendations() {
       allKeys: Object.keys(restaurant)
     });
     
-    // DIRECT BYPASS: Since server data keeps getting lost, inject real contact data for Wisconsin restaurants
-    const getContactDataForRestaurant = (restaurantName: string) => {
-      const name = restaurantName.toLowerCase();
-      
-      // Real Wisconsin restaurant contact data (public information)
-      if (name.includes('lakefront brewery')) {
-        return {
-          phone: '(414) 372-8800',
-          website: 'https://www.lakefrontbrewery.com',
-          address: '1872 N Commerce St, Milwaukee, WI 53212',
-          hours: 'Mon-Thu: 11am-9pm, Fri-Sat: 11am-10pm, Sun: 11am-8pm'
-        };
-      }
-      if (name.includes('milwaukee athletic') || name.includes('the mac')) {
-        return {
-          phone: '(414) 287-0100', 
-          website: 'https://www.milwaukeeathleticclub.com',
-          address: '758 N Broadway, Milwaukee, WI 53202',
-          hours: 'Mon-Fri: 6am-10pm, Sat-Sun: 7am-9pm'
-        };
-      }
-      if (name.includes('mason street grill')) {
-        return {
-          phone: '(414) 298-3131',
-          website: 'https://www.masonstreetgrill.com', 
-          address: '425 E Mason St, Milwaukee, WI 53202',
-          hours: 'Mon-Thu: 11:30am-2pm & 5pm-9pm'
-        };
-      }
-      if (name.includes('safehouse')) {
-        return {
-          phone: '(414) 271-2007',
-          website: 'https://www.safe-house.com',
-          address: '779 N Front St, Milwaukee, WI 53202', 
-          hours: 'Mon-Thu: 11:30am-2am, Fri-Sat: 11:30am-2:30am'
-        };
-      }
-      // Default fallback
-      return {
-        phone: restaurant.phoneNumber || restaurant.phone || '',
-        website: restaurant.website || restaurant.websiteUri || '',
-        address: restaurant.address || restaurant.location || restaurant.vicinity || '',
-        hours: restaurant.hours || formatOpeningHours(restaurant.openingHours) || ''
-      };
-    };
-    
-    const contactData = getContactDataForRestaurant(restaurant.name);
-    
-    // Store comprehensive restaurant data in sessionStorage 
+    // PRESERVE ALL SERVER DATA - don't override anything with empty strings
     const restaurantData = {
       id: restaurantId,
       name: restaurant.name,
       type: restaurant.type || restaurant.cuisine || 'Restaurant',
       priceRange: restaurant.priceRange,
       description: restaurant.description || restaurant.reasonForRecommendation || '',
-      // USE ACTUAL CONTACT DATA instead of server's broken mapping
-      address: contactData.address,
-      phone: contactData.phone,
-      phoneNumber: contactData.phone,
-      website: contactData.website,
-      websiteUri: contactData.website,
-      hours: contactData.hours,
-      openingHours: restaurant.openingHours,
+      // Keep ALL fields from server response
+      ...restaurant,
+      // Override only the display ID
+      id: restaurantId,
       rating: restaurant.rating || restaurant.estimatedRating || 0,
       estimatedRating: restaurant.rating || restaurant.estimatedRating || 0,
       reviewCount: restaurant.userRatingsTotal || 0,

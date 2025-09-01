@@ -644,15 +644,8 @@ export async function generateCustomRecommendations(
         // DIRECT API DATA - bypass any mapping issues  
         phone: restaurant.phoneNumber,
         hours: restaurant.openingHours,
-        // LOG WHAT WE'RE ACTUALLY SENDING
-        _debugContact: {
-          serverHasPhone: !!restaurant.phoneNumber,
-          serverHasWebsite: !!restaurant.website, 
-          serverHasHours: !!restaurant.openingHours,
-          phoneValue: restaurant.phoneNumber,
-          websiteValue: restaurant.website,
-          hoursValue: restaurant.openingHours
-        },
+        // LOG THE EXACT VALUES BEING SENT
+        _serverDebug: `Phone: ${restaurant.phoneNumber || 'NULL'} | Website: ${restaurant.website || 'NULL'} | Hours: ${restaurant.openingHours ? 'OBJECT' : 'NULL'}`,
         reviews: restaurant.reviews || [],
         userRatingsTotal: restaurant.userRatingsTotal,
         businessStatus: restaurant.businessStatus,
