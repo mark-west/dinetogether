@@ -3,34 +3,43 @@ interface RestaurantWebsiteResult {
   fallbackSearch: string;
 }
 
-// Function to search for restaurant website using web search
-async function searchForRestaurantWebsite(query: string): Promise<string | undefined> {
+// Function to search for restaurant website using Google Places API
+async function searchForRestaurantWebsite(restaurantName: string, address?: string): Promise<string | undefined> {
   try {
-    // Use web search to find actual restaurant website
-    const searchResult = await fetch('http://localhost:5000/api/web-search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query })
-    });
+    // Use Google Places API to find the business profile with website
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.log('Google Maps API key not found');
+      return undefined;
+    }
+
+    // First, search for the place using the Text Search API
+    const searchQuery = `${restaurantName}${address ? ` ${address}` : ''}`;
+    const textSearchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&key=${apiKey}`;
     
-    if (searchResult.ok) {
-      const searchData = await searchResult.json();
-      // Look for official website URLs in search results
-      if (searchData.results && searchData.results.length > 0) {
-        // Find the first result that looks like an official website
-        for (const result of searchData.results) {
-          const url = result.url || result.link;
-          if (url && isLikelyRestaurantWebsite(url, query)) {
-            return url;
-          }
-        }
+    const searchResponse = await fetch(textSearchUrl);
+    const searchData = await searchResponse.json();
+    
+    if (searchData.results && searchData.results.length > 0) {
+      // Get the first result's place_id
+      const placeId = searchData.results[0].place_id;
+      
+      // Use Place Details API to get the website URL
+      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=website&key=${apiKey}`;
+      
+      const detailsResponse = await fetch(detailsUrl);
+      const detailsData = await detailsResponse.json();
+      
+      if (detailsData.result && detailsData.result.website) {
+        console.log(`Found website for ${restaurantName}: ${detailsData.result.website}`);
+        return detailsData.result.website;
       }
     }
     
     return undefined;
     
   } catch (error) {
-    console.error('Error in restaurant website search:', error);
+    console.error('Error in Google Places restaurant website search:', error);
     return undefined;
   }
 }
@@ -85,11 +94,11 @@ export async function webSearchForRestaurantWebsite(
     let actualWebsiteUrl: string | undefined;
     
     try {
-      // Search for the restaurant's website
-      const searchResults = await searchForRestaurantWebsite(searchQuery);
+      // Search for the restaurant's website using Google Places API
+      const searchResults = await searchForRestaurantWebsite(restaurantName, address);
       actualWebsiteUrl = searchResults;
     } catch (searchError) {
-      console.log('Web search failed, using fallback:', searchError);
+      console.log('Google Places search failed, using fallback:', searchError);
     }
     
     const result: RestaurantWebsiteResult = {
