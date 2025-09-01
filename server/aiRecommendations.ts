@@ -645,9 +645,10 @@ export async function generateCustomRecommendations(
       console.log(`PRICE FILTER: ${beforeCount} -> ${filteredRestaurants.length} restaurants`);
     }
     
-    // If no matches found, fall back to all restaurants
+    // If no matches found for specific cuisine, return empty results instead of ignoring preferences
     if (filteredRestaurants.length === 0 && preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
-      filteredRestaurants = nearbyRestaurants.slice(0, 6);
+      console.log(`NO RESTAURANTS FOUND for cuisine: ${preferences.foodType}`);
+      return []; // Return empty array instead of ignoring user preferences
     }
     
     // Since we're using fetchEnhancedRestaurantsForAI, restaurants already have detailed data
@@ -680,13 +681,16 @@ export async function generateCustomRecommendations(
           matchesPreference ? `Serves ${preferences.foodType} cuisine` : 'Based on Google Places data',
           'Real restaurant you can visit'
         ],
-        // Map Google Places data - direct from API response
-        phoneNumber: restaurant.phoneNumber,
-        website: restaurant.website, 
+        // PRESERVE CONTACT DATA from Google Places API
+        phoneNumber: restaurant.phoneNumber || restaurant.phone,
+        website: restaurant.website || restaurant.websiteUri, 
         openingHours: restaurant.openingHours,
+        address: restaurant.address || restaurant.vicinity || restaurant.formattedAddress,
         // DIRECT API DATA - bypass any mapping issues  
-        phone: restaurant.phoneNumber,
+        phone: restaurant.phoneNumber || restaurant.phone,
+        websiteUri: restaurant.website || restaurant.websiteUri,
         hours: restaurant.openingHours,
+        formattedAddress: restaurant.address || restaurant.vicinity,
         // LOG THE EXACT VALUES BEING SENT
         _serverDebug: `Phone: ${restaurant.phoneNumber || 'NULL'} | Website: ${restaurant.website || 'NULL'} | Hours: ${restaurant.openingHours ? 'OBJECT' : 'NULL'}`,
         reviews: restaurant.reviews || [],
