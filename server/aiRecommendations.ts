@@ -8,9 +8,9 @@ const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : 
 
 // Helper function to fetch nearby restaurants from Google Places API for AI recommendations
 async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, radius: number) {
-  const API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
   if (!API_KEY) {
-    console.error('Google Maps API key not configured');
+    console.error('Server-side Google Maps API key not configured');
     return [];
   }
 

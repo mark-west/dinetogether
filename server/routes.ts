@@ -31,10 +31,10 @@ import {
 async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
   console.log('=== FETCH NEARBY RESTAURANTS CALLED ===');
   console.log('Parameters:', { latitude, longitude, radius });
-  const API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
   console.log('Using Google Maps API key:', API_KEY ? `Key exists: ${API_KEY?.substring(0, 10)}...` : 'No key found');
   if (!API_KEY) {
-    console.error('Google Maps API key not configured');
+    console.error('Server-side Google Maps API key not configured');
     return [];
   }
 
