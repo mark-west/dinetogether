@@ -27,7 +27,6 @@ export default function Sidebar() {
     { path: '/', label: 'Dashboard', icon: 'fas fa-home' },
     { path: '/groups', label: 'My Groups', icon: 'fas fa-users' },
     { path: '/events', label: 'Events', icon: 'fas fa-calendar' },
-    { path: '/recommendations', label: 'AI Recommendations', icon: 'fas fa-robot' },
     { path: '/chat', label: 'Messages', icon: 'fas fa-comments' },
   ];
 
