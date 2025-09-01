@@ -1234,9 +1234,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!restaurants || restaurants.length === 0) {
         console.log('No restaurants found from Google Places API, using location-based fallback');
         const fallbackRestaurants = getLocationBasedFallbackRestaurants(latitude, longitude);
+        console.log('Location-based fallback restaurants:', fallbackRestaurants.length, 'restaurants');
+        if (fallbackRestaurants.length > 0) {
+          console.log('First fallback restaurant:', fallbackRestaurants[0]);
+        }
         
         // Randomize the order so users see different restaurants each time
         const shuffledRestaurants = fallbackRestaurants.sort(() => Math.random() - 0.5);
+        console.log('Shuffled restaurants being returned:', shuffledRestaurants.length);
         res.json(shuffledRestaurants);
         return;
       }
