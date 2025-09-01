@@ -105,11 +105,11 @@ export function InteractiveAISuggestions({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <i className="fas fa-magic text-white"></i>
+            <div className="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center">
+              <i className="fas fa-sparkles text-white text-lg"></i>
             </div>
             <div>
-              <CardTitle className="text-lg">{title}</CardTitle>
+              <CardTitle className="text-xl font-semibold text-foreground">{title}</CardTitle>
               <p className="text-sm text-muted-foreground">{subtitle}</p>
             </div>
           </div>
@@ -117,9 +117,10 @@ export function InteractiveAISuggestions({
           {!showForm && !recommendations.length && (
             <Button 
               onClick={() => setShowForm(true)}
+              className="gradient-bg"
               data-testid="button-start-suggestions"
             >
-              <i className="fas fa-wand-magic mr-2"></i>
+              <i className="fas fa-sparkles mr-2"></i>
               Get Suggestions
             </Button>
           )}
@@ -259,11 +260,11 @@ export function InteractiveAISuggestions({
               <Button 
                 onClick={handleGenerateSuggestions}
                 disabled={generateMutation.isPending}
-                className="flex-1"
+                className="flex-1 gradient-bg"
                 data-testid="button-generate-suggestions"
               >
                 {generateMutation.isPending ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
+                  <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full mr-2"></div>
                 ) : (
                   <i className="fas fa-sparkles mr-2"></i>
                 )}
@@ -283,10 +284,10 @@ export function InteractiveAISuggestions({
         {/* Loading State */}
         {generateMutation.isPending && (
           <div className="space-y-4">
-            <div className="text-center py-4">
+            <div className="text-center py-6">
               <div className="inline-flex items-center gap-3 text-muted-foreground">
-                <div className="animate-spin h-5 w-5 border-2 border-purple-300 border-t-purple-500 rounded-full"></div>
-                <span>AI is analyzing your preferences...</span>
+                <div className="animate-spin h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full"></div>
+                <span className="font-medium">AI is analyzing your preferences...</span>
               </div>
             </div>
             {[...Array(3)].map((_, i) => (

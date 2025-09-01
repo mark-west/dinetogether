@@ -122,7 +122,14 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Here's what's happening with your restaurant groups</p>
             </div>
             
-            {/* Stats Grid */}
+            {/* Interactive AI Suggestions */}
+          <InteractiveAISuggestions
+            title="Find Your Perfect Restaurant"
+            subtitle="Tell us what you're craving and get personalized recommendations"
+            variant="user"
+          />
+
+          {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4">
@@ -239,13 +246,6 @@ export default function Dashboard() {
               </Card>
             )}
           </div>
-
-          {/* Interactive AI Suggestions */}
-          <InteractiveAISuggestions
-            title="Personalized Restaurant Finder"
-            subtitle="Tell us what you're in the mood for and get customized recommendations"
-            variant="user"
-          />
 
           {/* My Groups */}
           <div className="space-y-4">
