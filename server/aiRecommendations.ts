@@ -25,8 +25,19 @@ async function fetchRestaurantDetails(placeId: string) {
     const response = await fetch(url);
     const data = await response.json();
     
+    console.log(`Google Places Details API called for ${placeId}:`);
+    console.log(`Status: ${data.status}`);
+    if (data.error_message) {
+      console.log(`Error: ${data.error_message}`);
+    }
+    
     if (data.status === 'OK' && data.result) {
       const place = data.result;
+      console.log(`Place details for ${place.name}:`);
+      console.log(`- Phone: ${place.formatted_phone_number || 'NOT FOUND'}`);
+      console.log(`- Website: ${place.website || 'NOT FOUND'}`);
+      console.log(`- Opening Hours: ${place.opening_hours ? 'FOUND' : 'NOT FOUND'}`);
+      
       return {
         placeId: placeId,
         name: place.name,
@@ -43,6 +54,8 @@ async function fetchRestaurantDetails(placeId: string) {
         photos: place.photos,
         businessStatus: place.business_status
       };
+    } else {
+      console.log(`Failed to get place details for ${placeId}: ${data.status}`);
     }
   } catch (error) {
     console.error(`Error fetching details for place ${placeId}:`, error);
