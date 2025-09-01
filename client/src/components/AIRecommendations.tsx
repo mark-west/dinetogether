@@ -220,9 +220,25 @@ export function AIRecommendations() {
                     <div className="flex items-center gap-2">
                       <RestaurantIcon size="lg" className="text-orange-500" />
                       <div>
-                        <h3 className="font-semibold text-foreground" data-testid={`text-restaurant-name-${index}`}>
-                          {rec.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground" data-testid={`text-restaurant-name-${index}`}>
+                            {rec.name}
+                          </h3>
+                          {/* Website Icon */}
+                          <button
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const websiteUrl = await getRestaurantWebsiteUrl(rec.name, rec.location);
+                              window.open(websiteUrl, '_blank');
+                            }}
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                            title="Visit Restaurant Website"
+                            data-testid={`button-restaurant-website-icon-${index}`}
+                          >
+                            <i className="fas fa-globe text-xs"></i>
+                          </button>
+                        </div>
                         <p className="text-sm text-muted-foreground">{rec.cuisine}</p>
                       </div>
                     </div>

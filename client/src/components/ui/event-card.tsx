@@ -174,9 +174,27 @@ export function EventCard({
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 gap-2">
               <div className="flex-1">
-                <h4 className={`font-semibold text-foreground ${variant === 'detailed' ? 'text-lg' : ''}`} data-testid={`text-restaurant-${event.id}`}>
-                  {event.restaurantName || event.name}
-                </h4>
+                <div className="flex items-center gap-2">
+                  <h4 className={`font-semibold text-foreground ${variant === 'detailed' ? 'text-lg' : ''}`} data-testid={`text-restaurant-${event.id}`}>
+                    {event.restaurantName || event.name}
+                  </h4>
+                  {/* Website Icon - only show for events with restaurants */}
+                  {event.restaurantName && (
+                    <button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
+                        window.open(websiteUrl, '_blank');
+                      }}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                      title="Visit Restaurant Website"
+                      data-testid={`button-restaurant-website-icon-${event.id}`}
+                    >
+                      <i className="fas fa-globe text-xs"></i>
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground" data-testid={`text-group-${event.id}`}>
                   {event.group.name}
                 </p>

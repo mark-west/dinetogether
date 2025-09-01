@@ -175,9 +175,25 @@ export default function RestaurantDetails() {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1">
-              <CardTitle className="text-2xl mb-2" data-testid="text-restaurant-name">
-                {restaurant.name}
-              </CardTitle>
+              <div className="flex items-center gap-3 mb-2">
+                <CardTitle className="text-2xl" data-testid="text-restaurant-name">
+                  {restaurant.name}
+                </CardTitle>
+                {/* Website Icon */}
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
+                    const websiteUrl = await getRestaurantWebsiteUrl(restaurant.name, restaurant.address);
+                    window.open(websiteUrl, '_blank');
+                  }}
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                  title="Visit Restaurant Website"
+                  data-testid="button-restaurant-website"
+                >
+                  <i className="fas fa-globe"></i>
+                </button>
+              </div>
               <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
                 <Badge variant="secondary" data-testid="badge-cuisine-type">
                   <Utensils className="w-3 h-3 mr-1" />

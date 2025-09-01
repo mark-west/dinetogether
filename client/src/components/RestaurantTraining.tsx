@@ -201,9 +201,25 @@ export function RestaurantTraining({
           <div className="space-y-4">
             {/* Restaurant Info */}
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-semibold text-foreground">
-                {currentRestaurant.name}
-              </h3>
+              <div className="flex items-center justify-center gap-3">
+                <h3 className="text-xl font-semibold text-foreground">
+                  {currentRestaurant.name}
+                </h3>
+                {/* Website Icon */}
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
+                    const websiteUrl = await getRestaurantWebsiteUrl(currentRestaurant.name, currentRestaurant.location);
+                    window.open(websiteUrl, '_blank');
+                  }}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                  title="Visit Restaurant Website"
+                  data-testid="button-restaurant-website"
+                >
+                  <i className="fas fa-globe text-sm"></i>
+                </button>
+              </div>
               <div className="flex items-center justify-center gap-2">
                 <Badge variant="outline">{currentRestaurant.type}</Badge>
                 <Badge variant="outline">{currentRestaurant.priceRange}</Badge>
