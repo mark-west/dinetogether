@@ -404,49 +404,79 @@ export async function generateCustomRecommendations(
   latitude: number = 33.7490,
   longitude: number = -84.3880
 ): Promise<CustomRecommendation[]> {
+  console.log('=== GENERATING CUSTOM RECOMMENDATIONS ===');
+  console.log('Preferences:', preferences);
+  console.log('Location:', { latitude, longitude });
+  
   try {
-    // Return empty if OpenAI is not available - no fake restaurants
-    if (!openai || !hasOpenAI) {
-      console.log('OpenAI API not available - no custom recommendations');
-      return [];
+    // Try OpenAI first if available
+    if (openai && hasOpenAI) {
+      const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert restaurant recommendation engine that creates personalized suggestions based on specific user preferences and requirements.
+            
+            Consider:
+            - Food type and cuisine preferences
+            - Price range and budget constraints
+            - Group size and dining dynamics
+            - Occasion and atmosphere requirements
+            - Dietary restrictions and special needs
+            - User's historical preferences if available
+            
+            Provide realistic restaurant recommendations that match all specified criteria. Include confidence scores and detailed reasoning.
+            
+            Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "type": "Cuisine Type", "rating": 4.2, "priceRange": "$$", "description": "Detailed description", "confidence": 0.85, "reasons": ["reason1", "reason2", "reason3"]}] }`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2500
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      return result.recommendations || [];
     }
-
-    const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
-    
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert restaurant recommendation engine that creates personalized suggestions based on specific user preferences and requirements.
-          
-          Consider:
-          - Food type and cuisine preferences
-          - Price range and budget constraints
-          - Group size and dining dynamics
-          - Occasion and atmosphere requirements
-          - Dietary restrictions and special needs
-          - User's historical preferences if available
-          
-          Provide realistic restaurant recommendations that match all specified criteria. Include confidence scores and detailed reasoning.
-          
-          Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "type": "Cuisine Type", "rating": 4.2, "priceRange": "$$", "description": "Detailed description", "confidence": 0.85, "reasons": ["reason1", "reason2", "reason3"]}] }`
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 2500
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.recommendations || [];
   } catch (error) {
     console.error("Error generating custom AI recommendations:", error);
-    console.log('OpenAI API failed - no custom recommendations available');
+    console.log('OpenAI API failed - falling back to Google Places recommendations');
+  }
+
+  // Fallback to Google Places when OpenAI is unavailable or fails
+  console.log('Using Google Places fallback for recommendations');
+  try {
+    const radius = 48280; // 30 miles in meters
+    const nearbyRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
+    
+    console.log('Found nearby restaurants for fallback:', nearbyRestaurants.length);
+    
+    // Convert Google Places results to CustomRecommendation format
+    const recommendations: CustomRecommendation[] = nearbyRestaurants.slice(0, 6).map((restaurant: any) => ({
+      name: restaurant.name,
+      type: restaurant.cuisine || restaurant.types?.[0]?.replace('_', ' ') || 'Restaurant',
+      rating: restaurant.rating || 4.0,
+      priceRange: '$'.repeat(restaurant.price_level || 2),
+      description: `${restaurant.name} - A local restaurant serving ${restaurant.cuisine || 'delicious food'} in your area.`,
+      confidence: 0.7,
+      reasons: [
+        'Located within 30 miles of your location',
+        'Based on Google Places data',
+        'Real restaurant you can visit'
+      ]
+    }));
+    
+    console.log('Converted to recommendations:', recommendations.length);
+    return recommendations;
+  } catch (fallbackError) {
+    console.error('Google Places fallback also failed:', fallbackError);
     return [];
   }
 }
