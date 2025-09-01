@@ -137,7 +137,7 @@ export class GooglePlacesService {
       const url = `${GOOGLE_PLACES_BASE_URL}/places:searchNearby`;
       
       const requestBody = {
-        includedTypes: ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'food'],
+        includedTypes: ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'],
         maxResultCount: 20,
         locationRestriction: {
           circle: {
@@ -183,7 +183,7 @@ export class GooglePlacesService {
    */
   private async searchNearbyPlacesLegacy(latitude: number, longitude: number, radius: number): Promise<NearbyPlace[]> {
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${this.apiKey}`;
+      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&opennow=false&key=${this.apiKey}`;
       
       const response = await fetch(url);
 
