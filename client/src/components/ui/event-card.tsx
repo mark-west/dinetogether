@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { generateRestaurantWebsiteSearchUrl } from "@/lib/restaurantUtils";
+import { getRestaurantWebsiteUrl } from "@/lib/restaurantUtils";
 
 interface EventCardProps {
   event: {
@@ -295,10 +295,10 @@ export function EventCard({
                     variant="outline" 
                     size="sm"
                     className="w-full sm:w-auto"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      const websiteUrl = generateRestaurantWebsiteSearchUrl(event.restaurantName!, event.restaurantAddress);
+                      const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
                       window.open(websiteUrl, '_blank');
                     }}
                     data-testid={`button-restaurant-website-${event.id}`}

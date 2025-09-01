@@ -26,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { InteractiveStarRating } from "@/components/InteractiveStarRating";
-import { generateRestaurantWebsiteSearchUrl } from '@/lib/restaurantUtils';
+import { getRestaurantWebsiteUrl } from '@/lib/restaurantUtils';
 
 // Star Rating Component
 function StarRating({ rating, interactive = false, onRatingChange }: { 
@@ -1046,8 +1046,8 @@ export default function EventDetails() {
                           variant="outline" 
                           size="sm"
                           className="flex-1"
-                          onClick={() => {
-                            const websiteUrl = generateRestaurantWebsiteSearchUrl(event.restaurantName!, event.restaurantAddress);
+                          onClick={async () => {
+                            const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
                             window.open(websiteUrl, '_blank');
                           }}
                           data-testid="button-restaurant-website"

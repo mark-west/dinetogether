@@ -17,6 +17,7 @@ import {
   insertEventRatingSchema,
 } from "@shared/schema";
 import { nanoid } from "nanoid";
+import { getRestaurantWebsiteUrl } from "./restaurantWebsiteSearch";
 import { 
   generateRestaurantRecommendations, 
   analyzeUserDiningPatterns, 
@@ -1046,6 +1047,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Recommendation routes
+  // Restaurant website search endpoint
+  app.get("/api/restaurant-website", async (req, res) => {
+    try {
+      const { name, address } = req.query;
+      
+      if (!name || typeof name !== 'string') {
+        return res.status(400).json({ error: 'Restaurant name is required' });
+      }
+      
+      const websiteUrl = await getRestaurantWebsiteUrl(name, address as string);
+      res.json({ url: websiteUrl });
+    } catch (error) {
+      console.error('Error getting restaurant website:', error);
+      res.status(500).json({ error: 'Failed to get restaurant website' });
+    }
+  });
+
+  // Web search endpoint for finding restaurant websites
+  app.post("/api/web-search", async (req, res) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ error: 'Search query is required' });
+      }
+      
+      // Note: In a production environment, you would integrate with a real web search API
+      // such as Google Custom Search API, Bing Search API, or similar service
+      // For now, we'll return empty results to gracefully fall back to Google search
+      console.log('Web search requested for:', query);
+      res.json({ results: [] });
+    } catch (error) {
+      console.error('Error in web search:', error);
+      res.status(500).json({ error: 'Web search failed' });
+    }
+  });
+
   app.get('/api/recommendations', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

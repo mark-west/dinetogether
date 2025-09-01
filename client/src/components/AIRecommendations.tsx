@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
 import { RestaurantIcon, LocationIcon } from "./ui/app-icons";
-import { generateRestaurantWebsiteSearchUrl, getWebsiteLinkText } from '@/lib/restaurantUtils';
+import { getRestaurantWebsiteUrl, getWebsiteLinkText } from '@/lib/restaurantUtils';
 
 interface Recommendation {
   name: string;
@@ -280,8 +280,8 @@ export function AIRecommendations() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => {
-                        const websiteUrl = generateRestaurantWebsiteSearchUrl(rec.name, rec.location);
+                      onClick={async () => {
+                        const websiteUrl = await getRestaurantWebsiteUrl(rec.name, rec.location);
                         window.open(websiteUrl, '_blank');
                       }}
                       data-testid={`button-website-${index}`}

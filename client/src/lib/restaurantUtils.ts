@@ -33,6 +33,28 @@ export function generateRestaurantWebsiteSearchUrl(restaurantName: string, addre
 }
 
 /**
+ * Gets the restaurant's actual website URL or fallback search
+ * @param restaurantName - Name of the restaurant
+ * @param address - Optional restaurant address
+ * @returns Promise that resolves to the restaurant's website URL
+ */
+export async function getRestaurantWebsiteUrl(restaurantName: string, address?: string): Promise<string> {
+  try {
+    const response = await fetch(`/api/restaurant-website?name=${encodeURIComponent(restaurantName)}&address=${encodeURIComponent(address || '')}`);
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.url;
+    }
+  } catch (error) {
+    console.error('Error fetching restaurant website:', error);
+  }
+  
+  // Fallback to Google search
+  return generateRestaurantWebsiteSearchUrl(restaurantName, address);
+}
+
+/**
  * Gets a fun, clear button text for the website link
  */
 export function getWebsiteLinkText(): string {
