@@ -667,10 +667,10 @@ export async function generateCustomRecommendations(
           'asian': ['asian', 'oriental', 'fusion', 'sushi', 'ramen']
         };
         
-        const keywords = cuisineKeywords[preferredType] || [preferredType];
+        const keywords = cuisineKeywords[preferredType as keyof typeof cuisineKeywords] || [preferredType];
         
         // Check if restaurant matches ANY of the keywords
-        return keywords.some(keyword => 
+        return keywords.some((keyword: string) => 
           restaurantTypes.includes(keyword) || 
           restaurantName.includes(keyword) ||
           restaurantCuisine.includes(keyword)
@@ -729,15 +729,15 @@ export async function generateCustomRecommendations(
           'Real restaurant you can visit'
         ],
         // PRESERVE CONTACT DATA from Google Places API
-        phoneNumber: restaurant.phoneNumber || restaurant.phone,
-        website: restaurant.website || restaurant.websiteUri, 
-        openingHours: restaurant.openingHours,
-        address: restaurant.address || restaurant.vicinity || restaurant.formattedAddress,
+        phoneNumber: (restaurant as any).phoneNumber || (restaurant as any).phone,
+        website: (restaurant as any).website || (restaurant as any).websiteUri, 
+        openingHours: (restaurant as any).openingHours,
+        address: (restaurant as any).address || restaurant.address || (restaurant as any).vicinity || (restaurant as any).formattedAddress,
         // DIRECT API DATA - bypass any mapping issues  
-        phone: restaurant.phoneNumber || restaurant.phone,
-        websiteUri: restaurant.website || restaurant.websiteUri,
-        hours: restaurant.openingHours,
-        formattedAddress: restaurant.address || restaurant.vicinity,
+        phone: (restaurant as any).phoneNumber || (restaurant as any).phone,
+        websiteUri: (restaurant as any).website || (restaurant as any).websiteUri,
+        hours: (restaurant as any).openingHours,
+        formattedAddress: (restaurant as any).address || restaurant.address || (restaurant as any).vicinity,
         // LOG THE EXACT VALUES BEING SENT
         _serverDebug: `Phone: ${restaurant.phoneNumber || 'NULL'} | Website: ${restaurant.website || 'NULL'} | Hours: ${restaurant.openingHours ? 'OBJECT' : 'NULL'}`,
         reviews: restaurant.reviews || [],
