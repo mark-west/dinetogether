@@ -277,13 +277,16 @@ export class DatabaseStorage implements IStorage {
         adminId: groups.adminId,
         createdAt: groups.createdAt,
         updatedAt: groups.updatedAt,
-        memberCount: sql<number>`count(distinct ${groupMembers.userId})`,
+        memberCount: sql<number>`(
+          SELECT count(*)
+          FROM ${groupMembers} gm2
+          WHERE gm2.group_id = ${groups.id}
+        )`,
         role: groupMembers.role,
       })
       .from(groups)
       .innerJoin(groupMembers, eq(groups.id, groupMembers.groupId))
-      .where(eq(groupMembers.userId, userId))
-      .groupBy(groups.id, groupMembers.role);
+      .where(eq(groupMembers.userId, userId));
     
     return result;
   }
