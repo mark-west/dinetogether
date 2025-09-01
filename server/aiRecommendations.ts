@@ -134,9 +134,14 @@ async function fetchEnhancedRestaurantsForAI(latitude: number, longitude: number
       enhancedRestaurants.push({
         ...restaurant,
         ...details,
-        // Merge basic data with detailed data
+        // Merge basic data with detailed data - PRESERVE CONTACT INFO FROM DETAILS
         cuisine: restaurant.cuisine, // Keep our processed cuisine type
-        priceRange: restaurant.priceRange // Keep our formatted price range
+        priceRange: restaurant.priceRange, // Keep our formatted price range
+        // ENSURE contact details are preserved from Google Places API
+        phoneNumber: details.phoneNumber || restaurant.phoneNumber,
+        website: details.website || restaurant.website,
+        openingHours: details.openingHours || restaurant.openingHours,
+        address: details.address || restaurant.address || restaurant.vicinity
       });
     }
   }
