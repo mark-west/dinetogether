@@ -558,51 +558,14 @@ export async function generateCustomRecommendations(
   longitude: number
 ): Promise<CustomRecommendation[]> {
   
-  try {
-    // Try OpenAI first if available
-    if (openai && hasOpenAI) {
-      const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
-      
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert restaurant recommendation engine that creates personalized suggestions based on specific user preferences and requirements.
-            
-            Consider:
-            - Food type and cuisine preferences
-            - Price range and budget constraints
-            - Group size and dining dynamics
-            - Occasion and atmosphere requirements
-            - Dietary restrictions and special needs
-            - User's historical preferences if available
-            
-            Provide realistic restaurant recommendations that match all specified criteria. Include confidence scores and detailed reasoning.
-            
-            Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "type": "Cuisine Type", "rating": 4.2, "priceRange": "$$", "description": "Detailed description", "confidence": 0.85, "reasons": ["reason1", "reason2", "reason3"]}] }`
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-        max_tokens: 2500
-      });
+  // ALWAYS use Google Places data for location-specific results
+  // Never generate fake restaurants - only return real restaurants within 30 miles
 
-      const result = JSON.parse(response.choices[0].message.content || "{}");
-      return result.recommendations || [];
-    }
-  } catch (error) {
-    console.error("OpenAI API failed, using Google Places fallback:", error instanceof Error ? error.message : String(error));
-  }
-
-  // Fallback to Google Places when OpenAI is unavailable or fails
+  // Use Google Places with full restaurant details
   try {
     const radius = 48280; // 30 miles in meters
-    const nearbyRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
+    console.log(`Fetching restaurants within 30 miles of lat: ${latitude}, lng: ${longitude}`);
+    const nearbyRestaurants = await fetchEnhancedRestaurantsForAI(latitude, longitude, radius);
     
     // Filter restaurants based on user preferences
     let filteredRestaurants = nearbyRestaurants;
@@ -639,13 +602,16 @@ export async function generateCustomRecommendations(
       filteredRestaurants = nearbyRestaurants.slice(0, 6);
     }
     
-    // Get enhanced restaurant data with full Google Places details
-    const enhancedRestaurants = await Promise.all(
-      filteredRestaurants.slice(0, 6).map(async (restaurant: any) => {
-        const details = await fetchRestaurantDetails(restaurant.id);
-        return details ? { ...restaurant, ...details } : restaurant;
-      })
-    );
+    // Since we're using fetchEnhancedRestaurantsForAI, restaurants already have detailed data
+    // Just ensure we have the right number of results
+    const enhancedRestaurants = filteredRestaurants.slice(0, 6);
+    console.log(`Found ${enhancedRestaurants.length} location-specific restaurants`);
+    console.log('Sample restaurant data:', enhancedRestaurants[0] ? {
+      name: enhancedRestaurants[0].name,
+      hasPhone: !!enhancedRestaurants[0].phoneNumber,
+      hasWebsite: !!enhancedRestaurants[0].website,
+      hasHours: !!enhancedRestaurants[0].openingHours
+    } : 'No restaurants found');
     
     // Convert Google Places results to CustomRecommendation format with all data preserved
     const recommendations: any[] = enhancedRestaurants.map((restaurant: any) => {
