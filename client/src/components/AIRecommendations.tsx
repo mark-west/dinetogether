@@ -338,7 +338,7 @@ export function AIRecommendations() {
                               e.preventDefault();
                               e.stopPropagation();
                               const websiteUrl = await getRestaurantWebsiteUrl(rec.name, rec.location);
-                              window.open(websiteUrl, '_blank');
+                              window.location.href = websiteUrl;
                             }}
                             className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                             title="Visit Restaurant Website"
@@ -418,7 +418,7 @@ export function AIRecommendations() {
                       className="flex-1"
                       onClick={() => {
                         // Could integrate with maps or reservation systems
-                        window.open(`https://www.google.com/maps/search/${encodeURIComponent(rec.name + ' ' + rec.location)}`, '_blank');
+                        window.location.href = `https://www.google.com/maps/search/${encodeURIComponent(rec.name + ' ' + rec.location)}`;
                       }}
                       data-testid={`button-view-restaurant-${index}`}
                     >
@@ -432,7 +432,7 @@ export function AIRecommendations() {
                       className="flex-1"
                       onClick={async () => {
                         const websiteUrl = await getRestaurantWebsiteUrl(rec.name, rec.location);
-                        window.open(websiteUrl, '_blank');
+                        window.location.href = websiteUrl;
                       }}
                       data-testid={`button-website-${index}`}
                     >

@@ -427,7 +427,7 @@ export default function RestaurantDetails() {
                         onClick={async () => {
                           const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
                           const websiteUrl = await getRestaurantWebsiteUrl(restaurant.name, displayAddress);
-                          window.open(websiteUrl, '_blank');
+                          window.location.href = websiteUrl;
                         }}
                         variant="link" 
                         className="p-0 h-auto text-xs"
@@ -483,7 +483,7 @@ export default function RestaurantDetails() {
               onClick={async () => {
                 const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
                 const websiteUrl = await getRestaurantWebsiteUrl(restaurant.name, displayAddress);
-                window.open(websiteUrl, '_blank');
+                window.location.href = websiteUrl;
               }}
               variant="outline" 
               className="flex-1"

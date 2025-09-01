@@ -211,7 +211,7 @@ export function RestaurantTraining({
                     e.stopPropagation();
                     const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
                     const websiteUrl = await getRestaurantWebsiteUrl(currentRestaurant.name, currentRestaurant.location);
-                    window.open(websiteUrl, '_blank');
+                    window.location.href = websiteUrl;
                   }}
                   className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                   title="Visit Restaurant Website"

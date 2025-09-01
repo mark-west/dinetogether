@@ -465,7 +465,7 @@ export function InteractiveAISuggestions({
                         e.stopPropagation();
                         const { getRestaurantWebsiteUrl } = await import('@/lib/restaurantUtils');
                         const websiteUrl = await getRestaurantWebsiteUrl(recommendation.name, recommendation.address || recommendation.location);
-                        window.open(websiteUrl, '_blank');
+                        window.location.href = websiteUrl;
                       }}
                       variant="outline"
                       size="sm"

@@ -1048,7 +1048,7 @@ export default function EventDetails() {
                           className="flex-1"
                           onClick={async () => {
                             const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                            window.open(websiteUrl, '_blank');
+                            window.location.href = websiteUrl;
                           }}
                           data-testid="button-restaurant-website"
                         >

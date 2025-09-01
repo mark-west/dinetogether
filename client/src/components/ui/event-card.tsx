@@ -185,7 +185,7 @@ export function EventCard({
                         e.preventDefault();
                         e.stopPropagation();
                         const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                        window.open(websiteUrl, '_blank');
+                        window.location.href = websiteUrl;
                       }}
                       className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                       title="Visit Restaurant Website"
@@ -317,7 +317,7 @@ export function EventCard({
                       e.preventDefault();
                       e.stopPropagation();
                       const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                      window.open(websiteUrl, '_blank');
+                      window.location.href = websiteUrl;
                     }}
                     data-testid={`button-restaurant-website-${event.id}`}
                   >
