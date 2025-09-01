@@ -1,5 +1,12 @@
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
+// Stub exports to satisfy imports
+export function analyzeUserDiningPatterns() { return []; }
+export function generateRestaurantRecommendations() { return []; }
+export function enrichWithExternalReviews(data: any) { return data; }
+export function fetchNearbyRestaurants() { return []; }
+export function generateGroupRecommendations() { return []; }
+
 export async function generateCustomRecommendations(
   preferences: any, 
   userHistory: any, 
