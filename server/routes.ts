@@ -1183,15 +1183,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const longitude = parseFloat(req.query.lng as string);
       
       console.log(`ROUTE DEBUG: Custom recommendations requested for coordinates: ${latitude}, ${longitude}`);
-      console.log(`PREFERENCES RECEIVED:`, JSON.stringify(preferences, null, 2));
-      
       if (isNaN(latitude) || isNaN(longitude)) {
         return res.status(400).json({ message: "User location is required" });
       }
       
-      // Use new clean implementation
-      const { generateCustomRecommendations: newGenerateRecommendations } = await import('./aiRecommendationsNew');
-      const recommendations = await newGenerateRecommendations(preferences, userHistory, latitude, longitude);
+      const { generateCustomRecommendations } = await import('./aiRecommendations');
+      const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });
     } catch (error) {
