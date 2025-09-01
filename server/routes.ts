@@ -50,11 +50,16 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
     const response = await fetch(url);
     const data = await response.json();
 
+    console.log('Google Places API response status:', data.status);
+    console.log('Number of results:', data.results?.length || 0);
+
     if (data.status !== 'OK' || !data.results) {
       console.error('Google Places API error:', data.status, data.error_message);
       return [];
     }
 
+    console.log('Raw results from Google:', data.results.length);
+    
     // Filter out chains and process restaurants
     const filteredRestaurants = data.results
       .filter((place: any) => {
@@ -63,7 +68,10 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
         const isChain = chainKeywords.some(keyword => name.includes(keyword));
         const isFineDining = place.price_level >= 3; // Allow higher-end chains
         
-        return !isChain || isFineDining;
+        console.log(`Restaurant: ${place.name}, isChain: ${isChain}, isFineDining: ${isFineDining}, price_level: ${place.price_level}`);
+        
+        // Temporarily allow all restaurants for testing
+        return true; // !isChain || isFineDining;
       })
       .slice(0, 5) // Get 5 restaurants for training
       .map((place: any) => ({
@@ -79,6 +87,10 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
         photoReference: place.photos?.[0]?.photo_reference
       }));
 
+    console.log('Filtered restaurants for training:', filteredRestaurants.length);
+    if (filteredRestaurants.length > 0) {
+      console.log('Sample restaurant:', filteredRestaurants[0]);
+    }
     return filteredRestaurants;
   } catch (error) {
     console.error('Error fetching restaurants from Google Places:', error);
@@ -1151,7 +1163,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);
       
+      console.log('Training restaurants fetched:', restaurants?.length || 0, 'restaurants');
+      if (restaurants && restaurants.length > 0) {
+        console.log('First restaurant:', restaurants[0]);
+      }
+      
       if (!restaurants || restaurants.length === 0) {
+        console.log('No restaurants found, sending 404');
         return res.status(404).json({ message: 'No restaurants available for training' });
       }
 
