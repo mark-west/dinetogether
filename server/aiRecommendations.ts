@@ -3,14 +3,17 @@ import OpenAI from "openai";
 // Check if OpenAI API key is available
 const hasOpenAI = !!process.env.OPENAI_API_KEY;
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+// Using gpt-4o model for reliable AI recommendations
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 // Helper function to fetch nearby restaurants from Google Places API for AI recommendations
 async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, radius: number) {
+  console.log('=== AI RECOMMENDATIONS FETCH NEARBY RESTAURANTS ===');
+  console.log('AI Fetch Parameters:', { latitude, longitude, radius });
   const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  console.log('AI Using Google Maps API key:', API_KEY ? `Key exists: ${API_KEY?.substring(0, 10)}...` : 'No key found');
   if (!API_KEY) {
-    console.error('Server-side Google Maps API key not configured');
+    console.error('AI: Server-side Google Maps API key not configured');
     return [];
   }
 
@@ -25,13 +28,17 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
   ];
 
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
+  console.log('AI Making Google Places API call to:', url.replace(API_KEY, 'API_KEY_HIDDEN'));
 
   try {
     const response = await fetch(url);
     const data = await response.json();
 
+    console.log('AI Google Places API response status:', data.status);
+    console.log('AI Number of results:', data.results?.length || 0);
+
     if (data.status !== 'OK' || !data.results) {
-      console.error('Google Places API error:', data.status, data.error_message);
+      console.error('AI Google Places API error:', data.status, data.error_message);
       return [];
     }
 
@@ -180,7 +187,7 @@ export async function generateRestaurantRecommendations(
     const prompt = createLocalRecommendationPrompt(userPreferences, localRestaurants, location);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -347,7 +354,7 @@ Provide analysis in JSON format: {
 }`;
 
     const response = await openai!.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         {
           role: "system", 
@@ -407,7 +414,7 @@ export async function generateCustomRecommendations(
     const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -462,7 +469,7 @@ export async function generateGroupRecommendations(
     const prompt = createGroupRecommendationPrompt(preferences, groupHistory);
     
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
