@@ -598,6 +598,15 @@ export async function generateCustomRecommendations(
     const radius = 48280; // 30 miles in meters
     console.log(`Fetching restaurants within 30 miles of lat: ${latitude}, lng: ${longitude}`);
     const nearbyRestaurants = await fetchEnhancedRestaurantsForAI(latitude, longitude, radius);
+    console.log(`generateCustomRecommendations got ${nearbyRestaurants?.length || 0} restaurants from fetchEnhancedRestaurantsForAI`);
+    if (nearbyRestaurants && nearbyRestaurants.length > 0) {
+      console.log('First restaurant data from enhanced function:', {
+        name: nearbyRestaurants[0].name,
+        phoneNumber: nearbyRestaurants[0].phoneNumber,
+        website: nearbyRestaurants[0].website,
+        openingHours: !!nearbyRestaurants[0].openingHours
+      });
+    }
     
     // Filter restaurants based on user preferences
     let filteredRestaurants = nearbyRestaurants;
