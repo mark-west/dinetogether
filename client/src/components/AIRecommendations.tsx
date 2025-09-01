@@ -97,13 +97,13 @@ export function AIRecommendations() {
       priceRange: restaurant.priceRange,
       description: restaurant.description || restaurant.reasonForRecommendation || '',
       address: restaurant.location || restaurant.address || '',
-      // Use EXACT Google Places API field names from documentation
-      phone: restaurant.formatted_phone_number || restaurant.phoneNumber || '',
-      phoneNumber: restaurant.formatted_phone_number || restaurant.phoneNumber || '',
-      website: restaurant.website || '',
+      // Use server's field names directly (server already mapped from Google API)
+      phone: restaurant.phoneNumber || '', // Server maps from formatted_phone_number
+      phoneNumber: restaurant.phoneNumber || '',
+      website: restaurant.website || '', // Server passes through from Google
       websiteUri: restaurant.website || '',
-      hours: formatOpeningHours(restaurant.opening_hours || restaurant.openingHours),
-      openingHours: restaurant.opening_hours || restaurant.openingHours,
+      hours: formatOpeningHours(restaurant.openingHours), // Server maps from opening_hours
+      openingHours: restaurant.openingHours,
       rating: restaurant.rating || restaurant.estimatedRating || 0,
       estimatedRating: restaurant.rating || restaurant.estimatedRating || 0,
       reviewCount: restaurant.userRatingsTotal || 0,
