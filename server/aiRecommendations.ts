@@ -242,6 +242,24 @@ export interface CustomRecommendation {
   description: string;
   confidence: number;
   reasons: string[];
+  // Google Places data fields
+  phoneNumber?: string;
+  website?: string;
+  openingHours?: any;
+  reviews?: any[];
+  userRatingsTotal?: number;
+  businessStatus?: string;
+  placeId?: string;
+  address?: string;
+  cuisine?: string;
+  estimatedRating?: number;
+  location?: string;
+  debugInfo?: {
+    hasPhone: boolean;
+    hasWebsite: boolean;
+    hasHours: boolean;
+    hasAddress: boolean;
+  };
 }
 
 export async function generateRestaurantRecommendations(
