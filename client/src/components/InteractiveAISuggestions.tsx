@@ -60,10 +60,8 @@ export function InteractiveAISuggestions({
         ? `/api/recommendations/group/${groupId}/custom`
         : '/api/recommendations/custom';
       
-      return await apiRequest(endpoint, {
-        method: 'POST',
-        body: prefs
-      });
+      const response = await apiRequest('POST', endpoint, prefs);
+      return await response.json();
     },
     onSuccess: (data: any) => {
       setRecommendations(data.recommendations || []);
