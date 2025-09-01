@@ -125,6 +125,31 @@ function getRandomRestaurants(restaurantPool: any[], count: number) {
   return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
+// Helper function to get location name based on coordinates
+function getLocationName(latitude: number, longitude: number): string {
+  // Simple coordinate-based location detection for major regions
+  if (latitude > 42.0 && latitude < 47.0 && longitude > -93.0 && longitude < -86.0) {
+    return 'Wisconsin';
+  } else if (latitude > 30.0 && latitude < 35.0 && longitude > -86.0 && longitude < -80.0) {
+    return 'Georgia';
+  } else if (latitude > 32.0 && latitude < 42.0 && longitude > -125.0 && longitude < -114.0) {
+    return 'California';
+  } else if (latitude > 40.0 && latitude < 45.0 && longitude > -80.0 && longitude < -71.0) {
+    return 'New York';
+  } else if (latitude > 25.0 && latitude < 36.0 && longitude > -107.0 && longitude < -93.0) {
+    return 'Texas';
+  } else if (latitude > 24.0 && latitude < 31.0 && longitude > -88.0 && longitude < -79.0) {
+    return 'Florida';
+  } else {
+    // Generate location name based on general geographic indicators
+    if (latitude > 49) return 'Northern Region';
+    else if (latitude < 25) return 'Southern Region';
+    else if (longitude < -100) return 'Western Region';
+    else if (longitude > -80) return 'Eastern Region';
+    else return 'Central Region';
+  }
+}
+
 // Helper function to generate diverse restaurant types with varied pricing
 function generateDiverseRestaurantPool(locationName: string = 'Local Area') {
   const restaurantTypes = [
@@ -151,7 +176,7 @@ function generateDiverseRestaurantPool(locationName: string = 'Local Area') {
     { type: 'Fine Dining', priceRange: '$$$$', names: ['The Metropolitan', 'Signature', 'The Capital Table', 'Executive Chef\'s'] }
   ];
   
-  const restaurants = [];
+  const restaurants: any[] = [];
   let idCounter = 1;
   
   restaurantTypes.forEach(category => {
@@ -1271,7 +1296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get coordinates from query parameters or default to Atlanta, GA
       const latitude = parseFloat(req.query.lat as string) || 33.7490;
       const longitude = parseFloat(req.query.lng as string) || -84.3880;
-      const radius = 48280; // 30 miles radius
+      const radius = 48280; // 30 miles in meters (30 * 1.60934 * 1000)
       
       console.log('Using coordinates:', { latitude, longitude });
       
@@ -1285,7 +1310,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!restaurants || restaurants.length === 0) {
         console.log('No restaurants found from Google Places API, using location-based fallback');
-        const fallbackRestaurants = getLocationBasedFallbackRestaurants(latitude, longitude);
+        // Generate diverse restaurants with balanced pricing for any location
+        const locationName = getLocationName(latitude, longitude);
+        const allRestaurants = generateDiverseRestaurantPool(locationName);
+        
+        // Ensure price range diversity: budget, moderate, upscale, luxury
+        const budgetRestaurants = allRestaurants.filter(r => r.priceRange === '$');
+        const moderateRestaurants = allRestaurants.filter(r => r.priceRange === '$$');
+        const upscaleRestaurants = allRestaurants.filter(r => r.priceRange === '$$$');
+        const luxuryRestaurants = allRestaurants.filter(r => r.priceRange === '$$$$');
+        
+        const fallbackRestaurants = [
+          ...getRandomRestaurants(budgetRestaurants, 3),      // 3 budget options
+          ...getRandomRestaurants(moderateRestaurants, 4),    // 4 moderate options  
+          ...getRandomRestaurants(upscaleRestaurants, 2),     // 2 upscale options
+          ...getRandomRestaurants(luxuryRestaurants, 1)       // 1 luxury option
+        ];
         console.log('Location-based fallback restaurants:', fallbackRestaurants.length, 'restaurants');
         if (fallbackRestaurants.length > 0) {
           console.log('First fallback restaurant:', fallbackRestaurants[0]);
