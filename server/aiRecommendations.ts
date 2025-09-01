@@ -592,7 +592,13 @@ export async function generateCustomRecommendations(
       filteredRestaurants.slice(0, 6).map(async (restaurant: any) => {
         console.log('DEBUG: Fetching details for restaurant:', restaurant.name, 'with ID:', restaurant.id);
         const details = await fetchRestaurantDetails(restaurant.id);
-        console.log('DEBUG: Fetched details:', details);
+        console.log('DEBUG: Fetched details for', restaurant.name, ':', {
+          hasPhoneNumber: !!details?.phoneNumber,
+          hasWebsite: !!details?.website,
+          hasOpeningHours: !!details?.openingHours,
+          phoneNumber: details?.phoneNumber,
+          website: details?.website
+        });
         return details ? { ...restaurant, ...details } : restaurant;
       })
     );
