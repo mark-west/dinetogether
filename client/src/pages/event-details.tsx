@@ -668,7 +668,7 @@ export default function EventDetails() {
 
   const saveRatingMutation = useMutation({
     mutationFn: async (rating: number) => {
-      return apiRequest("POST", `/api/events/${eventId}/rating`, {
+      return apiRequest("PUT", `/api/events/${eventId}/rating`, {
         rating,
         review: "",
         isPublic: true
