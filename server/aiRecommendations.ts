@@ -168,7 +168,8 @@ export async function generateRestaurantRecommendations(
     const localRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
     
     if (!localRestaurants || localRestaurants.length === 0) {
-      return getFallbackRecommendations(userPreferences, location);
+      console.log('No real restaurants found via Google Places API');
+      return [];
     }
 
     // Use AI to rank and filter the real restaurants based on user preferences
@@ -207,9 +208,13 @@ export async function generateRestaurantRecommendations(
     return result.recommendations || convertToRecommendations(localRestaurants.slice(0, 8));
   } catch (error) {
     console.error("Error generating AI recommendations:", error);
-    // Use local restaurants as fallback
+    // Return local restaurants without AI processing if available
     const localRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, 48280);
-    return convertToRecommendations(localRestaurants.slice(0, 8));
+    if (localRestaurants && localRestaurants.length > 0) {
+      return convertToRecommendations(localRestaurants.slice(0, 8));
+    }
+    console.log('No real restaurants available - both Google Places and OpenAI failed');
+    return [];
   }
 }
 
@@ -393,9 +398,10 @@ export async function generateCustomRecommendations(
   longitude: number = -84.3880
 ): Promise<CustomRecommendation[]> {
   try {
-    // Fallback if OpenAI is not available
+    // Return empty if OpenAI is not available - no fake restaurants
     if (!openai || !hasOpenAI) {
-      return getFallbackCustomRecommendations(preferences, userHistory, latitude, longitude);
+      console.log('OpenAI API not available - no custom recommendations');
+      return [];
     }
 
     const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
@@ -433,7 +439,8 @@ export async function generateCustomRecommendations(
     return result.recommendations || [];
   } catch (error) {
     console.error("Error generating custom AI recommendations:", error);
-    return getFallbackCustomRecommendations(preferences, userHistory, latitude, longitude);
+    console.log('OpenAI API failed - no custom recommendations available');
+    return [];
   }
 }
 
@@ -446,9 +453,10 @@ export async function generateGroupRecommendations(
   }
 ): Promise<CustomRecommendation[]> {
   try {
-    // Fallback if OpenAI is not available
+    // Return empty if OpenAI is not available - no fake restaurants
     if (!openai || !hasOpenAI) {
-      return getFallbackGroupRecommendations(preferences, groupHistory);
+      console.log('OpenAI API not available - no group recommendations');
+      return [];
     }
 
     const prompt = createGroupRecommendationPrompt(preferences, groupHistory);
@@ -486,131 +494,18 @@ export async function generateGroupRecommendations(
     return result.recommendations || [];
   } catch (error) {
     console.error("Error generating group AI recommendations:", error);
-    return getFallbackGroupRecommendations(preferences, groupHistory);
+    console.log('OpenAI API failed - no group recommendations available');
+    return [];
   }
 }
 
-// Fallback recommendations when AI is unavailable
-function getFallbackRecommendations(userPreferences: UserPreferences, location: string): RestaurantRecommendation[] {
-  const fallbackRestaurants = [
-    {
-      name: "Bella Vista Italian",
-      cuisine: "Italian",
-      priceRange: "$$",
-      estimatedRating: 4.2,
-      location: location,
-      reasonForRecommendation: "Popular Italian restaurant with great reviews, perfect for most dining occasions",
-      confidenceScore: 0.75
-    },
-    {
-      name: "Dragon Palace",
-      cuisine: "Chinese",
-      priceRange: "$",
-      estimatedRating: 4.0,
-      location: location,
-      reasonForRecommendation: "Affordable Chinese cuisine with authentic flavors and family-friendly atmosphere",
-      confidenceScore: 0.70
-    },
-    {
-      name: "The Garden Bistro",
-      cuisine: "American",
-      priceRange: "$$$",
-      estimatedRating: 4.4,
-      location: location,
-      reasonForRecommendation: "Upscale American dining with seasonal menu and excellent service",
-      confidenceScore: 0.80
-    }
-  ];
+// NO FALLBACK RESTAURANTS - only real API data should be used
 
-  return fallbackRestaurants;
-}
+// NO HARDCODED RESTAURANTS - only use real API data
 
-// Helper function to get location-based restaurant names
-function getLocationBasedRestaurants(latitude?: number, longitude?: number): { [key: string]: string[] } {
-  // If coordinates are in Wisconsin area (roughly lat 43-47, lng -87 to -92)
-  if (latitude && longitude && latitude >= 42 && latitude <= 47 && longitude >= -92 && longitude <= -87) {
-    return {
-      italian: ["Lombardino's Restaurant", "Osteria Papavero", "Salvatore's Tomato Pies"],
-      chinese: ["Hong Kong Cafe", "Taste of China", "Golden Dragon"],
-      mexican: ["Tornado Steak Lodge", "La Hacienda", "Casa Blanca"],
-      japanese: ["Sakura Japanese Cuisine", "Wasabi Japanese Restaurant", "Kanpai"],
-      indian: ["Swagat Restaurant", "Himalayan Restaurant", "India Palace"],
-      american: ["The Old Fashioned", "Graze", "Tornado Room"],
-      thai: ["Thai Orchid", "Sala Thai", "Bangkok House"],
-      any: ["The Old Fashioned", "Lombardino's Restaurant", "Hong Kong Cafe"]
-    };
-  }
-  
-  // Default to general restaurant names for other locations
-  return {
-    italian: ["Bella Vista", "Romano's Kitchen", "Little Italy"],
-    chinese: ["Dragon Palace", "Golden Wok", "Panda Garden"],
-    mexican: ["Casa Miguel", "El Mariachi", "Taco Libre"],
-    japanese: ["Sakura Sushi", "Tokyo Bay", "Ramen House"],
-    indian: ["Spice Garden", "Curry Palace", "Mumbai Kitchen"],
-    american: ["The Garden Bistro", "Main Street Grill", "Liberty Diner"],
-    thai: ["Thai Orchid", "Bangkok Street", "Coconut Palace"],
-    any: ["The Garden Bistro", "Bella Vista", "Dragon Palace"]
-  };
-}
+// REMOVED - No fake custom recommendations
 
-function getFallbackCustomRecommendations(preferences: CustomPreferences, userHistory?: UserPreferences, latitude?: number, longitude?: number): CustomRecommendation[] {
-  const cuisineMap = getLocationBasedRestaurants(latitude, longitude);
-
-  const restaurants = cuisineMap[preferences.foodType] || cuisineMap.any;
-  const priceSymbol = preferences.priceRange === 'budget' ? '$' : 
-                     preferences.priceRange === 'moderate' ? '$$' : 
-                     preferences.priceRange === 'upscale' ? '$$$' : '$$$$';
-
-  return restaurants.map((name, index) => ({
-    name,
-    type: preferences.foodType === 'any' ? ['Italian', 'Chinese', 'American'][index] : preferences.foodType,
-    rating: 3.8 + Math.random() * 1.2,
-    priceRange: priceSymbol,
-    description: `A ${preferences.occasion} restaurant perfect for ${preferences.groupSize} people with ${preferences.ambiance} ambiance`,
-    confidence: 0.75 + Math.random() * 0.2,
-    reasons: [
-      `Matches your ${preferences.foodType} preference`,
-      `${preferences.priceRange} price range`,
-      `Great for ${preferences.occasion}`,
-      `${preferences.ambiance} atmosphere`
-    ]
-  }));
-}
-
-function getFallbackGroupRecommendations(preferences: CustomPreferences, groupHistory: any): CustomRecommendation[] {
-  const groupFavorites = [
-    {
-      name: "Family Table",
-      type: "American",
-      rating: 4.3,
-      priceRange: "$$",
-      description: "Spacious restaurant perfect for groups with diverse menu options that please everyone",
-      confidence: 0.85,
-      reasons: ["Group-friendly seating", "Diverse menu", "Moderate pricing", "Good for celebrations"]
-    },
-    {
-      name: "Round Table Pizza",
-      type: "Italian",
-      rating: 4.1,
-      priceRange: "$",
-      description: "Casual dining perfect for large groups with shareable options and family atmosphere",
-      confidence: 0.80,
-      reasons: ["Great for groups", "Shareable food", "Budget-friendly", "Casual atmosphere"]
-    },
-    {
-      name: "Fusion Bistro",
-      type: "Fusion",
-      rating: 4.4,
-      priceRange: "$$$",
-      description: "Modern restaurant with eclectic menu accommodating various dietary preferences",
-      confidence: 0.78,
-      reasons: ["Varied cuisine options", "Dietary accommodations", "Modern atmosphere", "Group reservations available"]
-    }
-  ];
-
-  return groupFavorites;
-}
+// REMOVED - No fake group recommendations
 
 function createCustomRecommendationPrompt(preferences: CustomPreferences, userHistory?: UserPreferences, latitude?: number, longitude?: number): string {
   let prompt = `Generate restaurant recommendations based on these specific preferences:

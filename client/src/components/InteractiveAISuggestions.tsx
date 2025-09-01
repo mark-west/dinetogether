@@ -368,7 +368,7 @@ export function InteractiveAISuggestions({
         )}
 
         {/* Recommendations Results */}
-        {recommendations.length > 0 && (
+        {recommendations.length > 0 ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-foreground">Your Personalized Recommendations</h4>
@@ -454,7 +454,40 @@ export function InteractiveAISuggestions({
               </Button>
             </div>
           </div>
-        )}
+        ) : generateMutation.isSuccess && recommendations.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
+                <i className="fas fa-map-marker-alt text-2xl text-orange-500"></i>
+              </div>
+              <h4 className="font-semibold text-foreground mb-2">No Real Restaurants Found</h4>
+              <p className="text-muted-foreground mb-4">
+                Sorry, we couldn't find any real restaurants in your area that match your preferences. This could be due to:
+              </p>
+              <ul className="text-sm text-muted-foreground text-left mb-6 space-y-1">
+                <li>• Limited restaurant data for your location</li>
+                <li>• API service temporarily unavailable</li>
+                <li>• Very specific preference combination</li>
+              </ul>
+              <div className="flex gap-2 justify-center">
+                <Button 
+                  onClick={() => setShowForm(true)}
+                  variant="outline"
+                  data-testid="button-try-different-area"
+                >
+                  Try Different Preferences
+                </Button>
+                <Button 
+                  onClick={resetForm}
+                  variant="ghost"
+                  data-testid="button-start-over-empty"
+                >
+                  Start Over
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Error State */}
         {generateMutation.isError && (
