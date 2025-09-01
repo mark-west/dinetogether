@@ -63,6 +63,41 @@ export default function RestaurantDetails() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // All hooks must be declared before any conditional logic
+  const { data: groups = [] } = useQuery({
+    queryKey: ['/api/groups'],
+    enabled: !!user
+  });
+
+  const createEventMutation = useMutation({
+    mutationFn: async (eventData: any) => {
+      const response = await apiRequest('POST', '/api/events', eventData);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Event Created",
+        description: "Your dining event has been created successfully!",
+      });
+      setShowEventDialog(false);
+      setEventForm({
+        title: '',
+        description: '',
+        groupId: '',
+        dateTime: '',
+        maxAttendees: 4
+      });
+      setLocation('/events');
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create event. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   useEffect(() => {
     if (restaurantId) {
       // Try to get restaurant data from sessionStorage
@@ -132,40 +167,6 @@ export default function RestaurantDetails() {
       </div>
     );
   }
-
-  const { data: groups = [] } = useQuery({
-    queryKey: ['/api/groups'],
-    enabled: !!user
-  });
-
-  const createEventMutation = useMutation({
-    mutationFn: async (eventData: any) => {
-      const response = await apiRequest('POST', '/api/events', eventData);
-      return await response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Event Created",
-        description: "Your dining event has been created successfully!",
-      });
-      setShowEventDialog(false);
-      setEventForm({
-        title: '',
-        description: '',
-        groupId: '',
-        dateTime: '',
-        maxAttendees: 4
-      });
-      setLocation('/events');
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to create event. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
 
   const handleCreateEvent = () => {
     if (!eventForm.groupId || !eventForm.dateTime || !eventForm.title) {
