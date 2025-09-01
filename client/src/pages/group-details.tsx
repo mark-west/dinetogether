@@ -328,70 +328,79 @@ export default function GroupDetails() {
                 </div>
                 
                 <div className="flex-1 w-full text-center sm:text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-4">
-                    <div className="flex-1">
-                      <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-group-name">
-                        {(group as Group)?.name}
-                      </h1>
-                      {(group as Group)?.description ? (
-                        <p className="text-muted-foreground" data-testid="text-group-description">
-                          {(group as Group).description}
-                        </p>
-                      ) : (
-                        <p className="text-muted-foreground italic">
-                          No description provided
-                        </p>
-                      )}
+                  <div className="mb-4">
+                    <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-group-name">
+                      {(group as Group)?.name}
+                    </h1>
+                    {(group as Group)?.description ? (
+                      <p className="text-muted-foreground" data-testid="text-group-description">
+                        {(group as Group).description}
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground italic">
+                        No description provided
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-muted-foreground mb-6">
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                      <i className="fas fa-users"></i>
+                      <span data-testid="text-member-count">
+                        {Array.isArray(members) ? members.length : 0} members
+                      </span>
                     </div>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start">
+                      <i className="fas fa-calendar"></i>
+                      <span>Created {(group as Group)?.createdAt ? format(new Date((group as Group).createdAt!), 'MMM d, yyyy') : 'Unknown'}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowInviteModal(true)}
+                      data-testid="button-invite-members-header"
+                    >
+                      <i className="fas fa-user-plus mr-1"></i>
+                      Invite Members
+                    </Button>
                     
-                    {/* Invite button for all members */}
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto"
-                        onClick={() => setShowInviteModal(true)}
-                        data-testid="button-invite-members-header"
-                      >
-                        <i className="fas fa-user-plus mr-1"></i>
-                        Invite Members
-                      </Button>
-                      
-                      {/* Admin-only actions */}
-                      {(group as Group).adminId === user?.id && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full sm:w-auto"
-                            onClick={() => {
-                              setNewGroupName((group as Group).name);
-                              setShowRenameDialog(true);
-                            }}
-                            data-testid="button-rename-group"
-                          >
-                            <i className="fas fa-edit mr-1"></i>
-                            Rename
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full sm:w-auto"
-                            onClick={() => {
-                              setDuplicateGroupName(`${(group as Group).name} (Copy)`);
-                              setShowDuplicateDialog(true);
-                            }}
-                            data-testid="button-duplicate-group"
-                          >
-                            <i className="fas fa-copy mr-1"></i>
-                            Duplicate
-                          </Button>
+                    {/* Admin-only actions */}
+                    {(group as Group).adminId === user?.id && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setNewGroupName((group as Group).name);
+                            setShowRenameDialog(true);
+                          }}
+                          data-testid="button-rename-group"
+                        >
+                          <i className="fas fa-edit mr-1"></i>
+                          Rename
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setDuplicateGroupName(`${(group as Group).name} (Copy)`);
+                            setShowDuplicateDialog(true);
+                          }}
+                          data-testid="button-duplicate-group"
+                        >
+                          <i className="fas fa-copy mr-1"></i>
+                          Duplicate
+                        </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               data-testid="button-delete-group"
                             >
                               <i className="fas fa-trash mr-1"></i>
@@ -416,22 +425,8 @@ export default function GroupDetails() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                      <i className="fas fa-users"></i>
-                      <span data-testid="text-member-count">
-                        {Array.isArray(members) ? members.length : 0} members
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 justify-center sm:justify-start">
-                      <i className="fas fa-calendar"></i>
-                      <span>Created {(group as Group)?.createdAt ? format(new Date((group as Group).createdAt!), 'MMM d, yyyy') : 'Unknown'}</span>
-                    </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
