@@ -67,9 +67,10 @@ export function AIRecommendations() {
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
     
     console.log('DEBUG: Restaurant clicked:', restaurant);
-    console.log('DEBUG: Restaurant has phone?', restaurant.phoneNumber);
-    console.log('DEBUG: Restaurant has website?', restaurant.website);
-    console.log('DEBUG: Restaurant has hours?', restaurant.openingHours);
+    console.log('DEBUG: Restaurant phoneNumber field:', restaurant.phoneNumber);
+    console.log('DEBUG: Restaurant website field:', restaurant.website);
+    console.log('DEBUG: Restaurant openingHours field:', restaurant.openingHours);
+    console.log('DEBUG: All restaurant fields:', Object.keys(restaurant));
     
     // Store comprehensive restaurant data in sessionStorage including all Google Places data
     const restaurantData = {
@@ -79,7 +80,7 @@ export function AIRecommendations() {
       priceRange: restaurant.priceRange,
       description: restaurant.reasonForRecommendation,
       address: restaurant.location || restaurant.address,
-      phone: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
+      phone: restaurant.phoneNumber || '',
       website: restaurant.website || '',
       hours: formatOpeningHours(restaurant.openingHours),
       rating: restaurant.estimatedRating || restaurant.rating,
