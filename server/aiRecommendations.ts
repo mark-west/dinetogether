@@ -168,7 +168,7 @@ export async function generateRestaurantRecommendations(
     const localRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
     
     if (!localRestaurants || localRestaurants.length === 0) {
-      console.log('No real restaurants found via Google Places API');
+      console.log('No restaurants found via Google Places API');
       return [];
     }
 

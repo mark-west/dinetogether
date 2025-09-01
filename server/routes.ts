@@ -1181,7 +1181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (!restaurants || restaurants.length === 0) {
-        console.log('No real restaurants found in the area - cannot provide training data');
+        console.log('No restaurants found in the area - cannot provide training data');
         res.status(404).json({ 
           message: 'No restaurants found in your area. Please check your internet connection and try again, or contact support if the issue persists.',
           error: 'NO_RESTAURANTS_FOUND'
