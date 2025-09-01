@@ -35,12 +35,10 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
       setLocationStatus('requesting');
       getUserLocation()
         .then((location) => {
-          console.log('Location detected:', location);
           setUserLocation(location);
           setLocationStatus('granted');
         })
-        .catch((error) => {
-          console.error('Location error:', error);
+        .catch(() => {
           setLocationStatus('denied');
         });
     }

@@ -55,15 +55,13 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
     const response = await fetch(url);
     const data = await response.json();
 
-    console.log('Google Places API response status:', data.status);
-    console.log('Number of results:', data.results?.length || 0);
+    // Log API response status for debugging
 
     if (data.status !== 'OK' || !data.results) {
       console.error('Google Places API error:', data.status, data.error_message);
       return [];
     }
 
-    console.log('Raw results from Google:', data.results.length);
     
     // Filter out chains and process restaurants
     const filteredRestaurants = data.results
@@ -73,7 +71,6 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
         const isChain = chainKeywords.some(keyword => name.includes(keyword));
         const isFineDining = place.price_level >= 3; // Allow higher-end chains
         
-        console.log(`Restaurant: ${place.name}, isChain: ${isChain}, isFineDining: ${isFineDining}, price_level: ${place.price_level}`);
         
         // Temporarily allow all restaurants for testing
         return true; // !isChain || isFineDining;
@@ -92,10 +89,6 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
         photoReference: place.photos?.[0]?.photo_reference
       }));
 
-    console.log('Filtered restaurants for training:', filteredRestaurants.length);
-    if (filteredRestaurants.length > 0) {
-      console.log('Sample restaurant:', filteredRestaurants[0]);
-    }
     return filteredRestaurants;
   } catch (error) {
     console.error('Error fetching restaurants from Google Places:', error);
@@ -1147,7 +1140,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get coordinates from query parameters or default to Atlanta, GA
       const latitude = parseFloat(req.query.lat as string) || 33.7490;
       const longitude = parseFloat(req.query.lng as string) || -84.3880;
-      console.log('Custom recommendations using coordinates:', { latitude, longitude });
       const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });
@@ -1160,17 +1152,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Restaurant training routes
   app.get('/api/training/restaurants/:variant/:groupId?', isAuthenticated, async (req: any, res) => {
     try {
-      console.log('=== TRAINING RESTAURANTS ENDPOINT CALLED ===');
       const { variant, groupId } = req.params;
       const userId = req.user?.claims?.sub;
-      console.log('URL params:', { variant, groupId, userId });
       
       // Get coordinates from query parameters or default to Atlanta, GA
       const latitude = parseFloat(req.query.lat as string) || 33.7490;
       const longitude = parseFloat(req.query.lng as string) || -84.3880;
       const radius = 48280; // 30 miles in meters (30 * 1.60934 * 1000)
       
-      console.log('Using coordinates:', { latitude, longitude });
       
       console.log('About to call fetchNearbyRestaurants...');
       const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);

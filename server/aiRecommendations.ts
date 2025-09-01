@@ -6,14 +6,14 @@ const hasOpenAI = !!process.env.OPENAI_API_KEY;
 // Using gpt-4o model for reliable AI recommendations
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
-// Helper function to fetch nearby restaurants from Google Places API for AI recommendations
+/**
+ * Fetches nearby restaurants from Google Places API for AI recommendations
+ * Filters out major chain restaurants to focus on local dining options
+ */
 async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, radius: number) {
-  console.log('=== AI RECOMMENDATIONS FETCH NEARBY RESTAURANTS ===');
-  console.log('AI Fetch Parameters:', { latitude, longitude, radius });
   const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-  console.log('AI Using Google Maps API key:', API_KEY ? `Key exists: ${API_KEY?.substring(0, 10)}...` : 'No key found');
   if (!API_KEY) {
-    console.error('AI: Server-side Google Maps API key not configured');
+    // Google Maps API key not configured
     return [];
   }
 
@@ -28,17 +28,13 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
   ];
 
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
-  console.log('AI Making Google Places API call to:', url.replace(API_KEY, 'API_KEY_HIDDEN'));
 
   try {
     const response = await fetch(url);
     const data = await response.json();
 
-    console.log('AI Google Places API response status:', data.status);
-    console.log('AI Number of results:', data.results?.length || 0);
-
     if (data.status !== 'OK' || !data.results) {
-      console.error('AI Google Places API error:', data.status, data.error_message);
+      // Google Places API error
       return [];
     }
 
@@ -398,15 +394,16 @@ export async function enrichWithExternalReviews(
 }
 
 // Generate custom recommendations based on user preferences
+/**
+ * Generates custom restaurant recommendations based on user preferences
+ * Falls back to Google Places data when OpenAI is unavailable
+ */
 export async function generateCustomRecommendations(
   preferences: CustomPreferences,
   userHistory?: UserPreferences,
   latitude: number = 33.7490,
   longitude: number = -84.3880
 ): Promise<CustomRecommendation[]> {
-  console.log('=== GENERATING CUSTOM RECOMMENDATIONS ===');
-  console.log('Preferences:', preferences);
-  console.log('Location:', { latitude, longitude });
   
   try {
     // Try OpenAI first if available
@@ -446,32 +443,20 @@ export async function generateCustomRecommendations(
       return result.recommendations || [];
     }
   } catch (error) {
-    console.error("Error generating custom AI recommendations:", error);
-    console.log('OpenAI API failed - falling back to Google Places recommendations');
+    console.error("OpenAI API failed, using Google Places fallback:", error instanceof Error ? error.message : String(error));
   }
 
   // Fallback to Google Places when OpenAI is unavailable or fails
-  console.log('Using Google Places fallback for recommendations');
   try {
     const radius = 48280; // 30 miles in meters
     const nearbyRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
-    
-    console.log('Found nearby restaurants for fallback:', nearbyRestaurants.length);
     
     // Filter restaurants based on user preferences
     let filteredRestaurants = nearbyRestaurants;
     
     // Filter by food type if specified
-    console.log('Debug foodType check:', {
-      foodType: preferences.foodType,
-      hasValue: !!preferences.foodType,
-      toLowerCase: preferences.foodType?.toLowerCase(),
-      notAny: preferences.foodType?.toLowerCase() !== 'any'
-    });
-    
     if (preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
       const preferredType = preferences.foodType.toLowerCase();
-      console.log('Filtering by food type:', preferredType);
       
       filteredRestaurants = nearbyRestaurants.filter((restaurant: any) => {
         const restaurantTypes = (restaurant.types || []).join(' ').toLowerCase();
@@ -484,7 +469,6 @@ export async function generateCustomRecommendations(
                restaurantCuisine.includes(preferredType);
       });
       
-      console.log(`Found ${filteredRestaurants.length} restaurants matching "${preferences.foodType}"`);
     }
     
     // Filter by price range if specified
@@ -495,13 +479,10 @@ export async function generateCustomRecommendations(
       filteredRestaurants = filteredRestaurants.filter((restaurant: any) => 
         allowedPriceLevels.includes(restaurant.price_level || 2)
       );
-      
-      console.log(`After price filtering (${preferences.priceRange}):`, filteredRestaurants.length);
     }
     
-    // If no matches found, fall back to all restaurants but mention the limitation
+    // If no matches found, fall back to all restaurants
     if (filteredRestaurants.length === 0 && preferences.foodType && preferences.foodType.toLowerCase() !== 'any') {
-      console.log('No matches found for preferences, showing all nearby restaurants');
       filteredRestaurants = nearbyRestaurants.slice(0, 6);
     }
     
@@ -527,7 +508,6 @@ export async function generateCustomRecommendations(
       };
     });
     
-    console.log('Converted to recommendations:', recommendations.length);
     return recommendations;
   } catch (fallbackError) {
     console.error('Google Places fallback also failed:', fallbackError);

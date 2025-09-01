@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
+import { memo, useCallback, useMemo } from "react";
 import type { Group } from "@shared/schema";
 import logoImage from "@assets/fulllogo_1756644214427.jpg";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
@@ -20,7 +21,7 @@ export default function Sidebar() {
   const { data: unreadData } = useQuery({
     queryKey: ["/api/messages/unread-count"],
     retry: false,
-    refetchInterval: 5000, // Poll every 5 seconds for unread count
+    refetchInterval: 10000, // Poll every 10 seconds for unread count
   });
 
   const navItems = [

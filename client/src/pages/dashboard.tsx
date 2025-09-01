@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, isToday, isTomorrow } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
@@ -99,9 +98,9 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-3">
-              {user?.profileImageUrl && (
+              {(user as any)?.profileImageUrl && (
                 <img 
-                  src={user.profileImageUrl} 
+                  src={(user as any).profileImageUrl} 
                   alt="User avatar" 
                   className="w-8 h-8 rounded-full object-cover"
                   data-testid="img-avatar"

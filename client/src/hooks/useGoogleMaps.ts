@@ -42,7 +42,7 @@ export function useGoogleMaps() {
     // Set up a timeout to detect if Google Maps fails to load
     const loadTimeout = setTimeout(() => {
       if (!window.googleMapsLoaded && !window.google) {
-        setError('Google Maps API key is invalid or lacks permissions');
+        setError('Google Maps failed to load');
       }
     }, 15000); // 15 second timeout (longer for slower connections)
 

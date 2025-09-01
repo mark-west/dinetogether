@@ -11,7 +11,7 @@ export default function MobileNavigation() {
   const { data: unreadData } = useQuery({
     queryKey: ["/api/messages/unread-count"],
     retry: false,
-    refetchInterval: 5000, // Poll every 5 seconds for unread count
+    refetchInterval: 10000, // Poll every 10 seconds for unread count
   });
 
   const navItems = [
