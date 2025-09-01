@@ -1187,16 +1187,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
-      console.log('DEBUG: Server sending recommendations to client:', {
-        count: recommendations.length,
-        firstRecommendation: recommendations[0] ? {
-          name: recommendations[0].name,
-          hasPhoneNumber: !!recommendations[0].phoneNumber,
-          phoneNumber: recommendations[0].phoneNumber,
-          hasWebsite: !!recommendations[0].website,
-          website: recommendations[0].website
-        } : null
-      });
       
       res.json({ recommendations });
     } catch (error) {

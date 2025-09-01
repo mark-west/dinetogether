@@ -44,11 +44,16 @@ export function AIRecommendations() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [, navigate] = useLocation();
 
-  const { data: recommendations, isLoading: loadingRecommendations, refetch: refetchRecommendations } = useQuery({
+  const { data: apiResponse, isLoading: loadingRecommendations, refetch: refetchRecommendations } = useQuery({
     queryKey: ["/api/recommendations", location],
     retry: false,
     enabled: true,
   });
+  
+  // Debug the API response structure
+  const recommendations = apiResponse?.recommendations || apiResponse;
+  console.log('DEBUG: API response:', apiResponse);
+  console.log('DEBUG: Recommendations array:', recommendations);
 
   const { data: analysis, isLoading: loadingAnalysis } = useQuery<DiningAnalysis>({
     queryKey: ["/api/dining-analysis"],
@@ -65,12 +70,6 @@ export function AIRecommendations() {
     // Generate a restaurant ID from the name and index
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
     
-    console.log('=== CLIENT DEBUG: Restaurant clicked ===', restaurant);
-    console.log('CLIENT DEBUG: phoneNumber field:', restaurant.phoneNumber);
-    console.log('CLIENT DEBUG: website field:', restaurant.website);
-    console.log('CLIENT DEBUG: openingHours field:', restaurant.openingHours);
-    console.log('CLIENT DEBUG: All fields:', Object.keys(restaurant));
-    console.log('CLIENT DEBUG: Raw restaurant object:', JSON.stringify(restaurant, null, 2));
     
     // Store comprehensive restaurant data in sessionStorage including all Google Places data
     const restaurantData = {
@@ -98,7 +97,6 @@ export function AIRecommendations() {
       placeId: restaurant.placeId
     };
     
-    console.log('DEBUG: Storing restaurant data:', restaurantData);
     sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
     navigate(`/restaurant/${restaurantId}?back=/recommendations`);
   };

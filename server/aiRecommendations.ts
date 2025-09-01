@@ -541,8 +541,42 @@ export async function generateCustomRecommendations(
 ): Promise<CustomRecommendation[]> {
   
   try {
-    // Skip OpenAI for now to force Google Places fallback with real data
-    console.log('DEBUG: Forcing Google Places fallback to get real restaurant data');
+    // Try OpenAI first if available
+    if (openai && hasOpenAI) {
+      const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert restaurant recommendation engine that creates personalized suggestions based on specific user preferences and requirements.
+            
+            Consider:
+            - Food type and cuisine preferences
+            - Price range and budget constraints
+            - Group size and dining dynamics
+            - Occasion and atmosphere requirements
+            - Dietary restrictions and special needs
+            - User's historical preferences if available
+            
+            Provide realistic restaurant recommendations that match all specified criteria. Include confidence scores and detailed reasoning.
+            
+            Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "type": "Cuisine Type", "rating": 4.2, "priceRange": "$$", "description": "Detailed description", "confidence": 0.85, "reasons": ["reason1", "reason2", "reason3"]}] }`
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+        max_tokens: 2500
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+      return result.recommendations || [];
+    }
   } catch (error) {
     console.error("OpenAI API failed, using Google Places fallback:", error instanceof Error ? error.message : String(error));
   }
@@ -590,15 +624,7 @@ export async function generateCustomRecommendations(
     // Get enhanced restaurant data with full Google Places details
     const enhancedRestaurants = await Promise.all(
       filteredRestaurants.slice(0, 6).map(async (restaurant: any) => {
-        console.log('DEBUG: Fetching details for restaurant:', restaurant.name, 'with ID:', restaurant.id);
         const details = await fetchRestaurantDetails(restaurant.id);
-        console.log('DEBUG: Fetched details for', restaurant.name, ':', {
-          hasPhoneNumber: !!details?.phoneNumber,
-          hasWebsite: !!details?.website,
-          hasOpeningHours: !!details?.openingHours,
-          phoneNumber: details?.phoneNumber,
-          website: details?.website
-        });
         return details ? { ...restaurant, ...details } : restaurant;
       })
     );
@@ -644,7 +670,6 @@ export async function generateCustomRecommendations(
       };
     });
     
-    console.log('DEBUG: Final recommendations being returned to client:', JSON.stringify(recommendations.slice(0, 1), null, 2));
     return recommendations;
   } catch (fallbackError) {
     console.error('Google Places fallback also failed:', fallbackError);
