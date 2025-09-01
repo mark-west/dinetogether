@@ -106,9 +106,13 @@ export default function RestaurantDetails() {
     if (restaurantId) {
       // Try to get restaurant data from sessionStorage
       const storedData = sessionStorage.getItem(`restaurant_${restaurantId}`);
+      console.log('DEBUG: Restaurant ID:', restaurantId);
+      console.log('DEBUG: Stored data:', storedData);
+      
       if (storedData) {
         try {
           const restaurantData = JSON.parse(storedData);
+          console.log('DEBUG: Parsed restaurant data:', restaurantData);
           setRestaurant(restaurantData);
         } catch (error) {
           console.error('Failed to parse restaurant data:', error);

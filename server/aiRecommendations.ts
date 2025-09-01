@@ -624,7 +624,9 @@ export async function generateCustomRecommendations(
     // Get enhanced restaurant data with full Google Places details
     const enhancedRestaurants = await Promise.all(
       filteredRestaurants.slice(0, 6).map(async (restaurant: any) => {
+        console.log('DEBUG: Fetching details for restaurant:', restaurant.name, 'with ID:', restaurant.id);
         const details = await fetchRestaurantDetails(restaurant.id);
+        console.log('DEBUG: Fetched details:', details);
         return details ? { ...restaurant, ...details } : restaurant;
       })
     );
