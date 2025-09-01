@@ -1,3 +1,5 @@
+import { generatePreciseLocationDescription } from './utils/distanceCalculator';
+
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 // Stub exports to satisfy imports
@@ -34,23 +36,45 @@ export async function generateCustomRecommendations(
       return [];
     }
 
-    // Take first 6 results and format them
-    const recommendations = data.results.slice(0, 6).map((place: any) => ({
-      id: place.place_id,
-      name: place.name,
-      type: preferences.foodType || 'Restaurant',
-      priceRange: place.price_level ? '$'.repeat(place.price_level) : '$$',
-      rating: place.rating || 4.0,
-      estimatedRating: place.rating || 4.0,
-      location: place.vicinity || place.formatted_address || '',
-      address: place.vicinity || place.formatted_address || '',
-      description: `${preferences.foodType || 'Restaurant'} located within 30 miles of your location`,
-      confidence: 0.85,
-      phoneNumber: '',
-      website: '',
-      openingHours: place.opening_hours || null,
-      reviewCount: place.user_ratings_total || 0
-    }));
+    // Take first 6 results and format them with precise distances
+    const recommendations = data.results.slice(0, 6).map((place: any) => {
+      const restaurantLat = place.geometry?.location?.lat;
+      const restaurantLng = place.geometry?.location?.lng;
+      const address = place.vicinity || place.formatted_address || '';
+      
+      // Generate precise description with exact distance
+      const description = (restaurantLat && restaurantLng) ? 
+        generatePreciseLocationDescription(
+          latitude, 
+          longitude, 
+          restaurantLat, 
+          restaurantLng,
+          place.name,
+          preferences.foodType || 'Restaurant'
+        ) : 
+        `${preferences.foodType || 'Restaurant'} restaurant near your location`;
+
+      return {
+        id: place.place_id,
+        name: place.name,
+        type: preferences.foodType || 'Restaurant',
+        priceRange: place.price_level ? '$'.repeat(place.price_level) : '$$',
+        rating: place.rating || 4.0,
+        estimatedRating: place.rating || 4.0,
+        location: address,
+        address: address,
+        description: description,
+        confidence: 0.85,
+        phoneNumber: '',
+        website: '',
+        openingHours: place.opening_hours || null,
+        reviewCount: place.user_ratings_total || 0,
+        coordinates: restaurantLat && restaurantLng ? {
+          lat: restaurantLat,
+          lng: restaurantLng
+        } : null
+      };
+    });
 
     return recommendations;
 

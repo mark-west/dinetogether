@@ -11,7 +11,7 @@ import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { AISparklesIcon } from '@/components/icons/AISparklesIcon';
 import { RestaurantTraining } from '@/components/RestaurantTraining';
-import { Globe } from 'lucide-react';
+import { Globe, MapPin } from 'lucide-react';
 
 interface PreferenceForm {
   foodType: string;
@@ -30,6 +30,8 @@ interface Recommendation {
   description: string;
   confidence: number;
   reasons: string[];
+  address?: string;
+  location?: string;
 }
 
 interface InteractiveAISuggestionsProps {
@@ -419,9 +421,19 @@ export function InteractiveAISuggestions({
                     </div>
                   </div>
                   
-                  <p className="text-sm text-muted-foreground mb-3">
+                  <p className="text-sm text-muted-foreground mb-2">
                     {recommendation.description}
                   </p>
+                  
+                  {/* Address */}
+                  {(recommendation.address || recommendation.location) && (
+                    <div className="flex items-start gap-1 mb-3">
+                      <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        {recommendation.address || recommendation.location}
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="flex flex-wrap gap-1">
                     {(recommendation.reasons || []).map((reason, i) => (
