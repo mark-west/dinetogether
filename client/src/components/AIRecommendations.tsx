@@ -13,9 +13,19 @@ interface Recommendation {
   cuisine: string;
   priceRange: string;
   estimatedRating: number;
+  rating?: number;
   location: string;
+  address?: string;
   reasonForRecommendation: string;
   confidenceScore: number;
+  phoneNumber?: string;
+  formattedPhoneNumber?: string;
+  website?: string;
+  openingHours?: any;
+  reviews?: any[];
+  userRatingsTotal?: number;
+  businessStatus?: string;
+  placeId?: string;
   externalRating?: {
     google?: number;
     yelp?: number;

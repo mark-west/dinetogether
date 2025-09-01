@@ -621,8 +621,16 @@ export async function generateCustomRecommendations(
       filteredRestaurants = nearbyRestaurants.slice(0, 6);
     }
     
-    // Convert Google Places results to CustomRecommendation format
-    const recommendations: CustomRecommendation[] = filteredRestaurants.slice(0, 6).map((restaurant: any) => {
+    // Get enhanced restaurant data with full Google Places details
+    const enhancedRestaurants = await Promise.all(
+      filteredRestaurants.slice(0, 6).map(async (restaurant: any) => {
+        const details = await fetchRestaurantDetails(restaurant.id);
+        return details ? { ...restaurant, ...details } : restaurant;
+      })
+    );
+    
+    // Convert Google Places results to CustomRecommendation format with all data preserved
+    const recommendations: any[] = enhancedRestaurants.map((restaurant: any) => {
       const matchesPreference = preferences.foodType && preferences.foodType.toLowerCase() !== 'any';
       const preferenceNote = matchesPreference ? 
         `Matches your preference for ${preferences.foodType} cuisine` : 
@@ -633,13 +641,25 @@ export async function generateCustomRecommendations(
         type: restaurant.cuisine || restaurant.types?.[0]?.replace('_', ' ') || 'Restaurant',
         rating: restaurant.rating || 4.0,
         priceRange: '$'.repeat(restaurant.price_level || 2),
-        description: `${restaurant.name} - ${preferenceNote}. ${restaurant.vicinity || 'Located nearby'}.`,
+        description: `${restaurant.name} - ${preferenceNote}. ${restaurant.vicinity || restaurant.address || 'Located nearby'}.`,
         confidence: matchesPreference ? 0.9 : 0.7,
         reasons: [
           'Located within 30 miles of your location',
           matchesPreference ? `Serves ${preferences.foodType} cuisine` : 'Based on Google Places data',
           'Real restaurant you can visit'
-        ]
+        ],
+        // Preserve all Google Places data
+        phoneNumber: restaurant.phoneNumber,
+        website: restaurant.website,
+        openingHours: restaurant.openingHours,
+        reviews: restaurant.reviews || [],
+        userRatingsTotal: restaurant.userRatingsTotal,
+        businessStatus: restaurant.businessStatus,
+        placeId: restaurant.placeId,
+        address: restaurant.address || restaurant.vicinity,
+        cuisine: restaurant.cuisine,
+        estimatedRating: restaurant.rating || 4.0,
+        location: restaurant.address || restaurant.vicinity
       };
     });
     
