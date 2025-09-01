@@ -29,8 +29,10 @@ import {
 
 // Helper function to fetch nearby restaurants from Google Places API
 async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
+  console.log('=== FETCH NEARBY RESTAURANTS CALLED ===');
+  console.log('Parameters:', { latitude, longitude, radius });
   const API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
-  console.log('Using Google Maps API key:', API_KEY ? 'Key exists' : 'No key found');
+  console.log('Using Google Maps API key:', API_KEY ? `Key exists: ${API_KEY?.substring(0, 10)}...` : 'No key found');
   if (!API_KEY) {
     console.error('Google Maps API key not configured');
     return [];
@@ -1156,14 +1158,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Restaurant training routes
   app.get('/api/training/restaurants', isAuthenticated, async (req: any, res) => {
     try {
+      console.log('=== TRAINING RESTAURANTS ENDPOINT CALLED ===');
       const { variant, groupId } = req.query;
       const userId = req.user?.claims?.sub;
+      console.log('Query params:', { variant, groupId, userId });
       
       // Default location (Atlanta, GA) - in production this could be user's location
       const latitude = 33.7490;
       const longitude = -84.3880;
       const radius = 48280; // 30 miles radius
       
+      console.log('About to call fetchNearbyRestaurants...');
       const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);
       
       console.log('Training restaurants fetched:', restaurants?.length || 0, 'restaurants');
