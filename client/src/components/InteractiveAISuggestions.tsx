@@ -178,13 +178,6 @@ export function InteractiveAISuggestions({
                 <AISparklesIcon size={16} className="mr-2" />
                 Get Suggestions
               </Button>
-              <Button 
-                onClick={handleTrainAI}
-                variant="outline"
-                data-testid="button-train-ai"
-              >
-                Train AI
-              </Button>
             </div>
           )}
         </div>
@@ -453,6 +446,35 @@ export function InteractiveAISuggestions({
                 Start Over
               </Button>
             </div>
+
+            {/* Contextual Train AI Helper - Only show after recommendations when data might be insufficient */}
+            {recommendations.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-border">
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                      <i className="fas fa-lightbulb text-blue-600 text-sm"></i>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-foreground mb-1">Want Even Better Suggestions?</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Help our AI learn your taste preferences by rating some restaurants. This will give you more personalized recommendations in the future.
+                      </p>
+                      <Button 
+                        onClick={handleTrainAI}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white dark:bg-background"
+                        data-testid="button-train-ai-contextual"
+                      >
+                        <i className="fas fa-star mr-2"></i>
+                        Rate Some Restaurants
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : generateMutation.isSuccess && recommendations.length === 0 ? (
           <div className="text-center py-8">
