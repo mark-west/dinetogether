@@ -17,6 +17,12 @@ import {
   insertEventRatingSchema,
 } from "@shared/schema";
 import { nanoid } from "nanoid";
+import { 
+  generateRestaurantRecommendations, 
+  analyzeUserDiningPatterns, 
+  enrichWithExternalReviews,
+  type UserPreferences 
+} from "./aiRecommendations";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -952,6 +958,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting rating:", error);
       res.status(500).json({ message: "Failed to delete rating" });
+    }
+  });
+
+  // AI Recommendation routes
+  app.get('/api/recommendations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const location = req.query.location || "current area";
+      
+      // Get user's dining history from events and ratings
+      const userEvents = await storage.getUserEvents(userId);
+      const userRatings = await storage.getUserRatings(userId);
+      
+      // Build user preferences object
+      const userPreferences: UserPreferences = {
+        userId,
+        ratedRestaurants: userRatings.map((rating: any) => ({
+          restaurantName: rating.event?.restaurantName || rating.event?.name || 'Unknown',
+          rating: rating.rating,
+          cuisine: 'Various', // Could be enhanced with restaurant data
+          location: rating.event?.restaurantAddress
+        })),
+        visitHistory: userEvents.reduce((acc: any[], event: any) => {
+          const existing = acc.find(item => item.restaurantName === (event.restaurantName || event.name));
+          if (existing) {
+            existing.visitCount++;
+            existing.lastVisit = new Date(event.dateTime);
+          } else {
+            acc.push({
+              restaurantName: event.restaurantName || event.name,
+              visitCount: 1,
+              lastVisit: new Date(event.dateTime),
+              cuisine: 'Various'
+            });
+          }
+          return acc;
+        }, []),
+        preferredCuisines: [], // Could be enhanced with cuisine analysis
+        pricePreference: "moderate" as const,
+        locationPreference: location as string
+      };
+      
+      // Generate AI recommendations
+      const recommendations = await generateRestaurantRecommendations(userPreferences, location as string);
+      
+      // Enrich with external reviews
+      const enrichedRecommendations = await enrichWithExternalReviews(recommendations);
+      
+      res.json(enrichedRecommendations);
+    } catch (error) {
+      console.error("Error generating recommendations:", error);
+      res.status(500).json({ message: "Failed to generate recommendations" });
+    }
+  });
+
+  app.get('/api/dining-analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get user's dining data
+      const userEvents = await storage.getUserEvents(userId);
+      const userRatings = await storage.getUserRatings(userId);
+      
+      const userPreferences: UserPreferences = {
+        userId,
+        ratedRestaurants: userRatings.map((rating: any) => ({
+          restaurantName: rating.event?.restaurantName || rating.event?.name || 'Unknown',
+          rating: rating.rating,
+          cuisine: 'Various',
+          location: rating.event?.restaurantAddress
+        })),
+        visitHistory: userEvents.reduce((acc: any[], event: any) => {
+          const existing = acc.find(item => item.restaurantName === (event.restaurantName || event.name));
+          if (existing) {
+            existing.visitCount++;
+            existing.lastVisit = new Date(event.dateTime);
+          } else {
+            acc.push({
+              restaurantName: event.restaurantName || event.name,
+              visitCount: 1,
+              lastVisit: new Date(event.dateTime),
+              cuisine: 'Various'
+            });
+          }
+          return acc;
+        }, []),
+        preferredCuisines: [],
+        pricePreference: "moderate" as const
+      };
+      
+      // Analyze dining patterns
+      const analysis = await analyzeUserDiningPatterns(userPreferences);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing dining patterns:", error);
+      res.status(500).json({ message: "Failed to analyze dining patterns" });
     }
   });
 

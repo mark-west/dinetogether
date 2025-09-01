@@ -131,6 +131,7 @@ export interface IStorage {
   upsertEventRating(rating: InsertEventRating): Promise<EventRating>;
   getEventRating(eventId: string, userId: string): Promise<EventRating | undefined>;
   getEventRatings(eventId: string): Promise<Array<EventRating & { user: User }>>;
+  getUserRatings(userId: string): Promise<Array<EventRating & { event: Event }>>;
   getEventAverageRating(eventId: string): Promise<{ averageRating: number; totalRatings: number }>;
   deleteEventRating(eventId: string, userId: string): Promise<void>;
 }
@@ -972,6 +973,19 @@ export class DatabaseStorage implements IStorage {
       .then(rows => rows.map(row => ({
         ...row.event_ratings,
         user: row.users!
+      })));
+  }
+
+  async getUserRatings(userId: string): Promise<Array<EventRating & { event: Event }>> {
+    return await db
+      .select()
+      .from(eventRatings)
+      .leftJoin(events, eq(eventRatings.eventId, events.id))
+      .where(eq(eventRatings.userId, userId))
+      .orderBy(desc(eventRatings.createdAt))
+      .then(rows => rows.map(row => ({
+        ...row.event_ratings,
+        event: row.events!
       })));
   }
 

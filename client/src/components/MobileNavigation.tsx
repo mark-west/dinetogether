@@ -18,7 +18,7 @@ export default function MobileNavigation() {
     { path: '/', label: 'Home', icon: 'fas fa-home' },
     { path: '/groups', label: 'Groups', icon: 'fas fa-users' },
     { path: '/events', label: 'Events', icon: 'fas fa-calendar' },
-    { path: '/chat', label: 'Chat', icon: 'fas fa-comments' },
+    { path: '/recommendations', label: 'AI', icon: 'fas fa-robot' },
     { path: '/profile', label: 'Profile', icon: 'fas fa-user' },
   ];
 
