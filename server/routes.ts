@@ -30,8 +30,10 @@ import {
 // Helper function to fetch nearby restaurants from Google Places API
 async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
   const API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
+  console.log('Using Google Maps API key:', API_KEY ? 'Key exists' : 'No key found');
   if (!API_KEY) {
-    throw new Error('Google Maps API key not configured');
+    console.error('Google Maps API key not configured');
+    return [];
   }
 
   // Major chain restaurants to filter out
@@ -45,6 +47,7 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
   ];
 
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
+  console.log('Making Google Places API call to:', url.replace(API_KEY, 'API_KEY_HIDDEN'));
 
   try {
     const response = await fetch(url);
@@ -1161,57 +1164,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const longitude = -84.3880;
       const radius = 48280; // 30 miles radius
       
-      // For now, let's use sample data to ensure training works
-      const sampleRestaurants = [
-        {
-          id: 'sample-1',
-          name: 'The Optimist',
-          type: 'Seafood',
-          priceRange: '$$$',
-          description: 'West End • Rating: 4.4',
-          rating: 4.4,
-          address: 'West End'
-        },
-        {
-          id: 'sample-2',
-          name: 'Gunshow',
-          type: 'American',
-          priceRange: '$$$$',
-          description: 'Glenwood Park • Rating: 4.3',
-          rating: 4.3,
-          address: 'Glenwood Park'
-        },
-        {
-          id: 'sample-3',
-          name: 'Staplehouse',
-          type: 'New American',
-          priceRange: '$$$$',
-          description: 'Old Fourth Ward • Rating: 4.5',
-          rating: 4.5,
-          address: 'Old Fourth Ward'
-        },
-        {
-          id: 'sample-4',
-          name: 'Lazy Betty',
-          type: 'Contemporary',
-          priceRange: '$$$$',
-          description: 'Candler Park • Rating: 4.6',
-          rating: 4.6,
-          address: 'Candler Park'
-        },
-        {
-          id: 'sample-5',
-          name: 'Bacchanalia',
-          type: 'Contemporary American',
-          priceRange: '$$$$',
-          description: 'Westside • Rating: 4.2',
-          rating: 4.2,
-          address: 'Westside'
-        }
-      ];
+      const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);
+      
+      console.log('Training restaurants fetched:', restaurants?.length || 0, 'restaurants');
+      if (restaurants && restaurants.length > 0) {
+        console.log('First restaurant:', restaurants[0]);
+      }
+      
+      if (!restaurants || restaurants.length === 0) {
+        console.log('No restaurants found from Google Places API, using fallback');
+        // Fallback to sample Atlanta restaurants if Google Places fails
+        const fallbackRestaurants = [
+          {
+            id: 'fallback-1',
+            name: 'The Optimist',
+            type: 'Seafood',
+            priceRange: '$$$',
+            description: 'West End • Rating: 4.4',
+            rating: 4.4,
+            address: 'West End'
+          },
+          {
+            id: 'fallback-2',
+            name: 'Gunshow',
+            type: 'American',
+            priceRange: '$$$$',
+            description: 'Glenwood Park • Rating: 4.3',
+            rating: 4.3,
+            address: 'Glenwood Park'
+          },
+          {
+            id: 'fallback-3',
+            name: 'Staplehouse',
+            type: 'New American',
+            priceRange: '$$$$',
+            description: 'Old Fourth Ward • Rating: 4.5',
+            rating: 4.5,
+            address: 'Old Fourth Ward'
+          },
+          {
+            id: 'fallback-4',
+            name: 'Lazy Betty',
+            type: 'Contemporary',
+            priceRange: '$$$$',
+            description: 'Candler Park • Rating: 4.6',
+            rating: 4.6,
+            address: 'Candler Park'
+          },
+          {
+            id: 'fallback-5',
+            name: 'Bacchanalia',
+            type: 'Contemporary American',
+            priceRange: '$$$$',
+            description: 'Westside • Rating: 4.2',
+            rating: 4.2,
+            address: 'Westside'
+          }
+        ];
+        res.json(fallbackRestaurants);
+        return;
+      }
 
-      console.log('Sending sample restaurants for training:', sampleRestaurants.length);
-      res.json(sampleRestaurants);
+      res.json(restaurants);
     } catch (error) {
       console.error('Error getting training restaurants:', error);
       res.status(500).json({ message: 'Failed to get training restaurants' });
