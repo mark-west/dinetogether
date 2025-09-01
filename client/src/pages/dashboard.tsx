@@ -9,6 +9,7 @@ import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import CreateEventModal from "@/components/CreateEventModal";
 import CreateGroupModal from "@/components/CreateGroupModal";
+import { InteractiveAISuggestions } from "@/components/InteractiveAISuggestions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -239,68 +240,12 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* AI Recommendations Preview */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <i className="fas fa-robot text-blue-500"></i>
-                <h3 className="text-xl font-semibold text-foreground">AI Restaurant Recommendations</h3>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigateWithLoading('/recommendations')}
-                disabled={isNavigationLoading('/recommendations')}
-                data-testid="button-view-all-recommendations"
-              >
-                {isNavigationLoading('/recommendations') ? (
-                  <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
-                ) : null}
-                View All
-              </Button>
-            </div>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <i className="fas fa-brain text-white"></i>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-foreground">Smart Restaurant Suggestions</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Get personalized recommendations based on your dining history and ratings
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
-                    onClick={() => navigateWithLoading('/recommendations')}
-                    disabled={isNavigationLoading('/recommendations')}
-                    className="flex-1"
-                    data-testid="button-get-recommendations"
-                  >
-                    {isNavigationLoading('/recommendations') ? (
-                      <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
-                    ) : (
-                      <i className="fas fa-magic mr-2"></i>
-                    )}
-                    Get Recommendations
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigateWithLoading('/events')}
-                    disabled={isNavigationLoading('/events')}
-                    className="flex-1"
-                    data-testid="button-rate-more-events"
-                  >
-                    Rate More Events
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Interactive AI Suggestions */}
+          <InteractiveAISuggestions
+            title="Personalized Restaurant Finder"
+            subtitle="Tell us what you're in the mood for and get customized recommendations"
+            variant="user"
+          />
 
           {/* My Groups */}
           <div className="space-y-4">

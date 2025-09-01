@@ -21,7 +21,10 @@ import {
   generateRestaurantRecommendations, 
   analyzeUserDiningPatterns, 
   enrichWithExternalReviews,
-  type UserPreferences 
+  generateCustomRecommendations,
+  generateGroupRecommendations,
+  type UserPreferences,
+  type CustomPreferences
 } from "./aiRecommendations";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1010,6 +1013,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating recommendations:", error);
       res.status(500).json({ message: "Failed to generate recommendations" });
+    }
+  });
+
+  // Custom recommendation endpoint for users
+  app.post('/api/recommendations/custom', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferences: CustomPreferences = req.body;
+      
+      // Get user's historical data for personalization
+      const userEvents = await storage.getUserEvents(userId);
+      const userRatings = await storage.getUserRatings(userId);
+      
+      const userHistory: UserPreferences = {
+        userId,
+        ratedRestaurants: userRatings.map((rating: any) => ({
+          restaurantName: rating.event?.restaurantName || rating.event?.name || 'Unknown',
+          rating: rating.rating,
+          cuisine: 'Various',
+          location: rating.event?.restaurantAddress
+        })),
+        visitHistory: userEvents.reduce((acc: any[], event: any) => {
+          const existing = acc.find(item => item.restaurantName === (event.restaurantName || event.name));
+          if (existing) {
+            existing.visitCount++;
+            existing.lastVisit = new Date(event.dateTime);
+          } else {
+            acc.push({
+              restaurantName: event.restaurantName || event.name,
+              visitCount: 1,
+              lastVisit: new Date(event.dateTime),
+              cuisine: 'Various'
+            });
+          }
+          return acc;
+        }, []),
+        preferredCuisines: [],
+        pricePreference: "moderate" as const
+      };
+      
+      const recommendations = await generateCustomRecommendations(preferences, userHistory);
+      
+      res.json({ recommendations });
+    } catch (error) {
+      console.error("Error generating custom recommendations:", error);
+      res.status(500).json({ message: "Failed to generate custom recommendations" });
+    }
+  });
+
+  // Group-based custom recommendation endpoint
+  app.post('/api/recommendations/group/:groupId/custom', isAuthenticated, async (req: any, res) => {
+    try {
+      const { groupId } = req.params;
+      const preferences: CustomPreferences = req.body;
+      
+      // Get group's historical data
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      const groupEvents = await storage.getGroupEvents(groupId);
+      const groupMembers = await storage.getGroupMembers(groupId);
+      
+      // Build group history for AI analysis
+      const groupHistory = {
+        groupEvents: groupEvents.map((event: any) => ({
+          restaurantName: event.restaurantName || event.name,
+          rating: 4.0, // Would need to calculate average ratings per event
+          cuisine: 'Various'
+        })),
+        memberPreferences: groupMembers.map((member: any) => ({
+          preferredCuisines: ['Various'], // Would need user preference data
+          pricePreference: 'moderate'
+        }))
+      };
+      
+      const recommendations = await generateGroupRecommendations(preferences, groupHistory);
+      
+      res.json({ recommendations });
+    } catch (error) {
+      console.error("Error generating group recommendations:", error);
+      res.status(500).json({ message: "Failed to generate group recommendations" });
     }
   });
 

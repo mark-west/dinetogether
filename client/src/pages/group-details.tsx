@@ -12,6 +12,7 @@ import MobileNavigation from "@/components/MobileNavigation";
 import InviteModal from "@/components/InviteModal";
 import PhotoUploader from "@/components/PhotoUploader";
 import CreateEventModal from "@/components/CreateEventModal";
+import { InteractiveAISuggestions } from "@/components/InteractiveAISuggestions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -439,9 +440,13 @@ export default function GroupDetails() {
 
           {/* Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="events">Events</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="ai-suggestions">
+                <i className="fas fa-robot mr-1"></i>
+                AI Suggestions
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="events" className="space-y-4">
@@ -675,6 +680,15 @@ export default function GroupDetails() {
                   <p className="text-sm text-muted-foreground">This group is empty.</p>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="ai-suggestions" className="space-y-4">
+              <InteractiveAISuggestions
+                title="Group Restaurant Finder"
+                subtitle="Get AI-powered recommendations tailored to your group's preferences and history"
+                variant="group"
+                groupId={groupId}
+              />
             </TabsContent>
           </Tabs>
         </div>
