@@ -80,11 +80,17 @@ export function AIRecommendations() {
       priceRange: restaurant.priceRange,
       description: restaurant.reasonForRecommendation,
       address: restaurant.location || restaurant.address,
-      phone: restaurant.phoneNumber || '',
+      // Store both field name formats to handle different data structures
+      phone: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
+      phoneNumber: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
       website: restaurant.website || '',
+      websiteUri: restaurant.website || '',
       hours: formatOpeningHours(restaurant.openingHours),
+      openingHours: restaurant.openingHours,
       rating: restaurant.estimatedRating || restaurant.rating,
+      estimatedRating: restaurant.estimatedRating,
       reviewCount: restaurant.userRatingsTotal,
+      userRatingsTotal: restaurant.userRatingsTotal,
       menuHighlights: extractMenuHighlights(restaurant.reviews),
       features: [
         'AI-generated recommendation', 
@@ -98,7 +104,10 @@ export function AIRecommendations() {
       placeId: restaurant.placeId
     };
     
+    // Clear any existing data for this restaurant to prevent caching issues
+    sessionStorage.removeItem(`restaurant_${restaurantId}`);
     sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
+    console.log('Stored restaurant data:', restaurantData);
     navigate(`/restaurant/${restaurantId}?back=/recommendations`);
   };
 

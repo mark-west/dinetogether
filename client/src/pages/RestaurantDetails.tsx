@@ -115,6 +115,19 @@ export default function RestaurantDetails() {
       if (storedData) {
         try {
           const restaurantData = JSON.parse(storedData);
+          console.log('Retrieved restaurant data from storage:', restaurantData);
+          console.log('Phone fields available:', {
+            phone: restaurantData.phone,
+            phoneNumber: restaurantData.phoneNumber
+          });
+          console.log('Website fields available:', {
+            website: restaurantData.website,
+            websiteUri: restaurantData.websiteUri
+          });
+          console.log('Hours fields available:', {
+            hours: restaurantData.hours,
+            openingHours: restaurantData.openingHours
+          });
           setRestaurant(restaurantData);
         } catch (error) {
           console.error('Failed to parse restaurant data:', error);
