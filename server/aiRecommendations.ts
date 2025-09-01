@@ -247,8 +247,8 @@ export interface CustomRecommendation {
 export async function generateRestaurantRecommendations(
   userPreferences: UserPreferences,
   location: string = "current area",
-  latitude: number = 33.7490,
-  longitude: number = -84.3880
+  latitude: number,
+  longitude: number
 ): Promise<RestaurantRecommendation[]> {
   try {
     // Get real restaurants with detailed information from Google Places API within 30 miles
@@ -510,8 +510,8 @@ export async function enrichWithExternalReviews(
 export async function generateCustomRecommendations(
   preferences: CustomPreferences,
   userHistory?: UserPreferences,
-  latitude: number = 33.7490,
-  longitude: number = -84.3880
+  latitude: number,
+  longitude: number
 ): Promise<CustomRecommendation[]> {
   
   try {

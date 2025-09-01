@@ -1122,10 +1122,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         locationPreference: location as string
       };
       
-      // Generate AI recommendations
-      // Default location (Atlanta, GA) - in production this could be user's location
-      const latitude = 33.7490;
-      const longitude = -84.3880;
+      // Generate AI recommendations - require real user location
+      const latitude = parseFloat(req.query.lat as string);
+      const longitude = parseFloat(req.query.lng as string);
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ message: "User location is required" });
+      }
       const recommendations = await generateRestaurantRecommendations(userPreferences, location as string, latitude, longitude);
       
       // Enrich with external reviews
@@ -1175,9 +1178,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricePreference: "moderate" as const
       };
       
-      // Get coordinates from query parameters or default to Atlanta, GA
-      const latitude = parseFloat(req.query.lat as string) || 33.7490;
-      const longitude = parseFloat(req.query.lng as string) || -84.3880;
+      // Get coordinates from query parameters - require real user location
+      const latitude = parseFloat(req.query.lat as string);
+      const longitude = parseFloat(req.query.lng as string);
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ message: "User location is required" });
+      }
       const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });
@@ -1193,9 +1200,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { variant, groupId } = req.params;
       const userId = req.user?.claims?.sub;
       
-      // Get coordinates from query parameters or default to Atlanta, GA
-      const latitude = parseFloat(req.query.lat as string) || 33.7490;
-      const longitude = parseFloat(req.query.lng as string) || -84.3880;
+      // Get coordinates from query parameters - require real user location
+      const latitude = parseFloat(req.query.lat as string);
+      const longitude = parseFloat(req.query.lng as string);
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ message: "User location is required" });
+      }
       const radius = 48280; // 30 miles in meters (30 * 1.60934 * 1000)
       
       

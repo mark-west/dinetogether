@@ -43,14 +43,14 @@ export function RestaurantTraining({
         },
         (error) => {
           console.warn('Geolocation error:', error);
-          setLocationError('Unable to get location. Using default area.');
-          // Fallback to Atlanta coordinates
-          setLocation({ lat: 33.7490, lng: -84.3880 });
+          setLocationError('Unable to get your location. Please enable location services to find nearby restaurants.');
+          // No fallback - require real user location
+          setLocation(null);
         }
       );
     } else {
-      setLocationError('Geolocation not supported. Using default area.');
-      setLocation({ lat: 33.7490, lng: -84.3880 });
+      setLocationError('Geolocation not supported by your browser. Please use a modern browser to access this feature.');
+      setLocation(null);
     }
   }, []);
 

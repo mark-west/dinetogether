@@ -424,71 +424,37 @@ export default function RestaurantDetails() {
         </CardContent>
       </Card>
 
-      {/* Reviews Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Reviews</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* REMOVED: No mock reviews - real reviews only */}
-            <div className="border-b pb-4" data-testid="review-1">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                    />
-                  ))}
+      {/* Reviews Section - Only show if real reviews are available */}
+      {restaurant.reviews && restaurant.reviews.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recent Reviews</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {restaurant.reviews.map((review: any, index: number) => (
+                <div key={index} className="border-b pb-4" data-testid={`review-${index}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm font-medium">{review.author}</span>
+                    <span className="text-xs text-muted-foreground">{review.date}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {review.text}
+                  </p>
                 </div>
-                <span className="text-sm font-medium">Sarah M.</span>
-                <span className="text-xs text-muted-foreground">2 days ago</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                "Amazing pasta! The atmosphere was perfect for our date night. Service was attentive without being intrusive."
-              </p>
+              ))}
             </div>
-            
-            <div className="border-b pb-4" data-testid="review-2">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center">
-                  {[1, 2, 3, 4].map((star) => (
-                    <Star
-                      key={star}
-                      className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                    />
-                  ))}
-                  <Star className="w-4 h-4 text-gray-300" />
-                </div>
-                <span className="text-sm font-medium">Mike R.</span>
-                <span className="text-xs text-muted-foreground">1 week ago</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                "Great food and good portions. The pizza was excellent. Only downside was the wait time, but it was worth it."
-              </p>
-            </div>
-            
-            <div data-testid="review-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-medium">Lisa K.</span>
-                <span className="text-xs text-muted-foreground">2 weeks ago</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                "Family-friendly place with authentic Italian food. Kids loved the pizza and we enjoyed the wine selection."
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

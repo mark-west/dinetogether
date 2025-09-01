@@ -71,13 +71,13 @@ export function InteractiveAISuggestions({
         },
         (error) => {
           console.warn('Geolocation error:', error);
-          // Fallback to Atlanta coordinates
-          setUserLocation({ lat: 33.7490, lng: -84.3880 });
+          // No fallback - require real user location
+          setUserLocation(null);
         }
       );
     } else {
-      // Fallback to Atlanta coordinates
-      setUserLocation({ lat: 33.7490, lng: -84.3880 });
+      // No fallback - require real user location
+      setUserLocation(null);
     }
   }, []);
 
