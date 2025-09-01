@@ -301,7 +301,9 @@ export async function generateRestaurantRecommendations(
   try {
     // Get real restaurants with detailed information from Google Places API within 30 miles
     const radius = 48280; // 30 miles in meters
+    console.log("CALLING fetchEnhancedRestaurantsForAI...");
     const localRestaurants = await fetchEnhancedRestaurantsForAI(latitude, longitude, radius);
+    console.log(`fetchEnhancedRestaurantsForAI returned ${localRestaurants?.length || 0} restaurants`);
     
     if (!localRestaurants || localRestaurants.length === 0) {
       console.log('No restaurants found via Google Places API');
