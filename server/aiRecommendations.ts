@@ -120,6 +120,7 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
   }, []);
   
   console.log(`Combined search found ${uniqueResults.length} unique restaurants`);
+  console.log('First 5 restaurant names from API:', uniqueResults.slice(0, 5).map(r => r.name));
 
   if (uniqueResults.length === 0) {
     return [];
@@ -158,6 +159,7 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
  * Fetches nearby restaurants with detailed information for enhanced AI recommendations
  */
 async function fetchEnhancedRestaurantsForAI(latitude: number, longitude: number, radius: number) {
+  console.log(`ENHANCED SEARCH: Starting search for lat: ${latitude}, lng: ${longitude}, radius: ${radius}`);
   const basicRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
   
   console.log(`Enhancement process: Found ${basicRestaurants.length} basic restaurants`);
