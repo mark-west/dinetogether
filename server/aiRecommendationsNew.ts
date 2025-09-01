@@ -1,10 +1,8 @@
-import { CustomPreferences, UserPreferences } from './aiRecommendationsService';
-
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 export async function generateCustomRecommendations(
-  preferences: CustomPreferences, 
-  userHistory: UserPreferences, 
+  preferences: any, 
+  userHistory: any, 
   latitude: number, 
   longitude: number
 ) {
