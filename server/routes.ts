@@ -1196,9 +1196,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricePreference: "moderate" as const
       };
       
-      // Default location (Atlanta, GA) - in production this could be user's location
-      const latitude = 33.7490;
-      const longitude = -84.3880;
+      // Get coordinates from query parameters or default to Atlanta, GA
+      const latitude = parseFloat(req.query.lat as string) || 33.7490;
+      const longitude = parseFloat(req.query.lng as string) || -84.3880;
+      console.log('Custom recommendations using coordinates:', { latitude, longitude });
       const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });

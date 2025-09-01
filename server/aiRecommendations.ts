@@ -341,7 +341,7 @@ Provide analysis in JSON format: {
   "preferredDiningStyle": "casual|fine-dining|family-friendly|trendy|authentic"
 }`;
 
-    const response = await openai.chat.completions.create({
+    const response = await openai!.chat.completions.create({
       model: "gpt-5",
       messages: [
         {
@@ -395,10 +395,10 @@ export async function generateCustomRecommendations(
   try {
     // Fallback if OpenAI is not available
     if (!openai || !hasOpenAI) {
-      return getFallbackCustomRecommendations(preferences, userHistory);
+      return getFallbackCustomRecommendations(preferences, userHistory, latitude, longitude);
     }
 
-    const prompt = createCustomRecommendationPrompt(preferences, userHistory);
+    const prompt = createCustomRecommendationPrompt(preferences, userHistory, latitude, longitude);
     
     const response = await openai.chat.completions.create({
       model: "gpt-5",
@@ -433,7 +433,7 @@ export async function generateCustomRecommendations(
     return result.recommendations || [];
   } catch (error) {
     console.error("Error generating custom AI recommendations:", error);
-    return getFallbackCustomRecommendations(preferences, userHistory);
+    return getFallbackCustomRecommendations(preferences, userHistory, latitude, longitude);
   }
 }
 
@@ -525,8 +525,24 @@ function getFallbackRecommendations(userPreferences: UserPreferences, location: 
   return fallbackRestaurants;
 }
 
-function getFallbackCustomRecommendations(preferences: CustomPreferences, userHistory?: UserPreferences): CustomRecommendation[] {
-  const cuisineMap: { [key: string]: string[] } = {
+// Helper function to get location-based restaurant names
+function getLocationBasedRestaurants(latitude?: number, longitude?: number): { [key: string]: string[] } {
+  // If coordinates are in Wisconsin area (roughly lat 43-47, lng -87 to -92)
+  if (latitude && longitude && latitude >= 42 && latitude <= 47 && longitude >= -92 && longitude <= -87) {
+    return {
+      italian: ["Lombardino's Restaurant", "Osteria Papavero", "Salvatore's Tomato Pies"],
+      chinese: ["Hong Kong Cafe", "Taste of China", "Golden Dragon"],
+      mexican: ["Tornado Steak Lodge", "La Hacienda", "Casa Blanca"],
+      japanese: ["Sakura Japanese Cuisine", "Wasabi Japanese Restaurant", "Kanpai"],
+      indian: ["Swagat Restaurant", "Himalayan Restaurant", "India Palace"],
+      american: ["The Old Fashioned", "Graze", "Tornado Room"],
+      thai: ["Thai Orchid", "Sala Thai", "Bangkok House"],
+      any: ["The Old Fashioned", "Lombardino's Restaurant", "Hong Kong Cafe"]
+    };
+  }
+  
+  // Default to general restaurant names for other locations
+  return {
     italian: ["Bella Vista", "Romano's Kitchen", "Little Italy"],
     chinese: ["Dragon Palace", "Golden Wok", "Panda Garden"],
     mexican: ["Casa Miguel", "El Mariachi", "Taco Libre"],
@@ -536,6 +552,10 @@ function getFallbackCustomRecommendations(preferences: CustomPreferences, userHi
     thai: ["Thai Orchid", "Bangkok Street", "Coconut Palace"],
     any: ["The Garden Bistro", "Bella Vista", "Dragon Palace"]
   };
+}
+
+function getFallbackCustomRecommendations(preferences: CustomPreferences, userHistory?: UserPreferences, latitude?: number, longitude?: number): CustomRecommendation[] {
+  const cuisineMap = getLocationBasedRestaurants(latitude, longitude);
 
   const restaurants = cuisineMap[preferences.foodType] || cuisineMap.any;
   const priceSymbol = preferences.priceRange === 'budget' ? '$' : 
@@ -592,7 +612,7 @@ function getFallbackGroupRecommendations(preferences: CustomPreferences, groupHi
   return groupFavorites;
 }
 
-function createCustomRecommendationPrompt(preferences: CustomPreferences, userHistory?: UserPreferences): string {
+function createCustomRecommendationPrompt(preferences: CustomPreferences, userHistory?: UserPreferences, latitude?: number, longitude?: number): string {
   let prompt = `Generate restaurant recommendations based on these specific preferences:
 
 Food Type: ${preferences.foodType}
@@ -601,7 +621,10 @@ Group Size: ${preferences.groupSize} people
 Occasion: ${preferences.occasion}
 Ambiance: ${preferences.ambiance}
 Dietary Restrictions: ${preferences.dietaryRestrictions.join(", ") || "None"}
-Location: ${preferences.location || "current area"}`;
+Location: ${preferences.location || "current area"}
+Coordinates: ${latitude}, ${longitude}
+
+IMPORTANT: Only recommend restaurants that would realistically exist within 30 miles of the given coordinates.`;
 
   if (userHistory) {
     prompt += `

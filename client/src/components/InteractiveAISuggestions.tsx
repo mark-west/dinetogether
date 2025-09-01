@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,15 +56,47 @@ export function InteractiveAISuggestions({
   const [showForm, setShowForm] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [showTraining, setShowTraining] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [, navigate] = useLocation();
+
+  // Get user's location on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+          // Fallback to Atlanta coordinates
+          setUserLocation({ lat: 33.7490, lng: -84.3880 });
+        }
+      );
+    } else {
+      // Fallback to Atlanta coordinates
+      setUserLocation({ lat: 33.7490, lng: -84.3880 });
+    }
+  }, []);
 
   const generateMutation = useMutation({
     mutationFn: async (prefs: PreferenceForm) => {
+      if (!userLocation) {
+        throw new Error('Location not available');
+      }
+      
       const endpoint = variant === 'group' && groupId 
         ? `/api/recommendations/group/${groupId}/custom`
         : '/api/recommendations/custom';
       
-      const response = await apiRequest('POST', endpoint, prefs);
+      // Add location parameters to the request
+      const params = new URLSearchParams();
+      params.set('lat', userLocation.lat.toString());
+      params.set('lng', userLocation.lng.toString());
+      
+      const response = await apiRequest('POST', `${endpoint}?${params}`, prefs);
       return await response.json();
     },
     onSuccess: (data: any) => {
