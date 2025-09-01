@@ -117,7 +117,8 @@ export class GooglePlacesService {
 
       if (!response.ok) {
         console.error(`Google Places API error: ${response.status} ${response.statusText}`);
-        return null;
+        console.log('Falling back to legacy Place Details API...');
+        return await this.getPlaceDetailsLegacy(placeId);
       }
 
       const data = await response.json() as PlaceDetails;
@@ -160,8 +161,13 @@ export class GooglePlacesService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
         console.error(`Google Places Nearby Search error: ${response.status} ${response.statusText}`);
-        return [];
+        console.error('Error details:', errorText);
+        
+        // Fallback to old API format if new API fails
+        console.log('Falling back to old Places API format...');
+        return await this.searchNearbyPlacesLegacy(latitude, longitude, radius);
       }
 
       const data = await response.json() as { places: NearbyPlace[] };
@@ -169,6 +175,145 @@ export class GooglePlacesService {
     } catch (error) {
       console.error('Error searching nearby places:', error);
       return [];
+    }
+  }
+
+  /**
+   * Fallback method using the legacy Places API when the new API fails
+   */
+  private async searchNearbyPlacesLegacy(latitude: number, longitude: number, radius: number): Promise<NearbyPlace[]> {
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${this.apiKey}`;
+      
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error(`Google Places Legacy API error: ${response.status} ${response.statusText}`);
+        return [];
+      }
+
+      const data = await response.json() as any;
+      
+      if (data.status !== 'OK') {
+        console.error('Google Places Legacy API status error:', data.status);
+        return [];
+      }
+
+      // Convert legacy format to new format
+      return (data.results || []).map((place: any): NearbyPlace => ({
+        id: place.place_id,
+        displayName: { text: place.name },
+        primaryType: place.types?.[0] || 'restaurant',
+        rating: place.rating,
+        userRatingCount: place.user_ratings_total,
+        priceLevel: this.convertLegacyPriceLevel(place.price_level),
+        location: place.geometry?.location ? {
+          latitude: place.geometry.location.lat,
+          longitude: place.geometry.location.lng,
+        } : undefined,
+        formattedAddress: place.vicinity,
+      }));
+    } catch (error) {
+      console.error('Error in legacy Places API search:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fallback method using legacy Place Details API
+   */
+  private async getPlaceDetailsLegacy(placeId: string): Promise<PlaceDetails | null> {
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,formatted_phone_number,international_phone_number,website,opening_hours,rating,user_ratings_total,business_status,price_level,reviews,photos,type,geometry&key=${this.apiKey}`;
+      
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error(`Google Places Legacy Details API error: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const data = await response.json() as any;
+      
+      if (data.status !== 'OK') {
+        console.error('Google Places Legacy Details API status error:', data.status);
+        return null;
+      }
+
+      const place = data.result;
+      
+      // Convert legacy format to new format
+      return {
+        id: placeId,
+        displayName: { text: place.name || '' },
+        formattedAddress: place.formatted_address,
+        nationalPhoneNumber: place.formatted_phone_number,
+        internationalPhoneNumber: place.international_phone_number,
+        websiteUri: place.website,
+        regularOpeningHours: place.opening_hours ? {
+          openNow: place.opening_hours.open_now,
+          periods: place.opening_hours.periods?.map((period: any) => ({
+            open: {
+              day: period.open.day,
+              hour: parseInt(period.open.time?.substring(0, 2) || '0'),
+              minute: parseInt(period.open.time?.substring(2, 4) || '0')
+            },
+            close: period.close ? {
+              day: period.close.day,
+              hour: parseInt(period.close.time?.substring(0, 2) || '0'),
+              minute: parseInt(period.close.time?.substring(2, 4) || '0')
+            } : undefined
+          })),
+          weekdayDescriptions: place.opening_hours.weekday_text
+        } : undefined,
+        rating: place.rating,
+        userRatingCount: place.user_ratings_total,
+        businessStatus: place.business_status,
+        priceLevel: this.convertLegacyPriceLevel(place.price_level),
+        reviews: place.reviews?.map((review: any) => ({
+          authorAttribution: {
+            displayName: review.author_name || '',
+            uri: review.author_url,
+            photoUri: review.profile_photo_url
+          },
+          rating: review.rating,
+          text: { text: review.text || '' },
+          relativePublishTimeDescription: review.relative_time_description || ''
+        })),
+        photos: place.photos?.map((photo: any) => ({
+          name: photo.photo_reference,
+          widthPx: photo.width,
+          heightPx: photo.height,
+          authorAttributions: [{
+            displayName: photo.html_attributions?.[0] || '',
+            uri: undefined,
+            photoUri: undefined
+          }]
+        })),
+        primaryType: place.types?.[0] || 'restaurant',
+        location: place.geometry?.location ? {
+          latitude: place.geometry.location.lat,
+          longitude: place.geometry.location.lng
+        } : undefined
+      };
+    } catch (error) {
+      console.error('Error in legacy Place Details API:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Convert legacy price level to new format
+   */
+  private convertLegacyPriceLevel(priceLevel?: number): string | undefined {
+    if (typeof priceLevel !== 'number') return undefined;
+    switch (priceLevel) {
+      case 0: return 'PRICE_LEVEL_FREE';
+      case 1: return 'PRICE_LEVEL_INEXPENSIVE';
+      case 2: return 'PRICE_LEVEL_MODERATE';
+      case 3: return 'PRICE_LEVEL_EXPENSIVE';
+      case 4: return 'PRICE_LEVEL_VERY_EXPENSIVE';
+      default: return undefined;
     }
   }
 
