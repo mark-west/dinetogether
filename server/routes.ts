@@ -1074,7 +1074,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Generate AI recommendations
-      const recommendations = await generateRestaurantRecommendations(userPreferences, location as string);
+      // Default location (Atlanta, GA) - in production this could be user's location
+      const latitude = 33.7490;
+      const longitude = -84.3880;
+      const recommendations = await generateRestaurantRecommendations(userPreferences, location as string, latitude, longitude);
       
       // Enrich with external reviews
       const enrichedRecommendations = await enrichWithExternalReviews(recommendations);
@@ -1123,7 +1126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pricePreference: "moderate" as const
       };
       
-      const recommendations = await generateCustomRecommendations(preferences, userHistory);
+      // Default location (Atlanta, GA) - in production this could be user's location
+      const latitude = 33.7490;
+      const longitude = -84.3880;
+      const recommendations = await generateCustomRecommendations(preferences, userHistory, latitude, longitude);
       
       res.json({ recommendations });
     } catch (error) {
@@ -1141,7 +1147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Default location (Atlanta, GA) - in production this could be user's location
       const latitude = 33.7490;
       const longitude = -84.3880;
-      const radius = 5000; // 5km radius
+      const radius = 48280; // 30 miles radius
       
       const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);
       

@@ -6,6 +6,102 @@ const hasOpenAI = !!process.env.OPENAI_API_KEY;
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
+// Helper function to fetch nearby restaurants from Google Places API for AI recommendations
+async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, radius: number) {
+  const API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!API_KEY) {
+    console.error('Google Maps API key not configured');
+    return [];
+  }
+
+  // Major chain restaurants to filter out
+  const chainKeywords = [
+    'mcdonald', 'burger king', 'subway', 'kfc', 'taco bell', 'pizza hut',
+    'domino', 'papa john', 'wendy', 'arby', 'dairy queen', 'sonic',
+    'chick-fil-a', 'popeyes', 'chipotle', 'panda express', 'starbucks',
+    'dunkin', 'tim horton', 'ihop', 'denny', 'applebee', 'olive garden',
+    'red lobster', 'outback', 'texas roadhouse', 'chili', 'friday',
+    'buffalo wild wings', 'hooters', 'cracker barrel'
+  ];
+
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.results) {
+      console.error('Google Places API error:', data.status, data.error_message);
+      return [];
+    }
+
+    // Filter out chains and process restaurants
+    const filteredRestaurants = data.results
+      .filter((place: any) => {
+        const name = place.name.toLowerCase();
+        // Skip if it's a major chain (unless it's a finer dining franchise)
+        const isChain = chainKeywords.some(keyword => name.includes(keyword));
+        const isFineDining = place.price_level >= 3; // Allow higher-end chains
+        
+        return !isChain || isFineDining;
+      })
+      .slice(0, 20) // Get more restaurants for AI to choose from
+      .map((place: any) => ({
+        id: place.place_id,
+        name: place.name,
+        cuisine: getCuisineFromTypes(place.types),
+        priceRange: getPriceRange(place.price_level),
+        rating: place.rating || 0,
+        address: place.vicinity,
+        photoReference: place.photos?.[0]?.photo_reference
+      }));
+
+    return filteredRestaurants;
+  } catch (error) {
+    console.error('Error fetching restaurants from Google Places:', error);
+    return [];
+  }
+}
+
+// Helper function to convert Google's price level to our format
+function getPriceRange(priceLevel: number | undefined): string {
+  switch (priceLevel) {
+    case 1: return '$';
+    case 2: return '$$';
+    case 3: return '$$$';
+    case 4: return '$$$$';
+    default: return '$$';
+  }
+}
+
+// Helper function to extract cuisine type from Google Place types
+function getCuisineFromTypes(types: string[]): string {
+  const cuisineMap: { [key: string]: string } = {
+    'chinese_restaurant': 'Chinese',
+    'italian_restaurant': 'Italian',
+    'mexican_restaurant': 'Mexican',
+    'japanese_restaurant': 'Japanese',
+    'thai_restaurant': 'Thai',
+    'indian_restaurant': 'Indian',
+    'french_restaurant': 'French',
+    'korean_restaurant': 'Korean',
+    'greek_restaurant': 'Greek',
+    'mediterranean_restaurant': 'Mediterranean',
+    'american_restaurant': 'American',
+    'steakhouse': 'Steakhouse',
+    'seafood_restaurant': 'Seafood',
+    'vegetarian_restaurant': 'Vegetarian',
+    'pizza_restaurant': 'Pizza'
+  };
+
+  for (const type of types) {
+    if (cuisineMap[type]) {
+      return cuisineMap[type];
+    }
+  }
+  return 'Restaurant';
+}
+
 export interface UserPreferences {
   userId: string;
   ratedRestaurants: Array<{
@@ -62,30 +158,38 @@ export interface CustomRecommendation {
 
 export async function generateRestaurantRecommendations(
   userPreferences: UserPreferences,
-  location: string = "current area"
+  location: string = "current area",
+  latitude: number = 33.7490,
+  longitude: number = -84.3880
 ): Promise<RestaurantRecommendation[]> {
   try {
-    // Fallback if OpenAI is not available
-    if (!openai || !hasOpenAI) {
+    // Get real restaurants from Google Places API within 30 miles
+    const radius = 48280; // 30 miles in meters
+    const localRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
+    
+    if (!localRestaurants || localRestaurants.length === 0) {
       return getFallbackRecommendations(userPreferences, location);
     }
 
-    const prompt = createRecommendationPrompt(userPreferences, location);
+    // Use AI to rank and filter the real restaurants based on user preferences
+    if (!openai || !hasOpenAI) {
+      return convertToRecommendations(localRestaurants.slice(0, 8));
+    }
+
+    const prompt = createLocalRecommendationPrompt(userPreferences, localRestaurants, location);
     
     const response = await openai.chat.completions.create({
       model: "gpt-5",
       messages: [
         {
           role: "system",
-          content: `You are an expert restaurant recommendation engine that analyzes dining patterns, ratings, and preferences to suggest personalized restaurant recommendations. 
+          content: `You are an expert restaurant recommendation engine. You will be given a list of REAL restaurants from Google Places API and user preferences. Your job is to:
           
-          Consider the user's:
-          - Previous ratings and preferences
-          - Cuisine preferences and dining history
-          - Price preferences and location
-          - Similar user patterns and popular trends
+          1. Select and rank the 5-8 best restaurants from the provided list based on user preferences
+          2. Provide detailed reasoning for each recommendation
+          3. Assign confidence scores based on how well each restaurant matches user preferences
           
-          Provide realistic restaurant recommendations that would likely exist in the specified area. Include a confidence score and detailed reasoning for each recommendation.
+          IMPORTANT: Only recommend restaurants from the provided list. Do not invent restaurants.
           
           Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "cuisine": "Cuisine Type", "priceRange": "$$", "estimatedRating": 4.2, "location": "Address/Area", "reasonForRecommendation": "Detailed explanation", "confidenceScore": 0.85}] }`
         },
@@ -100,12 +204,73 @@ export async function generateRestaurantRecommendations(
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    return result.recommendations || [];
+    return result.recommendations || convertToRecommendations(localRestaurants.slice(0, 8));
   } catch (error) {
     console.error("Error generating AI recommendations:", error);
-    // Use fallback recommendations when AI fails
-    return getFallbackRecommendations(userPreferences, location);
+    // Use local restaurants as fallback
+    const localRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, 48280);
+    return convertToRecommendations(localRestaurants.slice(0, 8));
   }
+}
+
+// Helper function to create prompt for local restaurant recommendations
+function createLocalRecommendationPrompt(userPreferences: UserPreferences, localRestaurants: any[], location: string): string {
+  const { ratedRestaurants, visitHistory, preferredCuisines, pricePreference } = userPreferences;
+  
+  let prompt = `Select and rank the 5-8 best restaurants from the provided list for a user in ${location}.\n\n`;
+  
+  prompt += "Available Restaurants:\n";
+  localRestaurants.forEach((restaurant, index) => {
+    prompt += `${index + 1}. ${restaurant.name} (${restaurant.cuisine}) - ${restaurant.priceRange} - Rating: ${restaurant.rating} - ${restaurant.address}\n`;
+  });
+  prompt += "\n";
+  
+  prompt += "User's Dining Profile:\n";
+  
+  if (ratedRestaurants.length > 0) {
+    prompt += "Previous Ratings:\n";
+    ratedRestaurants.forEach(restaurant => {
+      prompt += `- ${restaurant.restaurantName}: ${restaurant.rating}/5 stars`;
+      if (restaurant.cuisine) prompt += ` (${restaurant.cuisine})`;
+      prompt += "\n";
+    });
+    prompt += "\n";
+  }
+  
+  if (visitHistory.length > 0) {
+    prompt += "Visit History:\n";
+    visitHistory.forEach(visit => {
+      prompt += `- ${visit.restaurantName}: ${visit.visitCount} visits`;
+      if (visit.cuisine) prompt += ` (${visit.cuisine})`;
+      prompt += "\n";
+    });
+    prompt += "\n";
+  }
+  
+  if (preferredCuisines.length > 0) {
+    prompt += `Preferred Cuisines: ${preferredCuisines.join(", ")}\n`;
+  }
+  
+  if (pricePreference) {
+    prompt += `Price Preference: ${pricePreference}\n`;
+  }
+  
+  prompt += "\nSelect restaurants from the list that best match the user's preferences and provide detailed reasoning for each choice.";
+  
+  return prompt;
+}
+
+// Helper function to convert Google Places restaurants to recommendation format
+function convertToRecommendations(restaurants: any[]): RestaurantRecommendation[] {
+  return restaurants.map(restaurant => ({
+    name: restaurant.name,
+    cuisine: restaurant.cuisine,
+    priceRange: restaurant.priceRange,
+    estimatedRating: restaurant.rating,
+    location: restaurant.address,
+    reasonForRecommendation: `Local restaurant with ${restaurant.rating} star rating`,
+    confidenceScore: 0.7
+  }));
 }
 
 function createRecommendationPrompt(userPreferences: UserPreferences, location: string): string {
@@ -223,7 +388,9 @@ export async function enrichWithExternalReviews(
 // Generate custom recommendations based on user preferences
 export async function generateCustomRecommendations(
   preferences: CustomPreferences,
-  userHistory?: UserPreferences
+  userHistory?: UserPreferences,
+  latitude: number = 33.7490,
+  longitude: number = -84.3880
 ): Promise<CustomRecommendation[]> {
   try {
     // Fallback if OpenAI is not available
