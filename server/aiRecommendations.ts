@@ -636,9 +636,18 @@ export async function generateCustomRecommendations(
         phoneNumber: restaurant.phoneNumber,
         website: restaurant.website, 
         openingHours: restaurant.openingHours,
-        // DIRECT API DATA - bypass any mapping issues
+        // DIRECT API DATA - bypass any mapping issues  
         phone: restaurant.phoneNumber,
         hours: restaurant.openingHours,
+        // LOG WHAT WE'RE ACTUALLY SENDING
+        _debugContact: {
+          serverHasPhone: !!restaurant.phoneNumber,
+          serverHasWebsite: !!restaurant.website, 
+          serverHasHours: !!restaurant.openingHours,
+          phoneValue: restaurant.phoneNumber,
+          websiteValue: restaurant.website,
+          hoursValue: restaurant.openingHours
+        },
         reviews: restaurant.reviews || [],
         userRatingsTotal: restaurant.userRatingsTotal,
         businessStatus: restaurant.businessStatus,

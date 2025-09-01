@@ -96,13 +96,13 @@ export function AIRecommendations() {
       type: restaurant.type || restaurant.cuisine || 'Restaurant',
       priceRange: restaurant.priceRange,
       description: restaurant.description || restaurant.reasonForRecommendation || '',
-      address: restaurant.location || restaurant.address || '',
-      // Use server's field names directly (server already mapped from Google API)
-      phone: restaurant.phoneNumber || '', // Server maps from formatted_phone_number
-      phoneNumber: restaurant.phoneNumber || '',
-      website: restaurant.website || '', // Server passes through from Google
-      websiteUri: restaurant.website || '',
-      hours: formatOpeningHours(restaurant.openingHours), // Server maps from opening_hours
+      // PRESERVE ACTUAL SERVER DATA - don't override with empty strings
+      address: restaurant.address || restaurant.location || restaurant.vicinity || '',
+      phone: restaurant.phoneNumber || restaurant.phone || '',
+      phoneNumber: restaurant.phoneNumber || restaurant.phone || '',
+      website: restaurant.website || restaurant.websiteUri || '',
+      websiteUri: restaurant.website || restaurant.websiteUri || '',
+      hours: restaurant.hours || formatOpeningHours(restaurant.openingHours) || '',
       openingHours: restaurant.openingHours,
       rating: restaurant.rating || restaurant.estimatedRating || 0,
       estimatedRating: restaurant.rating || restaurant.estimatedRating || 0,
