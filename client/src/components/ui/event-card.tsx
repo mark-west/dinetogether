@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { generateRestaurantWebsiteSearchUrl } from "@/lib/restaurantUtils";
 
 interface EventCardProps {
   event: {
@@ -288,6 +289,24 @@ export function EventCard({
                   <ReplyIcon className="mr-2" size="sm" />
                   RSVP
                 </Button>
+                {/* Restaurant Website Link */}
+                {event.restaurantName && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full sm:w-auto"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const websiteUrl = generateRestaurantWebsiteSearchUrl(event.restaurantName!, event.restaurantAddress);
+                      window.open(websiteUrl, '_blank');
+                    }}
+                    data-testid={`button-restaurant-website-${event.id}`}
+                  >
+                    <i className="fas fa-globe mr-2"></i>
+                    Restaurant Menu
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center sm:justify-start gap-2">

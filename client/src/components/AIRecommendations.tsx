@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
 import { RestaurantIcon, LocationIcon } from "./ui/app-icons";
+import { generateRestaurantWebsiteSearchUrl, getWebsiteLinkText } from '@/lib/restaurantUtils';
 
 interface Recommendation {
   name: string;
@@ -260,19 +261,35 @@ export function AIRecommendations() {
                     {rec.reasonForRecommendation}
                   </p>
 
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => {
-                      // Could integrate with maps or reservation systems
-                      window.open(`https://www.google.com/maps/search/${encodeURIComponent(rec.name + ' ' + rec.location)}`, '_blank');
-                    }}
-                    data-testid={`button-view-restaurant-${index}`}
-                  >
-                    <i className="fas fa-map-marker-alt mr-2"></i>
-                    View on Map
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => {
+                        // Could integrate with maps or reservation systems
+                        window.open(`https://www.google.com/maps/search/${encodeURIComponent(rec.name + ' ' + rec.location)}`, '_blank');
+                      }}
+                      data-testid={`button-view-restaurant-${index}`}
+                    >
+                      <i className="fas fa-map-marker-alt mr-2"></i>
+                      View on Map
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => {
+                        const websiteUrl = generateRestaurantWebsiteSearchUrl(rec.name, rec.location);
+                        window.open(websiteUrl, '_blank');
+                      }}
+                      data-testid={`button-website-${index}`}
+                    >
+                      <i className="fas fa-globe mr-2"></i>
+                      Visit Website
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

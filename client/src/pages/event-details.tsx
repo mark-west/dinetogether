@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { InteractiveStarRating } from "@/components/InteractiveStarRating";
+import { generateRestaurantWebsiteSearchUrl } from '@/lib/restaurantUtils';
 
 // Star Rating Component
 function StarRating({ rating, interactive = false, onRatingChange }: { 
@@ -1017,23 +1018,44 @@ export default function EventDetails() {
                 
                 {/* Restaurant Info */}
                 {(event.restaurantName || event.restaurantAddress) && (
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div className="flex-1">
-                      {event.restaurantName && (
-                        <p className="font-medium" data-testid="text-restaurant-name">{event.restaurantName}</p>
-                      )}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex-1">
+                        {event.restaurantName && (
+                          <p className="font-medium" data-testid="text-restaurant-name">{event.restaurantName}</p>
+                        )}
+                        {event.restaurantAddress && (
+                          <p className="text-sm text-muted-foreground" data-testid="text-restaurant-address">{event.restaurantAddress}</p>
+                        )}
+                      </div>
                       {event.restaurantAddress && (
-                        <p className="text-sm text-muted-foreground" data-testid="text-restaurant-address">{event.restaurantAddress}</p>
+                        <DirectionsButton 
+                          address={event.restaurantAddress}
+                          restaurantName={event.restaurantName}
+                          lat={event.restaurantLat}
+                          lng={event.restaurantLng}
+                          size="sm"
+                        />
                       )}
                     </div>
-                    {event.restaurantAddress && (
-                      <DirectionsButton 
-                        address={event.restaurantAddress}
-                        restaurantName={event.restaurantName}
-                        lat={event.restaurantLat}
-                        lng={event.restaurantLng}
-                        size="sm"
-                      />
+                    
+                    {/* Restaurant Website Link */}
+                    {event.restaurantName && (
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            const websiteUrl = generateRestaurantWebsiteSearchUrl(event.restaurantName!, event.restaurantAddress);
+                            window.open(websiteUrl, '_blank');
+                          }}
+                          data-testid="button-restaurant-website"
+                        >
+                          <i className="fas fa-globe mr-2"></i>
+                          🍽️ Check Out Menu & Hours
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
