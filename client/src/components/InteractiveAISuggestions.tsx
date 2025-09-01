@@ -133,9 +133,27 @@ export function InteractiveAISuggestions({
     }, 500);
   };
 
-  const handleRecommendationClick = (recommendation: Recommendation, index: number) => {
+  const handleRecommendationClick = (recommendation: any, index: number) => {
     // Generate a restaurant ID from the name and index
     const restaurantId = `${recommendation.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
+    
+    // Store restaurant data in sessionStorage to pass it to the details page
+    const restaurantData = {
+      id: restaurantId,
+      name: recommendation.name,
+      type: recommendation.type,
+      priceRange: recommendation.priceRange,
+      description: recommendation.description,
+      address: '', // InteractiveAI suggestions may not have address
+      phone: '',
+      hours: '',
+      rating: recommendation.rating,
+      reviewCount: 0,
+      menuHighlights: [],
+      features: ['AI-generated recommendation', 'Personalized suggestion']
+    };
+    
+    sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
     const currentPath = window.location.pathname;
     navigate(`/restaurant/${restaurantId}?back=${currentPath}`);
   };

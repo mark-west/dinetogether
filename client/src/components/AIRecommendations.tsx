@@ -55,6 +55,24 @@ export function AIRecommendations() {
   const handleRestaurantClick = (restaurant: Recommendation, index: number) => {
     // Generate a restaurant ID from the name and index
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
+    
+    // Store restaurant data in sessionStorage to pass it to the details page
+    const restaurantData = {
+      id: restaurantId,
+      name: restaurant.name,
+      type: restaurant.cuisine,
+      priceRange: restaurant.priceRange,
+      description: restaurant.reasonForRecommendation,
+      address: restaurant.location,
+      phone: restaurant.phoneNumber || '',
+      hours: restaurant.openingHours ? (restaurant.openingHours.open_now ? 'Open Now' : 'Currently Closed') : '',
+      rating: restaurant.estimatedRating,
+      reviewCount: restaurant.userRatingsTotal,
+      menuHighlights: [], // AI recommendations don't include menu details
+      features: ['Real-time AI recommendation', 'Google Maps verified']
+    };
+    
+    sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
     navigate(`/restaurant/${restaurantId}?back=/recommendations`);
   };
 

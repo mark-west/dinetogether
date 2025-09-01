@@ -59,8 +59,49 @@ export default function RestaurantDetails() {
   const restaurantId = params?.id;
   const backPath = new URLSearchParams(window.location.search).get('back') || '/dashboard';
 
-  // REMOVED: No mock restaurant generation allowed
-  const restaurant: Restaurant | null = null;
+  // Get restaurant data from sessionStorage (passed from AI recommendations)
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (restaurantId) {
+      // Try to get restaurant data from sessionStorage
+      const storedData = sessionStorage.getItem(`restaurant_${restaurantId}`);
+      if (storedData) {
+        try {
+          const restaurantData = JSON.parse(storedData);
+          setRestaurant(restaurantData);
+        } catch (error) {
+          console.error('Failed to parse restaurant data:', error);
+          setRestaurant(null);
+        }
+      }
+    }
+    setIsLoading(false);
+  }, [restaurantId]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 max-w-4xl">
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation(backPath)}
+            data-testid="button-back-loading"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Results
+          </Button>
+        </div>
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading restaurant details...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show error if no restaurant data available
   if (!restaurant) {
