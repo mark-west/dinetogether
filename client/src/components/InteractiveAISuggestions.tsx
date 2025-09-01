@@ -40,13 +40,15 @@ interface InteractiveAISuggestionsProps {
   subtitle: string;
   variant: 'user' | 'group';
   groupId?: string;
+  groups?: any[];
 }
 
 export function InteractiveAISuggestions({ 
   title, 
   subtitle, 
   variant, 
-  groupId 
+  groupId: initialGroupId,
+  groups = []
 }: InteractiveAISuggestionsProps) {
   const [preferences, setPreferences] = useState<PreferenceForm>({
     foodType: '',
@@ -57,6 +59,7 @@ export function InteractiveAISuggestions({
     dietaryRestrictions: []
   });
   
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(initialGroupId || '');
   const [showForm, setShowForm] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [showTraining, setShowTraining] = useState(false);
@@ -91,8 +94,8 @@ export function InteractiveAISuggestions({
         throw new Error('Location not available');
       }
       
-      const endpoint = variant === 'group' && groupId 
-        ? `/api/recommendations/group/${groupId}/custom`
+      const endpoint = variant === 'group' && selectedGroupId 
+        ? `/api/recommendations/group/${selectedGroupId}/custom`
         : '/api/recommendations/custom';
       
       // Add location parameters to the request
@@ -109,6 +112,10 @@ export function InteractiveAISuggestions({
   });
 
   const handleGenerateSuggestions = () => {
+    if (variant === 'group' && !selectedGroupId) {
+      console.error('Group must be selected for group recommendations');
+      return;
+    }
     generateMutation.mutate(preferences);
   };
 
@@ -212,13 +219,38 @@ export function InteractiveAISuggestions({
         {showTraining && (
           <RestaurantTraining 
             variant={variant}
-            groupId={groupId}
+            groupId={selectedGroupId}
             onTrainingComplete={handleTrainingComplete}
           />
         )}
 
         {showForm && (
           <div className="space-y-6">
+            {/* Group Selection - Only show for group variant */}
+            {variant === 'group' && groups.length > 0 && (
+              <div className="space-y-2 pb-4 border-b">
+                <Label className="text-base font-medium">Select Group for Recommendations</Label>
+                <Select
+                  value={selectedGroupId}
+                  onValueChange={setSelectedGroupId}
+                >
+                  <SelectTrigger data-testid="select-group">
+                    <SelectValue placeholder="Choose a group to get suggestions for" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map((group: any) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name} ({group.memberCount || 0} members)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Recommendations will be based on all group members' preferences and dining history
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Food Type */}
               <div className="space-y-2">

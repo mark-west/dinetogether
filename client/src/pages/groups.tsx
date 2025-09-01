@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GroupCard } from "@/components/ui/group-card";
 import { PlusIcon, UsersIcon } from "@/components/ui/app-icons";
+import { InteractiveAISuggestions } from "@/components/InteractiveAISuggestions";
 
 export default function Groups() {
   const { isLoading, isAuthenticated } = useAuth();
@@ -91,6 +92,17 @@ export default function Groups() {
               Create Group
             </Button>
           </div>
+
+          {/* AI Restaurant Suggestions for Groups */}
+          {groups && groups.length > 0 && (
+            <InteractiveAISuggestions
+              title="Find Restaurants for Your Groups"
+              subtitle="Get personalized recommendations based on all your group members' preferences and history"
+              variant="group"
+              groupId={groups[0]?.id}
+              groups={groups}
+            />
+          )}
 
           {groupsLoading ? (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

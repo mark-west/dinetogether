@@ -1278,11 +1278,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper functions for group recommendation processing
+  function extractPreferredCuisines(ratedRestaurants: any[]): string[] {
+    // Simple heuristic - could be enhanced with actual cuisine data
+    return ['Various']; // Placeholder - would need cuisine classification
+  }
+  
+  function extractPricePreference(ratedRestaurants: any[]): 'budget' | 'moderate' | 'upscale' {
+    // Simple heuristic - could be enhanced with actual price data
+    return 'moderate';
+  }
+
   // Group-based custom recommendation endpoint
   app.post('/api/recommendations/group/:groupId/custom', isAuthenticated, async (req: any, res) => {
     try {
       const { groupId } = req.params;
       const preferences: CustomPreferences = req.body;
+      
+      // Get coordinates from query parameters - require real user location
+      const latitude = parseFloat(req.query.lat as string);
+      const longitude = parseFloat(req.query.lng as string);
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ message: "User location is required" });
+      }
       
       // Get group's historical data
       const group = await storage.getGroup(groupId);
@@ -1293,20 +1312,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupEvents = await storage.getGroupEvents(groupId);
       const groupMembers = await storage.getGroupMembers(groupId);
       
-      // Build group history for AI analysis
-      const groupHistory = {
+      // Get comprehensive data for all group members
+      const memberDataPromises = groupMembers.map(async (member: any) => {
+        const memberEvents = await storage.getUserEvents(member.userId);
+        const memberRatings = await storage.getUserRatings(member.userId);
+        
+        return {
+          userId: member.userId,
+          events: memberEvents,
+          ratings: memberRatings,
+          ratedRestaurants: memberRatings.map((rating: any) => ({
+            restaurantName: rating.event?.restaurantName || rating.event?.name || 'Unknown',
+            rating: rating.rating,
+            cuisine: 'Various',
+            location: rating.event?.restaurantAddress
+          })),
+          visitHistory: memberEvents.reduce((acc: any[], event: any) => {
+            const existing = acc.find(item => item.restaurantName === (event.restaurantName || event.name));
+            if (existing) {
+              existing.visitCount++;
+              existing.lastVisit = new Date(event.dateTime);
+            } else {
+              acc.push({
+                restaurantName: event.restaurantName || event.name,
+                visitCount: 1,
+                lastVisit: new Date(event.dateTime),
+                cuisine: 'Various'
+              });
+            }
+            return acc;
+          }, [])
+        };
+      });
+      
+      const memberDataResults = await Promise.all(memberDataPromises);
+      
+      // Calculate group averages and preferences
+      const allRatings = memberDataResults.flatMap(member => member.ratedRestaurants);
+      const allVisits = memberDataResults.flatMap(member => member.visitHistory);
+      const averageRating = allRatings.length > 0 
+        ? allRatings.reduce((sum, r) => sum + r.rating, 0) / allRatings.length 
+        : 4.0;
+      
+      // Build comprehensive group history for AI analysis
+      const groupHistory: GroupPreferences = {
+        groupId,
+        memberCount: groupMembers.length,
         groupEvents: groupEvents.map((event: any) => ({
           restaurantName: event.restaurantName || event.name,
-          rating: 4.0, // Would need to calculate average ratings per event
-          cuisine: 'Various'
+          rating: averageRating, // Use calculated average
+          cuisine: 'Various',
+          date: event.dateTime
         })),
-        memberPreferences: groupMembers.map((member: any) => ({
-          preferredCuisines: ['Various'], // Would need user preference data
-          pricePreference: 'moderate'
-        }))
+        memberPreferences: memberDataResults.map(member => ({
+          userId: member.userId,
+          ratedRestaurants: member.ratedRestaurants,
+          visitHistory: member.visitHistory,
+          preferredCuisines: extractPreferredCuisines(member.ratedRestaurants),
+          pricePreference: extractPricePreference(member.ratedRestaurants),
+          averageRating: member.ratedRestaurants.length > 0 
+            ? member.ratedRestaurants.reduce((sum: number, r: any) => sum + r.rating, 0) / member.ratedRestaurants.length 
+            : 0
+        })),
+        groupRatings: allRatings,
+        groupVisits: allVisits,
+        averageGroupRating: averageRating
       };
       
-      const recommendations = await generateGroupRecommendations(preferences, groupHistory);
+      const { generateCustomRecommendations } = await import('./aiRecommendations');
+      const recommendations = await generateCustomRecommendations(
+        preferences, 
+        groupHistory as any, // Type compatibility 
+        latitude, 
+        longitude
+      );
       
       res.json({ recommendations });
     } catch (error) {
