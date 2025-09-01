@@ -85,19 +85,48 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
     'buffalo wild wings', 'hooters', 'cracker barrel'
   ];
 
-  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.status !== 'OK' || !data.results) {
-      // Google Places API error
-      return [];
+  // Search for restaurants with broader keywords to get diverse results
+  const baseUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&key=${API_KEY}`;
+  const searchUrls = [
+    `${baseUrl}&type=restaurant`,
+    `${baseUrl}&keyword=mexican restaurant`,
+    `${baseUrl}&keyword=italian restaurant`, 
+    `${baseUrl}&keyword=chinese restaurant`,
+    `${baseUrl}&keyword=american restaurant`
+  ];
+  
+  let allResults: any[] = [];
+  
+  // Search multiple times with different keywords to get diverse cuisine types
+  for (const url of searchUrls.slice(0, 2)) { // Start with general + mexican
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results) {
+        allResults = allResults.concat(data.results);
+      }
+    } catch (error) {
+      console.error(`Error fetching from ${url}:`, error);
     }
+  }
 
-    // Filter out chains and process restaurants
-    const filteredRestaurants = data.results
+  // Remove duplicates by place_id
+  const uniqueResults = allResults.reduce((acc: any[], place: any) => {
+    if (!acc.find(p => p.place_id === place.place_id)) {
+      acc.push(place);
+    }
+    return acc;
+  }, []);
+  
+  console.log(`Combined search found ${uniqueResults.length} unique restaurants`);
+
+  if (uniqueResults.length === 0) {
+    return [];
+  }
+
+  // Filter out chains and process restaurants  
+  const filteredRestaurants = uniqueResults
       .filter((place: any) => {
         const name = place.name.toLowerCase();
         // Skip if it's a major chain (unless it's a finer dining franchise)
@@ -123,10 +152,6 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
       }));
 
     return filteredRestaurants;
-  } catch (error) {
-    console.error('Error fetching restaurants from Google Places:', error);
-    return [];
-  }
 }
 
 /**
@@ -624,10 +649,30 @@ export async function generateCustomRecommendations(
         const restaurantName = restaurant.name.toLowerCase();
         const restaurantCuisine = (restaurant.cuisine || '').toLowerCase();
         
-        // Check if restaurant matches the preferred food type
-        return restaurantTypes.includes(preferredType) || 
-               restaurantName.includes(preferredType) ||
-               restaurantCuisine.includes(preferredType);
+        // Much broader matching for cuisine types
+        const searchTerms = [
+          preferredType,
+          preferredType + 'an', // mexican -> mexican
+          preferredType.slice(0, -2) + 'o', // mexican -> mexico
+        ];
+        
+        // Also check common cuisine keywords
+        const cuisineKeywords = {
+          'mexican': ['mexican', 'mexico', 'taco', 'burrito', 'cantina', 'casa', 'el ', 'la ', 'dos', 'tres'],
+          'italian': ['italian', 'italy', 'pizza', 'pasta', 'mario', 'luigi', 'giuseppe'],
+          'chinese': ['chinese', 'china', 'wok', 'panda', 'dragon', 'bamboo'],
+          'american': ['american', 'grill', 'bar', 'diner', 'cafe', 'steakhouse'],
+          'asian': ['asian', 'oriental', 'fusion', 'sushi', 'ramen']
+        };
+        
+        const keywords = cuisineKeywords[preferredType] || [preferredType];
+        
+        // Check if restaurant matches ANY of the keywords
+        return keywords.some(keyword => 
+          restaurantTypes.includes(keyword) || 
+          restaurantName.includes(keyword) ||
+          restaurantCuisine.includes(keyword)
+        );
       });
       console.log(`FOOD FILTER: ${beforeCount} -> ${filteredRestaurants.length} restaurants`);
     }
