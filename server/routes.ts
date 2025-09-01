@@ -27,6 +27,76 @@ import {
   type CustomPreferences
 } from "./aiRecommendations";
 
+// Helper function to fetch nearby restaurants from Google Places API
+async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
+  const API_KEY = process.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!API_KEY) {
+    throw new Error('Google Maps API key not configured');
+  }
+
+  // Major chain restaurants to filter out
+  const chainKeywords = [
+    'mcdonald', 'burger king', 'subway', 'kfc', 'taco bell', 'pizza hut',
+    'domino', 'papa john', 'wendy', 'arby', 'dairy queen', 'sonic',
+    'chick-fil-a', 'popeyes', 'chipotle', 'panda express', 'starbucks',
+    'dunkin', 'tim horton', 'ihop', 'denny', 'applebee', 'olive garden',
+    'red lobster', 'outback', 'texas roadhouse', 'chili', 'friday',
+    'buffalo wild wings', 'hooters', 'cracker barrel'
+  ];
+
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.results) {
+      console.error('Google Places API error:', data.status, data.error_message);
+      return [];
+    }
+
+    // Filter out chains and process restaurants
+    const filteredRestaurants = data.results
+      .filter((place: any) => {
+        const name = place.name.toLowerCase();
+        // Skip if it's a major chain (unless it's a finer dining franchise)
+        const isChain = chainKeywords.some(keyword => name.includes(keyword));
+        const isFineDining = place.price_level >= 3; // Allow higher-end chains
+        
+        return !isChain || isFineDining;
+      })
+      .slice(0, 5) // Get 5 restaurants for training
+      .map((place: any) => ({
+        id: place.place_id,
+        name: place.name,
+        type: place.types?.find((type: string) => 
+          ['restaurant', 'meal_takeaway', 'food'].includes(type)
+        ) || 'Restaurant',
+        priceRange: getPriceRange(place.price_level),
+        description: `${place.vicinity} • Rating: ${place.rating || 'N/A'}`,
+        rating: place.rating || 0,
+        address: place.vicinity,
+        photoReference: place.photos?.[0]?.photo_reference
+      }));
+
+    return filteredRestaurants;
+  } catch (error) {
+    console.error('Error fetching restaurants from Google Places:', error);
+    return [];
+  }
+}
+
+// Helper function to convert Google's price level to our format
+function getPriceRange(priceLevel: number | undefined): string {
+  switch (priceLevel) {
+    case 1: return '$';
+    case 2: return '$$';
+    case 3: return '$$$';
+    case 4: return '$$$$';
+    default: return '$$';
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -1068,46 +1138,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { variant, groupId } = req.query;
       const userId = req.user?.claims?.sub;
       
-      // Generate sample restaurants for training
-      const sampleRestaurants = [
-        {
-          id: 'sample-1',
-          name: 'The Italian Corner',
-          type: 'Italian',
-          priceRange: '$$',
-          description: 'Authentic Italian cuisine with homemade pasta and wood-fired pizzas'
-        },
-        {
-          id: 'sample-2', 
-          name: 'Spice Garden',
-          type: 'Indian',
-          priceRange: '$$$',
-          description: 'Traditional Indian dishes with aromatic spices and vegetarian options'
-        },
-        {
-          id: 'sample-3',
-          name: 'Burger Express',
-          type: 'American',
-          priceRange: '$',
-          description: 'Gourmet burgers made with locally sourced ingredients'
-        },
-        {
-          id: 'sample-4',
-          name: 'Sakura Sushi',
-          type: 'Japanese',
-          priceRange: '$$$$',
-          description: 'Fresh sushi and sashimi prepared by experienced chefs'
-        },
-        {
-          id: 'sample-5',
-          name: 'Taco Libre',
-          type: 'Mexican',
-          priceRange: '$$',
-          description: 'Authentic tacos and margaritas in a vibrant atmosphere'
-        }
-      ];
+      // Default location (Atlanta, GA) - in production this could be user's location
+      const latitude = 33.7490;
+      const longitude = -84.3880;
+      const radius = 5000; // 5km radius
+      
+      const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);
+      
+      if (!restaurants || restaurants.length === 0) {
+        return res.status(404).json({ message: 'No restaurants available for training' });
+      }
 
-      res.json(sampleRestaurants);
+      res.json(restaurants);
     } catch (error) {
       console.error('Error getting training restaurants:', error);
       res.status(500).json({ message: 'Failed to get training restaurants' });
