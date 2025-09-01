@@ -69,6 +69,11 @@ export const events = pgTable("events", {
   restaurantAddress: text("restaurant_address"),
   restaurantImageUrl: varchar("restaurant_image_url"),
   restaurantPlaceId: varchar("restaurant_place_id"),
+  restaurantWebsite: varchar("restaurant_website", { length: 500 }),
+  restaurantHours: jsonb("restaurant_hours"),
+  restaurantPhone: varchar("restaurant_phone", { length: 50 }),
+  restaurantPriceLevel: integer("restaurant_price_level"), // 1-4 scale
+  restaurantRating: decimal("restaurant_rating", { precision: 3, scale: 1 }), // Google rating
   restaurantLat: varchar("restaurant_lat"),
   restaurantLng: varchar("restaurant_lng"),
   dateTime: timestamp("date_time").notNull(),

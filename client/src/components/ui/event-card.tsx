@@ -18,6 +18,11 @@ interface EventCardProps {
     restaurantName?: string;
     restaurantImageUrl?: string;
     restaurantAddress?: string;
+    restaurantWebsite?: string;
+    restaurantHours?: any;
+    restaurantPhone?: string;
+    restaurantPriceLevel?: number;
+    restaurantRating?: number;
     dateTime: string;
     description?: string;
     group: {
@@ -61,6 +66,36 @@ const formatEventDate = (dateString: string) => {
   } else {
     return format(date, 'EEEE, MMM d, h:mm a');
   }
+};
+
+const formatTodaysHours = (restaurantHours: any): string => {
+  if (!restaurantHours) return '';
+  
+  try {
+    const hoursData = restaurantHours.weekdayDescriptions || 
+                     restaurantHours.weekday_text ||
+                     restaurantHours.periods;
+    
+    if (Array.isArray(hoursData) && hoursData.length > 0) {
+      const today = new Date().getDay();
+      const googleDay = today === 0 ? 6 : today - 1; // Convert Sunday=0 to Monday=0 format
+      
+      if (hoursData[googleDay]) {
+        return hoursData[googleDay];
+      }
+      return hoursData[0] || '';
+    }
+    
+    return '';
+  } catch (error) {
+    console.error('Error formatting hours:', error);
+    return '';
+  }
+};
+
+const getPriceLevelText = (priceLevel?: number): string => {
+  if (!priceLevel) return '';
+  return '$'.repeat(Math.min(priceLevel, 4));
 };
 
 export function EventCard({ 
@@ -184,8 +219,10 @@ export function EventCard({
                       onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                        window.location.href = websiteUrl;
+                        // Use direct website URL if available, otherwise search
+                        const websiteUrl = event.restaurantWebsite || 
+                          await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
+                        window.open(websiteUrl, '_blank', 'noopener,noreferrer');
                       }}
                       className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                       title="Visit Restaurant Website"
@@ -266,6 +303,46 @@ export function EventCard({
                 </div>
               )}
             </div>
+
+            {/* Restaurant Additional Info (detailed variant only) */}
+            {variant === 'detailed' && event.restaurantName && (
+              <div className="space-y-2 mb-3">
+                {/* Restaurant Hours */}
+                {formatTodaysHours(event.restaurantHours) && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center sm:justify-start">
+                    <i className="fas fa-clock text-xs"></i>
+                    <span data-testid={`text-hours-${event.id}`}>
+                      Today: {formatTodaysHours(event.restaurantHours)}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Restaurant Rating & Price */}
+                <div className="flex items-center gap-4 text-sm text-muted-foreground justify-center sm:justify-start">
+                  {event.restaurantRating && (
+                    <div className="flex items-center gap-1">
+                      <i className="fas fa-star text-yellow-400 text-xs"></i>
+                      <span data-testid={`text-google-rating-${event.id}`}>{event.restaurantRating}/5</span>
+                    </div>
+                  )}
+                  {event.restaurantPriceLevel && (
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-green-600" data-testid={`text-price-level-${event.id}`}>
+                        {getPriceLevelText(event.restaurantPriceLevel)}
+                      </span>
+                    </div>
+                  )}
+                  {event.restaurantPhone && (
+                    <div className="flex items-center gap-1">
+                      <i className="fas fa-phone text-xs"></i>
+                      <span data-testid={`text-phone-${event.id}`} className="truncate">
+                        {event.restaurantPhone}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* Description (detailed variant only) */}
             {variant === 'detailed' && event.description && (
@@ -316,13 +393,15 @@ export function EventCard({
                     onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                      window.location.href = websiteUrl;
+                      // Use direct website URL if available, otherwise search
+                      const websiteUrl = event.restaurantWebsite || 
+                        await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
+                      window.open(websiteUrl, '_blank', 'noopener,noreferrer');
                     }}
                     data-testid={`button-restaurant-website-${event.id}`}
                   >
                     <i className="fas fa-globe mr-2"></i>
-                    Restaurant Menu
+                    Visit Restaurant
                   </Button>
                 )}
               </div>

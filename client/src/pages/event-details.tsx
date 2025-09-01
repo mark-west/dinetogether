@@ -28,6 +28,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { InteractiveStarRating } from "@/components/InteractiveStarRating";
 import { getRestaurantWebsiteUrl } from '@/lib/restaurantUtils';
 
+// Helper function to format today's restaurant hours
+const formatTodaysHours = (restaurantHours: any): string => {
+  if (!restaurantHours) return 'Hours not available';
+  
+  try {
+    const hoursData = restaurantHours.weekdayDescriptions || 
+                     restaurantHours.weekday_text ||
+                     restaurantHours.periods;
+    
+    if (Array.isArray(hoursData) && hoursData.length > 0) {
+      const today = new Date().getDay();
+      const googleDay = today === 0 ? 6 : today - 1; // Convert Sunday=0 to Monday=0 format
+      
+      if (hoursData[googleDay]) {
+        return hoursData[googleDay];
+      }
+      return hoursData[0] || 'Hours not available';
+    }
+    
+    return 'Hours not available';
+  } catch (error) {
+    console.error('Error formatting hours:', error);
+    return 'Hours not available';
+  }
+};
+
 // Star Rating Component
 function StarRating({ rating, interactive = false, onRatingChange }: { 
   rating: number; 
@@ -1016,30 +1042,74 @@ export default function EventDetails() {
                   </div>
                 )}
                 
-                {/* Restaurant Info */}
+                {/* Enhanced Restaurant Info */}
                 {(event.restaurantName || event.restaurantAddress) && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex-1">
-                        {event.restaurantName && (
-                          <p className="font-medium" data-testid="text-restaurant-name">{event.restaurantName}</p>
-                        )}
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted rounded-lg space-y-3">
+                      {/* Restaurant Name & Basic Info */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {event.restaurantName && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="font-medium text-lg" data-testid="text-restaurant-name">{event.restaurantName}</p>
+                              {(event as any).restaurantRating && (
+                                <div className="flex items-center gap-1">
+                                  <i className="fas fa-star text-yellow-400 text-sm"></i>
+                                  <span className="text-sm font-medium">{(event as any).restaurantRating}/5</span>
+                                </div>
+                              )}
+                              {(event as any).restaurantPriceLevel && (
+                                <span className="text-green-600 font-semibold">
+                                  {'$'.repeat(Math.min((event as any).restaurantPriceLevel, 4))}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {event.restaurantAddress && (
+                            <p className="text-sm text-muted-foreground mb-2" data-testid="text-restaurant-address">
+                              <i className="fas fa-map-marker-alt mr-2"></i>
+                              {event.restaurantAddress}
+                            </p>
+                          )}
+                          
+                          {/* Restaurant Hours */}
+                          {(event as any).restaurantHours && (
+                            <div className="text-sm text-muted-foreground">
+                              <i className="fas fa-clock mr-2"></i>
+                              <span data-testid="text-restaurant-hours">
+                                Today: {formatTodaysHours((event as any).restaurantHours)}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Phone Number */}
+                          {(event as any).restaurantPhone && (
+                            <div className="text-sm text-muted-foreground mt-2">
+                              <i className="fas fa-phone mr-2"></i>
+                              <a href={`tel:${(event as any).restaurantPhone}`} 
+                                 className="hover:underline" 
+                                 data-testid="link-restaurant-phone">
+                                {(event as any).restaurantPhone}
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Directions Button */}
                         {event.restaurantAddress && (
-                          <p className="text-sm text-muted-foreground" data-testid="text-restaurant-address">{event.restaurantAddress}</p>
+                          <DirectionsButton 
+                            address={event.restaurantAddress}
+                            restaurantName={event.restaurantName}
+                            lat={event.restaurantLat}
+                            lng={event.restaurantLng}
+                            size="sm"
+                          />
                         )}
                       </div>
-                      {event.restaurantAddress && (
-                        <DirectionsButton 
-                          address={event.restaurantAddress}
-                          restaurantName={event.restaurantName}
-                          lat={event.restaurantLat}
-                          lng={event.restaurantLng}
-                          size="sm"
-                        />
-                      )}
                     </div>
                     
-                    {/* Restaurant Website Link */}
+                    {/* Action Buttons */}
                     {event.restaurantName && (
                       <div className="flex gap-2">
                         <Button 
@@ -1047,13 +1117,15 @@ export default function EventDetails() {
                           size="sm"
                           className="flex-1"
                           onClick={async () => {
-                            const websiteUrl = await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                            window.location.href = websiteUrl;
+                            // Use direct website URL if available, otherwise search
+                            const websiteUrl = (event as any).restaurantWebsite || 
+                              await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
+                            window.open(websiteUrl, '_blank', 'noopener,noreferrer');
                           }}
                           data-testid="button-restaurant-website"
                         >
                           <i className="fas fa-globe mr-2"></i>
-                          🍽️ Check Out Menu & Hours
+                          🍽️ Visit Restaurant Website
                         </Button>
                       </div>
                     )}
