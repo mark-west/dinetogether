@@ -261,16 +261,42 @@ export function AIRecommendations() {
                       <Badge variant="outline">{rec.priceRange}</Badge>
                     </div>
 
-                    {rec.externalRating && (
-                      <div className="flex gap-4 text-xs text-muted-foreground">
-                        {rec.externalRating.google && (
-                          <span>Google: {rec.externalRating.google.toFixed(1)}</span>
-                        )}
-                        {rec.externalRating.yelp && (
-                          <span>Yelp: {rec.externalRating.yelp.toFixed(1)}</span>
-                        )}
-                      </div>
-                    )}
+                    {/* Enhanced Google Maps Data */}
+                    <div className="space-y-1">
+                      {rec.userRatingsTotal && rec.userRatingsTotal > 0 && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <i className="fas fa-users text-blue-500"></i>
+                          <span>{rec.userRatingsTotal} Google reviews</span>
+                        </div>
+                      )}
+                      
+                      {rec.phoneNumber && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <i className="fas fa-phone text-green-500"></i>
+                          <span>{rec.phoneNumber}</span>
+                        </div>
+                      )}
+                      
+                      {rec.openingHours && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <i className={`fas fa-clock ${rec.openingHours.open_now ? 'text-green-500' : 'text-red-500'}`}></i>
+                          <span className={rec.openingHours.open_now ? 'text-green-600' : 'text-red-600'}>
+                            {rec.openingHours.open_now ? 'Open Now' : 'Currently Closed'}
+                          </span>
+                        </div>
+                      )}
+
+                      {rec.externalRating && (
+                        <div className="flex gap-4 text-xs text-muted-foreground">
+                          {rec.externalRating.google && (
+                            <span>Google: {rec.externalRating.google.toFixed(1)}</span>
+                          )}
+                          {rec.externalRating.yelp && (
+                            <span>Yelp: {rec.externalRating.yelp.toFixed(1)}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <p className="text-sm text-muted-foreground mb-3" data-testid={`text-recommendation-reason-${index}`}>

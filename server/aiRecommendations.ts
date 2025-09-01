@@ -7,6 +7,51 @@ const hasOpenAI = !!process.env.OPENAI_API_KEY;
 const openai = hasOpenAI ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 /**
+ * Fetches detailed restaurant information from Google Places API
+ */
+async function fetchRestaurantDetails(placeId: string) {
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  if (!API_KEY) return null;
+
+  const fields = [
+    'name', 'rating', 'user_ratings_total', 'price_level', 'website',
+    'formatted_phone_number', 'opening_hours', 'reviews', 'types',
+    'formatted_address', 'geometry', 'photos', 'business_status'
+  ].join(',');
+
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status === 'OK' && data.result) {
+      const place = data.result;
+      return {
+        placeId: placeId,
+        name: place.name,
+        rating: place.rating || 0,
+        userRatingsTotal: place.user_ratings_total || 0,
+        priceLevel: place.price_level,
+        website: place.website,
+        phoneNumber: place.formatted_phone_number,
+        address: place.formatted_address,
+        openingHours: place.opening_hours,
+        reviews: place.reviews ? place.reviews.slice(0, 3) : [], // Top 3 reviews
+        types: place.types,
+        geometry: place.geometry,
+        photos: place.photos,
+        businessStatus: place.business_status
+      };
+    }
+  } catch (error) {
+    console.error(`Error fetching details for place ${placeId}:`, error);
+  }
+  
+  return null;
+}
+
+/**
  * Fetches nearby restaurants from Google Places API for AI recommendations
  * Filters out major chain restaurants to focus on local dining options
  */
@@ -55,8 +100,13 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
         cuisine: getCuisineFromTypes(place.types),
         priceRange: getPriceRange(place.price_level),
         rating: place.rating || 0,
+        userRatingsTotal: place.user_ratings_total || 0,
         address: place.vicinity,
-        photoReference: place.photos?.[0]?.photo_reference
+        photoReference: place.photos?.[0]?.photo_reference,
+        geometry: place.geometry,
+        businessStatus: place.business_status,
+        types: place.types,
+        permanently_closed: place.permanently_closed
       }));
 
     return filteredRestaurants;
@@ -64,6 +114,34 @@ async function fetchNearbyRestaurantsForAI(latitude: number, longitude: number, 
     console.error('Error fetching restaurants from Google Places:', error);
     return [];
   }
+}
+
+/**
+ * Fetches nearby restaurants with detailed information for enhanced AI recommendations
+ */
+async function fetchEnhancedRestaurantsForAI(latitude: number, longitude: number, radius: number) {
+  const basicRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
+  
+  if (basicRestaurants.length === 0) return [];
+  
+  // Fetch detailed information for top restaurants (limit to avoid too many API calls)
+  const topRestaurants = basicRestaurants.slice(0, 10);
+  const enhancedRestaurants = [];
+  
+  for (const restaurant of topRestaurants) {
+    const details = await fetchRestaurantDetails(restaurant.id);
+    if (details) {
+      enhancedRestaurants.push({
+        ...restaurant,
+        ...details,
+        // Merge basic data with detailed data
+        cuisine: restaurant.cuisine, // Keep our processed cuisine type
+        priceRange: restaurant.priceRange // Keep our formatted price range
+      });
+    }
+  }
+  
+  return enhancedRestaurants;
 }
 
 // Helper function to convert Google's price level to our format
@@ -137,6 +215,13 @@ export interface RestaurantRecommendation {
     google?: number;
     yelp?: number;
   };
+  // Enhanced fields from Google Maps
+  website?: string;
+  phoneNumber?: string;
+  openingHours?: any;
+  userRatingsTotal?: number;
+  businessStatus?: string;
+  reviews?: any[];
 }
 
 export interface CustomPreferences {
@@ -166,9 +251,9 @@ export async function generateRestaurantRecommendations(
   longitude: number = -84.3880
 ): Promise<RestaurantRecommendation[]> {
   try {
-    // Get real restaurants from Google Places API within 30 miles
+    // Get real restaurants with detailed information from Google Places API within 30 miles
     const radius = 48280; // 30 miles in meters
-    const localRestaurants = await fetchNearbyRestaurantsForAI(latitude, longitude, radius);
+    const localRestaurants = await fetchEnhancedRestaurantsForAI(latitude, longitude, radius);
     
     if (!localRestaurants || localRestaurants.length === 0) {
       console.log('No restaurants found via Google Places API');
@@ -187,15 +272,24 @@ export async function generateRestaurantRecommendations(
       messages: [
         {
           role: "system",
-          content: `You are an expert restaurant recommendation engine. You will be given a list of REAL restaurants from Google Places API and user preferences. Your job is to:
+          content: `You are an expert restaurant recommendation engine with access to comprehensive Google Maps business data. You will be given a list of REAL restaurants with detailed information including ratings, reviews, hours, contact info, and more. Your job is to:
           
           1. Select and rank the 5-8 best restaurants from the provided list based on user preferences
-          2. Provide detailed reasoning for each recommendation
-          3. Assign confidence scores based on how well each restaurant matches user preferences
+          2. Leverage the rich business data (hours, reviews, ratings, website, phone) in your recommendations
+          3. Consider practical factors like current open status, review sentiment, and Google rating quality
+          4. Provide detailed reasoning that incorporates the available business intelligence
+          5. Assign confidence scores based on data quality and user preference alignment
           
           IMPORTANT: Only recommend restaurants from the provided list. Do not invent restaurants.
           
-          Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "cuisine": "Cuisine Type", "priceRange": "$$", "estimatedRating": 4.2, "location": "Address/Area", "reasonForRecommendation": "Detailed explanation", "confidenceScore": 0.85}] }`
+          Key factors to consider:
+          - Google rating and number of reviews (more reviews = more reliable)
+          - Current operating status and hours
+          - Recent review sentiment and specifics
+          - Website availability and contact information
+          - Match with user's historical preferences and ratings
+          
+          Respond with JSON in this exact format: { "recommendations": [{"name": "Restaurant Name", "cuisine": "Cuisine Type", "priceRange": "$$", "estimatedRating": 4.2, "location": "Address/Area", "reasonForRecommendation": "Detailed explanation incorporating Google Maps data", "confidenceScore": 0.85}] }`
         },
         {
           role: "user",
@@ -227,9 +321,42 @@ function createLocalRecommendationPrompt(userPreferences: UserPreferences, local
   
   let prompt = `Select and rank the 5-8 best restaurants from the provided list for a user in ${location}.\n\n`;
   
-  prompt += "Available Restaurants:\n";
+  prompt += "Available Restaurants with Rich Details:\n";
   localRestaurants.forEach((restaurant, index) => {
-    prompt += `${index + 1}. ${restaurant.name} (${restaurant.cuisine}) - ${restaurant.priceRange} - Rating: ${restaurant.rating} - ${restaurant.address}\n`;
+    prompt += `${index + 1}. ${restaurant.name}\n`;
+    prompt += `   - Cuisine: ${restaurant.cuisine}\n`;
+    prompt += `   - Price Range: ${restaurant.priceRange}\n`;
+    prompt += `   - Google Rating: ${restaurant.rating}/5.0 (${restaurant.userRatingsTotal || 0} reviews)\n`;
+    prompt += `   - Address: ${restaurant.address}\n`;
+    
+    if (restaurant.phoneNumber) {
+      prompt += `   - Phone: ${restaurant.phoneNumber}\n`;
+    }
+    
+    if (restaurant.website) {
+      prompt += `   - Website: ${restaurant.website}\n`;
+    }
+    
+    if (restaurant.openingHours) {
+      const isOpen = restaurant.openingHours.open_now ? "Currently Open" : "Currently Closed";
+      prompt += `   - Status: ${isOpen}\n`;
+      if (restaurant.openingHours.weekday_text) {
+        prompt += `   - Hours: ${restaurant.openingHours.weekday_text.slice(0, 2).join(', ')}\n`;
+      }
+    }
+    
+    if (restaurant.reviews && restaurant.reviews.length > 0) {
+      prompt += `   - Recent Reviews:\n`;
+      restaurant.reviews.slice(0, 2).forEach((review: any) => {
+        prompt += `     * "${review.text.substring(0, 100)}..." (${review.rating}/5)\n`;
+      });
+    }
+    
+    if (restaurant.businessStatus === 'PERMANENTLY_CLOSED') {
+      prompt += `   - WARNING: This restaurant is permanently closed\n`;
+    }
+    
+    prompt += "\n";
   });
   prompt += "\n";
   
