@@ -263,7 +263,7 @@ function DiariesTab({ eventId }: { eventId: string }) {
     saveDiaryMutation.mutate({
       title,
       notes: notes || undefined,
-      cost: cost ? parseFloat(cost) : undefined,
+      cost: cost ? cost.toString() : undefined,
       costCurrency: cost ? currency : undefined,
       isPublic,
     });
