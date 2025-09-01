@@ -22,10 +22,12 @@ interface Recommendation {
   confidence: number; // Server sends 'confidence', not 'confidenceScore'
   confidenceScore?: number; // Keep as optional fallback
   reasons: string[];
-  phoneNumber?: string;
-  formattedPhoneNumber?: string;
-  website?: string;
-  openingHours?: any;
+  // Google Places API EXACT field names (Legacy API)
+  formatted_phone_number?: string; // EXACT Google field name
+  phoneNumber?: string; // Fallback
+  website?: string; // EXACT Google field name
+  opening_hours?: any; // EXACT Google field name 
+  openingHours?: any; // Fallback
   reviews?: any[];
   userRatingsTotal?: number;
   businessStatus?: string;
@@ -95,13 +97,13 @@ export function AIRecommendations() {
       priceRange: restaurant.priceRange,
       description: restaurant.description || restaurant.reasonForRecommendation || '',
       address: restaurant.location || restaurant.address || '',
-      // Store both field name formats to handle different data structures
-      phone: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
-      phoneNumber: restaurant.phoneNumber || restaurant.formattedPhoneNumber || '',
+      // Use EXACT Google Places API field names from documentation
+      phone: restaurant.formatted_phone_number || restaurant.phoneNumber || '',
+      phoneNumber: restaurant.formatted_phone_number || restaurant.phoneNumber || '',
       website: restaurant.website || '',
       websiteUri: restaurant.website || '',
-      hours: formatOpeningHours(restaurant.openingHours),
-      openingHours: restaurant.openingHours,
+      hours: formatOpeningHours(restaurant.opening_hours || restaurant.openingHours),
+      openingHours: restaurant.opening_hours || restaurant.openingHours,
       rating: restaurant.rating || restaurant.estimatedRating || 0,
       estimatedRating: restaurant.rating || restaurant.estimatedRating || 0,
       reviewCount: restaurant.userRatingsTotal || 0,
