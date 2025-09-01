@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -55,6 +56,7 @@ export function InteractiveAISuggestions({
   const [showForm, setShowForm] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [showTraining, setShowTraining] = useState(false);
+  const [, navigate] = useLocation();
 
   const generateMutation = useMutation({
     mutationFn: async (prefs: PreferenceForm) => {
@@ -94,6 +96,13 @@ export function InteractiveAISuggestions({
   const handleTrainingComplete = () => {
     setShowTraining(false);
     // Could trigger a suggestion generation here based on training data
+  };
+
+  const handleRecommendationClick = (recommendation: Recommendation, index: number) => {
+    // Generate a restaurant ID from the name and index
+    const restaurantId = `${recommendation.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
+    const currentPath = window.location.pathname;
+    navigate(`/restaurant/${restaurantId}?back=${currentPath}`);
   };
 
   const dietaryOptions = [
@@ -340,7 +349,11 @@ export function InteractiveAISuggestions({
             </div>
             
             {recommendations.map((recommendation, index) => (
-              <Card key={index} className="border-l-4 border-l-purple-500">
+              <Card 
+                key={index} 
+                className="border-l-4 border-l-purple-500 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleRecommendationClick(recommendation, index)}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div>

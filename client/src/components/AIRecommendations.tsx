@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -31,6 +32,7 @@ interface DiningAnalysis {
 export function AIRecommendations() {
   const [location, setLocation] = useState("current area");
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [, navigate] = useLocation();
 
   const { data: recommendations, isLoading: loadingRecommendations, refetch: refetchRecommendations } = useQuery({
     queryKey: ["/api/recommendations", location],
@@ -47,6 +49,12 @@ export function AIRecommendations() {
   const handleLocationChange = (newLocation: string) => {
     setLocation(newLocation);
     refetchRecommendations();
+  };
+
+  const handleRestaurantClick = (restaurant: Recommendation, index: number) => {
+    // Generate a restaurant ID from the name and index
+    const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
+    navigate(`/restaurant/${restaurantId}?back=/recommendations`);
   };
 
   const renderStars = (rating: number) => {
@@ -197,12 +205,13 @@ export function AIRecommendations() {
               </Card>
             ))}
           </div>
-        ) : recommendations && recommendations.length > 0 ? (
+        ) : recommendations && Array.isArray(recommendations) && recommendations.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recommendations.map((rec: Recommendation, index: number) => (
+            {(recommendations as Recommendation[]).map((rec: Recommendation, index: number) => (
               <Card 
                 key={index} 
-                className="hover:shadow-md transition-shadow"
+                className="hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => handleRestaurantClick(rec, index)}
                 data-testid={`card-recommendation-${index}`}
               >
                 <CardContent className="p-4">

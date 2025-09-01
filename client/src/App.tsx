@@ -15,6 +15,7 @@ import InvitePage from "@/pages/invite";
 import EventDetails from "@/pages/event-details";
 import Profile from "@/pages/profile";
 import Recommendations from "@/pages/recommendations";
+import RestaurantDetails from "@/pages/RestaurantDetails";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/groups/:groupId" component={GroupDetails} />
           <Route path="/events" component={Events} />
           <Route path="/events/:eventId" component={EventDetails} />
+          <Route path="/restaurant/:id" component={RestaurantDetails} />
           <Route path="/recommendations" component={Recommendations} />
           <Route path="/chat" component={Chat} />
           <Route path="/chat/:chatType/:chatId" component={Chat} />
