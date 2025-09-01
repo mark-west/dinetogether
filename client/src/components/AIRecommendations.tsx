@@ -10,26 +10,25 @@ import { getRestaurantWebsiteUrl, getWebsiteLinkText } from '@/lib/restaurantUti
 
 interface Recommendation {
   name: string;
-  cuisine: string;
+  type: string;
+  cuisine?: string;
   priceRange: string;
-  estimatedRating: number;
-  rating?: number;
-  location: string;
+  rating: number;
+  estimatedRating?: number;
+  description: string;
+  location?: string;
   address?: string;
-  reasonForRecommendation: string;
-  confidenceScore: number;
+  reasonForRecommendation?: string;
+  confidence: number;
+  confidenceScore?: number;
+  reasons: string[];
   phoneNumber?: string;
-  formattedPhoneNumber?: string;
   website?: string;
   openingHours?: any;
   reviews?: any[];
   userRatingsTotal?: number;
   businessStatus?: string;
   placeId?: string;
-  externalRating?: {
-    google?: number;
-    yelp?: number;
-  };
 }
 
 interface DiningAnalysis {
@@ -77,14 +76,14 @@ export function AIRecommendations() {
     const restaurantData = {
       id: restaurantId,
       name: restaurant.name,
-      type: restaurant.cuisine,
+      type: restaurant.type || restaurant.cuisine,
       priceRange: restaurant.priceRange,
-      description: restaurant.reasonForRecommendation,
+      description: restaurant.description || restaurant.reasonForRecommendation,
       address: restaurant.location || restaurant.address,
       phone: restaurant.phoneNumber || '',
       website: restaurant.website || '',
       hours: formatOpeningHours(restaurant.openingHours),
-      rating: restaurant.estimatedRating || restaurant.rating,
+      rating: restaurant.rating || restaurant.estimatedRating,
       reviewCount: restaurant.userRatingsTotal,
       menuHighlights: extractMenuHighlights(restaurant.reviews),
       features: [
