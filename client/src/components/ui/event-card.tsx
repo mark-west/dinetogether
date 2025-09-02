@@ -179,7 +179,7 @@ export function EventCard({
         navigate(`/events/${event.id}`);
         break;
       case 'chat':
-        navigate(`/chat/${event.id}`);
+        navigate(`/chat/event/${event.id}`);
         break;
       case 'rsvp':
         navigate(`/events/${event.id}`);
