@@ -299,7 +299,7 @@ export default function Chat() {
       <div className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="h-full flex gap-4">
             {/* Chat List Sidebar - Show on mobile when no chat selected */}
-            <div className={`w-full lg:w-80 ${selectedChatId ? 'hidden lg:block' : 'block'}`}>
+            <div className={`w-full lg:w-80 flex-shrink-0 ${selectedChatId ? 'hidden lg:block' : 'block'}`}>
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function Chat() {
                     )}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-hidden">
                   <Tabs value={selectedChatType} onValueChange={(value) => setSelectedChatType(value as ChatType)}>
                     <TabsList className="grid w-full grid-cols-2 m-4 mb-0">
                       <TabsTrigger value="group" data-testid="tab-group-chats">Group Chats</TabsTrigger>
@@ -327,14 +327,14 @@ export default function Chat() {
                             ))}
                           </div>
                         ) : groups && groups.length > 0 ? (
-                          <div className="space-y-1">
+                          <div className="space-y-1 px-2 pb-2">
                             {groups.map((group: any) => {
                               const unreadCount = getUnreadCount('group', group.id);
                               return (
                                 <Button
                                   key={group.id}
                                   variant={selectedChatType === 'group' && selectedChatId === group.id ? "secondary" : "ghost"}
-                                  className="w-full justify-between p-4 h-auto text-left"
+                                  className="w-full justify-between p-4 h-auto text-left overflow-hidden"
                                   onClick={() => handleChatSelect('group', group.id)}
                                   data-testid={`button-group-chat-${group.id}`}
                                 >
@@ -375,14 +375,14 @@ export default function Chat() {
                             ))}
                           </div>
                         ) : events && events.length > 0 ? (
-                          <div className="space-y-1">
+                          <div className="space-y-1 px-2 pb-2">
                             {events.map((evt: any) => {
                               const unreadCount = getUnreadCount('event', evt.id);
                               return (
                                 <Button
                                   key={evt.id}
                                   variant={selectedChatType === 'event' && selectedChatId === evt.id ? "secondary" : "ghost"}
-                                  className="w-full justify-between p-4 h-auto text-left"
+                                  className="w-full justify-between p-4 h-auto text-left overflow-hidden"
                                   onClick={() => handleChatSelect('event', evt.id)}
                                   data-testid={`button-event-chat-${evt.id}`}
                                 >
