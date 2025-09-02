@@ -107,6 +107,54 @@ function getPriceRange(priceLevel: number | undefined): string {
   }
 }
 
+// Geocoding service using Google Places API
+async function geocodeAddress(query: string): Promise<{ lat: string; lng: string; address: string } | null> {
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  if (!API_KEY) {
+    console.error('Google Maps API key not configured');
+    return null;
+  }
+
+  try {
+    // First, try to find the place using Places API
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(query)}&inputtype=textquery&fields=place_id,name,formatted_address,geometry&key=${API_KEY}`;
+    
+    const response = await fetch(searchUrl);
+    const data = await response.json();
+
+    if (data.status === 'OK' && data.candidates && data.candidates.length > 0) {
+      const place = data.candidates[0];
+      if (place.geometry && place.geometry.location) {
+        return {
+          lat: place.geometry.location.lat.toString(),
+          lng: place.geometry.location.lng.toString(),
+          address: place.formatted_address || place.name
+        };
+      }
+    }
+
+    // Fallback to geocoding API if Places API doesn't find it
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${API_KEY}`;
+    
+    const geocodeResponse = await fetch(geocodeUrl);
+    const geocodeData = await geocodeResponse.json();
+
+    if (geocodeData.status === 'OK' && geocodeData.results && geocodeData.results.length > 0) {
+      const result = geocodeData.results[0];
+      return {
+        lat: result.geometry.location.lat.toString(),
+        lng: result.geometry.location.lng.toString(),
+        address: result.formatted_address
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error geocoding address:', error);
+    return null;
+  }
+}
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -342,10 +390,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/events', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const eventData = insertEventSchema.parse({
+      let eventData = insertEventSchema.parse({
         ...req.body,
         createdBy: userId,
       });
+      
+      // Auto-geocode restaurant location if name/address provided but no coordinates
+      if ((eventData.restaurantName || eventData.restaurantAddress) && 
+          (!eventData.restaurantLat || !eventData.restaurantLng)) {
+        
+        const searchQuery = eventData.restaurantName || eventData.restaurantAddress;
+        const locationData = await geocodeAddress(searchQuery!);
+        
+        if (locationData) {
+          eventData = {
+            ...eventData,
+            restaurantLat: locationData.lat,
+            restaurantLng: locationData.lng,
+            restaurantAddress: eventData.restaurantAddress || locationData.address
+          };
+        }
+      }
       
       const event = await storage.createEvent(eventData);
       res.status(201).json(event);
@@ -406,7 +471,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get RSVPs before updating to send notifications
       const { rsvps } = await storage.getEventWithRsvps(req.params.id) || { rsvps: [] };
       
-      const updateData = insertEventSchema.partial().parse(req.body);
+      let updateData = insertEventSchema.partial().parse(req.body);
+      
+      // Auto-geocode restaurant location if name/address changed but no new coordinates
+      if ((updateData.restaurantName || updateData.restaurantAddress) && 
+          (!updateData.restaurantLat || !updateData.restaurantLng)) {
+        
+        const searchQuery = updateData.restaurantName || updateData.restaurantAddress;
+        const locationData = await geocodeAddress(searchQuery!);
+        
+        if (locationData) {
+          updateData = {
+            ...updateData,
+            restaurantLat: locationData.lat,
+            restaurantLng: locationData.lng,
+            restaurantAddress: updateData.restaurantAddress || locationData.address
+          };
+        }
+      }
+      
       const updatedEvent = await storage.updateEvent(req.params.id, updateData);
       
       // TODO: Add email notifications for event updates
@@ -442,6 +525,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting event:", error);
       res.status(500).json({ message: "Failed to delete event" });
+    }
+  });
+
+  // Geocode existing event endpoint
+  app.put('/api/events/:id/geocode', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const event = await storage.getEvent(req.params.id);
+      
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (event.createdBy !== userId) {
+        return res.status(403).json({ message: "Only event creator can geocode events" });
+      }
+      
+      const searchQuery = event.restaurantName || event.restaurantAddress;
+      if (!searchQuery) {
+        return res.status(400).json({ message: "No restaurant name or address to geocode" });
+      }
+      
+      const locationData = await geocodeAddress(searchQuery);
+      
+      if (!locationData) {
+        return res.status(404).json({ message: "Could not find location for this restaurant" });
+      }
+      
+      const updateData = {
+        restaurantLat: locationData.lat,
+        restaurantLng: locationData.lng,
+        restaurantAddress: event.restaurantAddress || locationData.address
+      };
+      
+      const updatedEvent = await storage.updateEvent(req.params.id, updateData);
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error("Error geocoding event:", error);
+      res.status(500).json({ message: "Failed to geocode event" });
     }
   });
 
