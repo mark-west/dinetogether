@@ -16,10 +16,8 @@ export async function loadGoogleMapsScript(): Promise<void> {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     
     if (!apiKey) {
-      console.error('Google Maps API key not found in VITE_GOOGLE_MAPS_API_KEY');
       return;
     }
-    console.log('Loading Google Maps with API key...');
 
     const script = document.createElement('script');
     script.id = 'google-maps-script';
@@ -29,13 +27,12 @@ export async function loadGoogleMapsScript(): Promise<void> {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=initGoogleMaps`;
     
     window.initGoogleMaps = function() {
-      console.log('Google Maps callback fired');
       window.googleMapsLoaded = true;
       window.dispatchEvent(new Event('googleMapsLoaded'));
     };
     
     script.onerror = function(error) {
-      console.error('Google Maps script failed to load:', error);
+      console.warn('Google Maps script failed to load:', error);
       window.googleMapsLoaded = false;
     };
     
