@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ export default function Chat() {
   const params = useParams();
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { navigateWithLoading } = useLoadingNavigation();
   const [message, setMessage] = useState("");
   const [selectedChatType, setSelectedChatType] = useState<ChatType>('group');
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -185,7 +187,7 @@ export default function Chat() {
     setSelectedChatType(type);
     setSelectedChatId(id);
     setReplyTo(null);
-    navigate(`/chat/${type}/${id}`);
+    navigateWithLoading(`/chat/${type}/${id}`);
     
     // Mark messages as read when entering a chat
     markAsReadMutation.mutate({ chatType: type, chatId: id });
@@ -194,7 +196,7 @@ export default function Chat() {
   const handleBackToChats = () => {
     setSelectedChatId(null);
     setReplyTo(null);
-    navigate('/chat');
+    navigateWithLoading('/chat');
   };
 
   const handleReply = (messageId: string) => {
