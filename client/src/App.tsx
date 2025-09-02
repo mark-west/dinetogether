@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { Suspense, lazy } from "react";
+import Layout from "@/components/Layout";
 
 // Eagerly load critical components for first page load
 import Landing from "@/pages/landing";
@@ -61,64 +62,66 @@ function Router() {
           <Route component={Landing} />
         </>
       ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/groups">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Groups />
-            </Suspense>
-          </Route>
-          <Route path="/groups/:groupId">
-            <Suspense fallback={<LoadingSpinner />}>
-              <GroupDetails />
-            </Suspense>
-          </Route>
-          <Route path="/events">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Events />
-            </Suspense>
-          </Route>
-          <Route path="/events/:eventId">
-            <Suspense fallback={<LoadingSpinner />}>
-              <EventDetails />
-            </Suspense>
-          </Route>
-          <Route path="/restaurant/:id">
-            <Suspense fallback={<LoadingSpinner />}>
-              <RestaurantDetails />
-            </Suspense>
-          </Route>
-          <Route path="/recommendations">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Recommendations />
-            </Suspense>
-          </Route>
-          <Route path="/chat">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Chat />
-            </Suspense>
-          </Route>
-          <Route path="/chat/:chatType/:chatId">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Chat />
-            </Suspense>
-          </Route>
-          <Route path="/profile">
-            <Suspense fallback={<LoadingSpinner />}>
-              <Profile />
-            </Suspense>
-          </Route>
-          <Route path="/admin">
-            <Suspense fallback={<LoadingSpinner />}>
-              <AdminPage />
-            </Suspense>
-          </Route>
-          <Route>
-            <Suspense fallback={<LoadingSpinner />}>
-              <NotFound />
-            </Suspense>
-          </Route>
-        </>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/groups">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Groups />
+              </Suspense>
+            </Route>
+            <Route path="/groups/:groupId">
+              <Suspense fallback={<LoadingSpinner />}>
+                <GroupDetails />
+              </Suspense>
+            </Route>
+            <Route path="/events">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Events />
+              </Suspense>
+            </Route>
+            <Route path="/events/:eventId">
+              <Suspense fallback={<LoadingSpinner />}>
+                <EventDetails />
+              </Suspense>
+            </Route>
+            <Route path="/restaurant/:id">
+              <Suspense fallback={<LoadingSpinner />}>
+                <RestaurantDetails />
+              </Suspense>
+            </Route>
+            <Route path="/recommendations">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Recommendations />
+              </Suspense>
+            </Route>
+            <Route path="/chat">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Chat />
+              </Suspense>
+            </Route>
+            <Route path="/chat/:chatType/:chatId">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Chat />
+              </Suspense>
+            </Route>
+            <Route path="/profile">
+              <Suspense fallback={<LoadingSpinner />}>
+                <Profile />
+              </Suspense>
+            </Route>
+            <Route path="/admin">
+              <Suspense fallback={<LoadingSpinner />}>
+                <AdminPage />
+              </Suspense>
+            </Route>
+            <Route>
+              <Suspense fallback={<LoadingSpinner />}>
+                <NotFound />
+              </Suspense>
+            </Route>
+          </Switch>
+        </Layout>
       )}
     </Switch>
   );
