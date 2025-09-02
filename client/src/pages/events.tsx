@@ -4,8 +4,7 @@ import { format, isToday, isTomorrow, isPast } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import Sidebar from "@/components/Sidebar";
-import MobileNavigation from "@/components/MobileNavigation";
+import { useBatchRatings } from "@/hooks/useBatchRatings";
 import CreateEventModal from "@/components/CreateEventModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,11 +32,7 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
 }
 
 // Past Event Card with Rating
-function PastEventCard({ event }: { event: any }) {
-  const { data: averageRating } = useQuery({
-    queryKey: [`/api/events/${event.id}/average-rating`],
-    retry: false,
-  });
+function PastEventCard({ event, averageRating }: { event: any; averageRating?: any }) {
 
   return (
     <Card 
@@ -143,26 +138,19 @@ export default function Events() {
 
   if (isLoading) {
     return (
-      <div className="app-container">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-          <div className="md:hidden bg-card border-b border-border p-4">
-            <Skeleton className="h-8 w-32" />
-          </div>
-          <div className="flex-1 p-4 md:p-6 space-y-6">
-            <Skeleton className="h-20 w-full" />
-          </div>
+      <>
+        <div className="md:hidden bg-card border-b border-border p-4">
+          <Skeleton className="h-8 w-32" />
         </div>
-        <MobileNavigation />
-      </div>
+        <div className="flex-1 p-4 md:p-6 space-y-6">
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="app-container">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
+    <>
         {/* Mobile Header */}
         <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
           <div className="flex items-center justify-between">
@@ -178,8 +166,8 @@ export default function Events() {
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground">Events</h2>
@@ -269,10 +257,7 @@ export default function Events() {
               )}
             </TabsContent>
           </Tabs>
-        </div>
       </div>
-
-      <MobileNavigation />
       
       {showCreateModal && (
         <CreateEventModal 
@@ -280,6 +265,6 @@ export default function Events() {
           groups={Array.isArray(groups) ? groups : []}
         />
       )}
-    </div>
+    </>
   );
 }

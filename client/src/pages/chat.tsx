@@ -6,8 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import Sidebar from "@/components/Sidebar";
-import MobileNavigation from "@/components/MobileNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -265,47 +263,40 @@ export default function Chat() {
 
   if (isLoading) {
     return (
-      <div className="app-container">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-          <div className="md:hidden bg-card border-b border-border p-4">
-            <Skeleton className="h-8 w-32" />
-          </div>
-          <div className="flex-1 p-4 md:p-6 space-y-6">
-            <Skeleton className="h-20 w-full" />
-          </div>
+      <>
+        <div className="md:hidden bg-card border-b border-border p-4">
+          <Skeleton className="h-8 w-32" />
         </div>
-        <MobileNavigation />
-      </div>
+        <div className="flex-1 p-4 md:p-6 space-y-6">
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="app-container">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-        {/* Mobile Header */}
-        <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
-          <div className="flex items-center gap-3">
-            {selectedChatId && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleBackToChats}
-                data-testid="button-mobile-back"
-              >
-                <i className="fas fa-arrow-left"></i>
-              </Button>
-            )}
-            <h1 className="font-bold text-lg text-foreground">
-              {selectedChatId ? (currentChat?.name || 'Chat') : 'Messages'}
-            </h1>
-          </div>
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          {selectedChatId && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackToChats}
+              data-testid="button-mobile-back"
+            >
+              <i className="fas fa-arrow-left"></i>
+            </Button>
+          )}
+          <h1 className="font-bold text-lg text-foreground">
+            {selectedChatId ? (currentChat?.name || 'Chat') : 'Messages'}
+          </h1>
         </div>
+      </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6">
+      {/* Content Area */}
+      <div className="flex-1 overflow-hidden p-4 md:p-6">
           <div className="h-full flex gap-4">
             {/* Chat List Sidebar - Show on mobile when no chat selected */}
             <div className={`w-full lg:w-80 ${selectedChatId ? 'hidden lg:block' : 'block'}`}>
@@ -575,12 +566,9 @@ export default function Chat() {
                   </CardContent>
                 </Card>
               )}
-            </div>
           </div>
         </div>
       </div>
-
-      <MobileNavigation />
-    </div>
+    </>
   );
 }
