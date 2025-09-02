@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
-import GoogleMapComponent from "@/components/GoogleMapComponent";
+import { EventMapComponent } from "@/components/EventMapComponent";
 import CalendarActions from "@/components/CalendarActions";
 import DirectionsButton from "@/components/DirectionsButton";
 import EditEventModal from "@/components/EditEventModal";
@@ -824,23 +824,7 @@ export default function EventDetails() {
   }
 
 
-  const mapMarkers = [];
-  let mapCenter = null;
-  
-  // First try to use stored coordinates
-  if (event.restaurantLat && event.restaurantLng) {
-    const lat = parseFloat(event.restaurantLat);
-    const lng = parseFloat(event.restaurantLng);
-    
-    if (!isNaN(lat) && !isNaN(lng)) {
-      mapCenter = { lat, lng };
-      mapMarkers.push({
-        position: { lat, lng },
-        title: event.restaurantName || event.name,
-        info: `<div><strong>${event.restaurantName || event.name}</strong><br/>${event.restaurantAddress || ''}</div>`
-      });
-    }
-  } 
+ 
 
   return (
     <>
@@ -997,132 +981,7 @@ export default function EventDetails() {
           </Card>
 
           {/* Location */}
-          {(event.restaurantName || event.restaurantAddress) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <i className="fas fa-map-marker-alt"></i>
-                  Location
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Map Display - always try to show map if we have coordinates */}
-                {mapMarkers.length > 0 ? (
-                  <GoogleMapComponent
-                    center={mapCenter || mapMarkers[0].position}
-                    markers={mapMarkers}
-                    zoom={15}
-                    className="w-full h-64 rounded-lg"
-                  />
-                ) : event.restaurantAddress ? (
-                  <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
-                      <p className="text-sm text-muted-foreground">Map not available for this location</p>
-                      <p className="text-xs text-muted-foreground mt-1">Address details below</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
-                      <p className="text-sm text-muted-foreground">No location specified</p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Enhanced Restaurant Info */}
-                {(event.restaurantName || event.restaurantAddress) && (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-muted rounded-lg space-y-3">
-                      {/* Restaurant Name & Basic Info */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {event.restaurantName && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <p className="font-medium text-lg" data-testid="text-restaurant-name">{event.restaurantName}</p>
-                              {(event as any).restaurantRating && (
-                                <div className="flex items-center gap-1">
-                                  <i className="fas fa-star text-yellow-400 text-sm"></i>
-                                  <span className="text-sm font-medium">{(event as any).restaurantRating}/5</span>
-                                </div>
-                              )}
-                              {(event as any).restaurantPriceLevel && (
-                                <span className="text-green-600 font-semibold">
-                                  {'$'.repeat(Math.min((event as any).restaurantPriceLevel, 4))}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          
-                          {event.restaurantAddress && (
-                            <p className="text-sm text-muted-foreground mb-2" data-testid="text-restaurant-address">
-                              <i className="fas fa-map-marker-alt mr-2"></i>
-                              {event.restaurantAddress}
-                            </p>
-                          )}
-                          
-                          {/* Restaurant Hours */}
-                          {(event as any).restaurantHours && (
-                            <div className="text-sm text-muted-foreground">
-                              <i className="fas fa-clock mr-2"></i>
-                              <span data-testid="text-restaurant-hours">
-                                Today: {formatTodaysHours((event as any).restaurantHours)}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Phone Number */}
-                          {(event as any).restaurantPhone && (
-                            <div className="text-sm text-muted-foreground mt-2">
-                              <i className="fas fa-phone mr-2"></i>
-                              <a href={`tel:${(event as any).restaurantPhone}`} 
-                                 className="hover:underline" 
-                                 data-testid="link-restaurant-phone">
-                                {(event as any).restaurantPhone}
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Directions Button */}
-                        {event.restaurantAddress && (
-                          <DirectionsButton 
-                            address={event.restaurantAddress}
-                            restaurantName={event.restaurantName}
-                            lat={event.restaurantLat}
-                            lng={event.restaurantLng}
-                            size="sm"
-                          />
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    {event.restaurantName && (
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="flex-1"
-                          onClick={async () => {
-                            // Use direct website URL if available, otherwise search
-                            const websiteUrl = (event as any).restaurantWebsite || 
-                              await getRestaurantWebsiteUrl(event.restaurantName!, event.restaurantAddress);
-                            window.open(websiteUrl, '_blank', 'noopener,noreferrer');
-                          }}
-                          data-testid="button-restaurant-website"
-                        >
-                          <i className="fas fa-globe mr-2"></i>
-                          🍽️ Visit Restaurant Website
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          <EventMapComponent event={event} />
 
           {/* RSVP Section */}
           <Card>
@@ -1251,3 +1110,4 @@ export default function EventDetails() {
     </>
   );
 }
+
