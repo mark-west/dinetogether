@@ -823,19 +823,62 @@ export default function EventDetails() {
     );
   }
 
+  // Function to geocode address and get coordinates
+  const [coordinatesFromGeocoding, setCoordinatesFromGeocoding] = useState<{lat: number, lng: number} | null>(null);
+  
+  useEffect(() => {
+    // If event has coordinates, use them
+    if (event.restaurantLat && event.restaurantLng) {
+      const lat = parseFloat(event.restaurantLat);
+      const lng = parseFloat(event.restaurantLng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        return; // Already have valid coordinates
+      }
+    }
+    
+    // If no coordinates but we have an address, try to geocode it
+    if (event.restaurantAddress && window.google && window.google.maps) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode(
+        { address: event.restaurantAddress },
+        (results, status) => {
+          if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location;
+            setCoordinatesFromGeocoding({
+              lat: location.lat(),
+              lng: location.lng()
+            });
+          }
+        }
+      );
+    }
+  }, [event.restaurantLat, event.restaurantLng, event.restaurantAddress]);
+
   const mapMarkers = [];
+  let mapCenter = null;
+  
+  // First try to use stored coordinates
   if (event.restaurantLat && event.restaurantLng) {
     const lat = parseFloat(event.restaurantLat);
     const lng = parseFloat(event.restaurantLng);
     
-    // Only add marker if coordinates are valid numbers
     if (!isNaN(lat) && !isNaN(lng)) {
+      mapCenter = { lat, lng };
       mapMarkers.push({
         position: { lat, lng },
         title: event.restaurantName || event.name,
         info: `<div><strong>${event.restaurantName || event.name}</strong><br/>${event.restaurantAddress || ''}</div>`
       });
     }
+  } 
+  // Fall back to geocoded coordinates
+  else if (coordinatesFromGeocoding) {
+    mapCenter = coordinatesFromGeocoding;
+    mapMarkers.push({
+      position: coordinatesFromGeocoding,
+      title: event.restaurantName || event.name,
+      info: `<div><strong>${event.restaurantName || event.name}</strong><br/>${event.restaurantAddress || ''}</div>`
+    });
   }
 
   return (
@@ -1005,7 +1048,7 @@ export default function EventDetails() {
                 {/* Map Display - always try to show map if we have coordinates */}
                 {mapMarkers.length > 0 ? (
                   <GoogleMapComponent
-                    center={mapMarkers[0].position}
+                    center={mapCenter || mapMarkers[0].position}
                     markers={mapMarkers}
                     zoom={15}
                     className="w-full h-64 rounded-lg"
