@@ -32,12 +32,7 @@ export function useGoogleMaps() {
       setError('Failed to load Google Maps');
     };
 
-    // Check if API key exists
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      setError('Google Maps API key not found');
-      return;
-    }
+    // Using specific API key configured in loadGoogleMapsScript
 
     // Set up a timeout to detect if Google Maps fails to load
     const loadTimeout = setTimeout(() => {
