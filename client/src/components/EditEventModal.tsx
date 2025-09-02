@@ -109,11 +109,17 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
       // Comprehensive cache invalidation to prevent stale data
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/events/upcoming'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
       queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rsvps`] });
       queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/messages`] });
       queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rating`] });
       queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/average-rating`] });
+      
+      // Invalidate group events if the event belongs to a group
+      if (event.groupId) {
+        queryClient.invalidateQueries({ queryKey: ['/api/groups', event.groupId, 'events'] });
+      }
       
       // Remove the specific event from cache completely
       queryClient.removeQueries({ queryKey: ['/api/events', event.id] });
