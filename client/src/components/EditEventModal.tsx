@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import { 
   Dialog, 
   DialogContent, 
@@ -63,13 +64,7 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
 
   const updateMutation = useMutation({
     mutationFn: async (data: EditEventForm) => {
-      const response = await fetch(`/api/events/${event.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to update event');
-      return response.json();
+      return apiRequest('PUT', `/api/events/${event.id}`, data);
     },
     onSuccess: () => {
       toast({
@@ -81,6 +76,17 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
       onClose();
     },
     onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Update Failed",
         description: error.message || "Failed to update event",
@@ -91,11 +97,7 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/events/${event.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to cancel event');
-      return response.json();
+      return apiRequest('DELETE', `/api/events/${event.id}`);
     },
     onSuccess: () => {
       toast({
@@ -107,6 +109,17 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
       onClose();
     },
     onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized", 
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Cancellation Failed",
         description: error.message || "Failed to cancel event",
