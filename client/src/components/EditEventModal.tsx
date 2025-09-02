@@ -6,6 +6,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
+import { useLocation } from "wouter";
 import { 
   Dialog, 
   DialogContent, 
@@ -46,6 +47,7 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   const form = useForm<EditEventForm>({
     resolver: zodResolver(editEventSchema),
@@ -107,6 +109,7 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/events/upcoming'] });
       onClose();
+      navigate('/events');
     },
     onError: (error: any) => {
       if (isUnauthorizedError(error)) {
