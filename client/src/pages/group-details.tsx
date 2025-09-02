@@ -7,8 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Group } from "@shared/schema";
-import Sidebar from "@/components/Sidebar";
-import MobileNavigation from "@/components/MobileNavigation";
 import InviteModal from "@/components/InviteModal";
 import PhotoUploader from "@/components/PhotoUploader";
 import CreateEventModal from "@/components/CreateEventModal";
@@ -233,39 +231,31 @@ export default function GroupDetails() {
 
   if (isLoading || groupLoading) {
     return (
-      <div className="app-container">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-          <div className="md:hidden bg-card border-b border-border p-4">
-            <Skeleton className="h-8 w-32" />
-          </div>
-          <div className="flex-1 p-4 md:p-6 space-y-6">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
+      <>
+        <div className="md:hidden bg-card border-b border-border p-4">
+          <Skeleton className="h-8 w-32" />
         </div>
-        <MobileNavigation />
-      </div>
+        <div className="flex-1 p-4 md:p-6 space-y-6">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </>
     );
   }
 
   if (!group) {
     return (
-      <div className="app-container">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold mb-2">Group not found</h2>
-              <p className="text-muted-foreground mb-4">The group you're looking for doesn't exist or you don't have access to it.</p>
-              <Button onClick={() => window.location.href = '/groups'}>
-                Back to Groups
-              </Button>
-            </div>
+      <>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold mb-2">Group not found</h2>
+            <p className="text-muted-foreground mb-4">The group you're looking for doesn't exist or you don't have access to it.</p>
+            <Button onClick={() => window.location.href = '/groups'}>
+              Back to Groups
+            </Button>
           </div>
         </div>
-        <MobileNavigation />
-      </div>
+      </>
     );
   }
 
@@ -275,27 +265,24 @@ export default function GroupDetails() {
   };
 
   return (
-    <div className="app-container">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-        {/* Mobile Header */}
-        <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => window.history.back()}
-              data-testid="button-back"
-            >
-              <i className="fas fa-arrow-left"></i>
-            </Button>
-            <h1 className="font-bold text-lg text-foreground">Group Details</h1>
-          </div>
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => window.history.back()}
+            data-testid="button-back"
+          >
+            <i className="fas fa-arrow-left"></i>
+          </Button>
+          <h1 className="font-bold text-lg text-foreground">Group Details</h1>
         </div>
+      </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {/* Group Header */}
           <Card>
             <CardContent className="p-6">
@@ -686,10 +673,7 @@ export default function GroupDetails() {
               />
             </TabsContent>
           </Tabs>
-        </div>
       </div>
-
-      <MobileNavigation />
       
       {showInviteModal && group && (
         <InviteModal 
@@ -787,6 +771,6 @@ export default function GroupDetails() {
           preSelectedGroupId={groupId}
         />
       )}
-    </div>
+    </>
   );
 }
