@@ -132,6 +132,12 @@ function PhotosTab({ eventId }: { eventId: string }) {
     );
   }
 
+  if (error && error.message.includes('404')) {
+    // Event not found, redirect to events page
+    navigateWithLoading('/events');
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
