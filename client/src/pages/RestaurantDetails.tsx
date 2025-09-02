@@ -44,14 +44,14 @@ export default function RestaurantDetails() {
         const cachedData = sessionStorage.getItem(`restaurant_${restaurantId}`);
         if (cachedData) {
           const parsed = JSON.parse(cachedData);
-          console.log('LOADED RESTAURANT DATA:', parsed);
+          // Restaurant data loaded successfully
           setRestaurant(parsed);
           setIsLoading(false);
           return;
         }
 
         // If no cached data, redirect back 
-        console.log('No restaurant data found for ID:', restaurantId);
+        // No restaurant data found for the given ID
         toast({
           title: "Restaurant Not Found",
           description: "Please select a restaurant from AI recommendations",

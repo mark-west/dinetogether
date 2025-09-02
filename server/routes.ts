@@ -30,10 +30,9 @@ import {
 
 // Helper function to fetch nearby restaurants from Google Places API
 async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
-  console.log('=== FETCH NEARBY RESTAURANTS CALLED ===');
-  console.log('Parameters:', { latitude, longitude, radius });
+  // Fetching nearby restaurants
   const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-  console.log('Using Google Maps API key:', API_KEY ? `Key exists: ${API_KEY?.substring(0, 10)}...` : 'No key found');
+  // Google Maps API key validation complete
   if (!API_KEY) {
     console.error('Server-side Google Maps API key not configured');
     return [];
@@ -50,7 +49,7 @@ async function fetchNearbyRestaurants(latitude: number, longitude: number, radiu
   ];
 
   const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${API_KEY}`;
-  console.log('Making Google Places API call to:', url.replace(API_KEY, 'API_KEY_HIDDEN'));
+  // Making Google Places API call
 
   try {
     const response = await fetch(url);
@@ -1110,7 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Note: In a production environment, you would integrate with a real web search API
       // such as Google Custom Search API, Bing Search API, or similar service
       // For now, we'll return empty results to gracefully fall back to Google search
-      console.log('Web search requested for:', query);
+      // Web search requested
       res.json({ results: [] });
     } catch (error) {
       console.error('Error in web search:', error);
@@ -1216,7 +1215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const latitude = parseFloat(req.query.lat as string);
       const longitude = parseFloat(req.query.lng as string);
       
-      console.log(`ROUTE DEBUG: Custom recommendations requested for coordinates: ${latitude}, ${longitude}`);
+      // Custom recommendations requested
       if (isNaN(latitude) || isNaN(longitude)) {
         return res.status(400).json({ message: "User location is required" });
       }
@@ -1247,12 +1246,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const radius = 48280; // 30 miles in meters (30 * 1.60934 * 1000)
       
       
-      console.log('About to call fetchNearbyRestaurants...');
+      // Fetching nearby restaurants for training
       const restaurants = await fetchNearbyRestaurants(latitude, longitude, radius);
       
-      console.log('Training restaurants fetched:', restaurants?.length || 0, 'restaurants');
+      // Training restaurants fetched successfully
       if (restaurants && restaurants.length > 0) {
-        console.log('First restaurant:', restaurants[0]);
+        // Restaurant data available for training
       }
       
       if (!restaurants || restaurants.length === 0) {

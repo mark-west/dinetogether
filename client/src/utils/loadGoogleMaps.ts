@@ -32,11 +32,12 @@ export async function loadGoogleMapsScript(): Promise<void> {
     };
     
     script.onerror = function(error) {
-      // Google Maps failed to load - silently fail
+      console.warn('Google Maps script failed to load:', error);
+      window.googleMapsLoaded = false;
     };
     
     document.head.appendChild(script);
   } catch (error) {
-    // Silently handle Google Maps loading errors
+    console.warn('Error loading Google Maps script:', error);
   }
 }

@@ -269,7 +269,7 @@ export class GooglePlacesService {
         rating: place.rating,
         userRatingCount: place.user_ratings_total,
         businessStatus: place.business_status,
-        priceLevel: this.convertLegacyPriceLevel(place.price_level),
+        priceLevel: this.convertLegacyPriceLevel(place.price_level) as any,
         reviews: place.reviews?.map((review: any) => ({
           authorAttribution: {
             displayName: review.author_name || '',

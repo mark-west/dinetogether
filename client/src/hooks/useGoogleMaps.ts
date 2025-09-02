@@ -188,7 +188,7 @@ export function useGooglePlaces() {
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log('Got user location:', position.coords.latitude, position.coords.longitude);
+          // User location successfully retrieved
           resolve({
             lat: position.coords.latitude,
             lng: position.coords.longitude
