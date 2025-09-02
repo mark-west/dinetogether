@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, isToday, isTomorrow, isPast } from "date-fns";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -33,11 +34,12 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
 
 // Past Event Card with Rating
 function PastEventCard({ event, averageRating }: { event: any; averageRating?: any }) {
+  const [, navigate] = useLocation();
 
   return (
     <Card 
       className="opacity-75 hover:shadow-md transition-shadow cursor-pointer" 
-      onClick={() => window.location.href = `/events/${event.id}`}
+      onClick={() => navigate(`/events/${event.id}`)}
       data-testid={`card-past-event-${event.id}`}
     >
       <CardContent className="p-4 md:p-6">

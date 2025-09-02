@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./card";
 import { Button } from "./button";
 import { UsersIcon, EyeIcon, UserPlusIcon } from "./app-icons";
 import { format } from "date-fns";
+import { useLocation } from "wouter";
 
 interface GroupCardProps {
   group: {
@@ -26,11 +27,13 @@ export function GroupCard({
   onClick,
   className = '' 
 }: GroupCardProps) {
+  const [, navigate] = useLocation();
+  
   const handleCardClick = () => {
     if (onClick) {
       onClick();
     } else {
-      window.location.href = `/groups/${group.id}`;
+      navigate(`/groups/${group.id}`);
     }
   };
 
@@ -39,10 +42,10 @@ export function GroupCard({
     
     switch (action) {
       case 'view':
-        window.location.href = `/groups/${group.id}`;
+        navigate(`/groups/${group.id}`);
         break;
       case 'invite':
-        window.location.href = `/groups/${group.id}?tab=members&invite=true`;
+        navigate(`/groups/${group.id}?tab=members&invite=true`);
         break;
     }
   };

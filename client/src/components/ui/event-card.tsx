@@ -3,6 +3,7 @@ import { Button } from "./button";
 import { StatusIndicator, RsvpStatus } from "./status-indicator";
 import { RestaurantIcon, CalendarIcon, LocationIcon, EyeIcon, ChatIcon, ReplyIcon } from "./app-icons";
 import { format, isToday, isTomorrow } from "date-fns";
+import { useLocation } from "wouter";
 import { InteractiveStarRating } from "../InteractiveStarRating";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -108,6 +109,7 @@ export function EventCard({
   onClick,
   className = '' 
 }: EventCardProps) {
+  const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -165,7 +167,7 @@ export function EventCard({
     if (onClick) {
       onClick();
     } else {
-      window.location.href = `/events/${event.id}`;
+      navigate(`/events/${event.id}`);
     }
   };
 
@@ -174,13 +176,13 @@ export function EventCard({
     
     switch (action) {
       case 'view':
-        window.location.href = `/events/${event.id}`;
+        navigate(`/events/${event.id}`);
         break;
       case 'chat':
-        window.location.href = `/chat/${event.id}`;
+        navigate(`/chat/${event.id}`);
         break;
       case 'rsvp':
-        window.location.href = `/events/${event.id}`;
+        navigate(`/events/${event.id}`);
         break;
     }
   };
