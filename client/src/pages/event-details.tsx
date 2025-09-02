@@ -983,11 +983,11 @@ export default function EventDetails() {
                       variant="outline" 
                       size="sm"
                       className="w-full sm:w-auto"
-                      onClick={() => navigateWithLoading(`/chat/${eventId}`)}
-                      disabled={isNavigationLoading(`/chat/${eventId}`)}
+                      onClick={() => navigateWithLoading(`/chat/event/${eventId}`)}
+                      disabled={isNavigationLoading(`/chat/event/${eventId}`)}
                       data-testid="button-chat"
                     >
-                      {isNavigationLoading(`/chat/${eventId}`) ? (
+                      {isNavigationLoading(`/chat/event/${eventId}`) ? (
                         <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-500 rounded-full mr-2"></div>
                       ) : (
                         <i className="fas fa-comments mr-2"></i>
