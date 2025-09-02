@@ -867,6 +867,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Edit event message
+  app.put('/api/events/:id/messages/:messageId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageId = req.params.messageId;
+      
+      // Check if message exists and user permissions
+      const existingMessage = await storage.getMessage(messageId);
+      if (!existingMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user owns the message or is event creator
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (existingMessage.userId !== userId && event.createdBy !== userId) {
+        return res.status(403).json({ message: "Not authorized to edit this message" });
+      }
+      
+      const updatedMessage = await storage.updateMessage(messageId, req.body.content);
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error("Error updating message:", error);
+      res.status(400).json({ message: "Failed to update message" });
+    }
+  });
+
+  // Delete event message
+  app.delete('/api/events/:id/messages/:messageId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageId = req.params.messageId;
+      
+      // Check if message exists and user permissions
+      const existingMessage = await storage.getMessage(messageId);
+      if (!existingMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user owns the message or is event creator
+      const event = await storage.getEvent(req.params.id);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      if (existingMessage.userId !== userId && event.createdBy !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this message" });
+      }
+      
+      await storage.deleteMessage(messageId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      res.status(500).json({ message: "Failed to delete message" });
+    }
+  });
+
+  // Edit group message
+  app.put('/api/groups/:id/messages/:messageId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageId = req.params.messageId;
+      const groupId = req.params.id;
+      
+      // Check if message exists and user permissions
+      const existingMessage = await storage.getGroupMessage(messageId);
+      if (!existingMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user owns the message or is group admin
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      if (existingMessage.userId !== userId && group.adminId !== userId) {
+        return res.status(403).json({ message: "Not authorized to edit this message" });
+      }
+      
+      const updatedMessage = await storage.updateGroupMessage(messageId, req.body.content);
+      res.json(updatedMessage);
+    } catch (error) {
+      console.error("Error updating group message:", error);
+      res.status(400).json({ message: "Failed to update group message" });
+    }
+  });
+
+  // Delete group message
+  app.delete('/api/groups/:id/messages/:messageId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const messageId = req.params.messageId;
+      const groupId = req.params.id;
+      
+      // Check if message exists and user permissions
+      const existingMessage = await storage.getGroupMessage(messageId);
+      if (!existingMessage) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user owns the message or is group admin
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      if (existingMessage.userId !== userId && group.adminId !== userId) {
+        return res.status(403).json({ message: "Not authorized to delete this message" });
+      }
+      
+      await storage.deleteGroupMessage(messageId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting group message:", error);
+      res.status(500).json({ message: "Failed to delete group message" });
+    }
+  });
+
+  // Clear all group messages (admin only)
+  app.delete('/api/groups/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const groupId = req.params.id;
+      
+      // Check if user is group admin
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      if (group.adminId !== userId) {
+        return res.status(403).json({ message: "Only group admin can clear all messages" });
+      }
+      
+      await storage.clearAllGroupMessages(groupId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error clearing group messages:", error);
+      res.status(500).json({ message: "Failed to clear group messages" });
+    }
+  });
+
   // Get all unread counts for user's chats
   app.get('/api/chats/all-unread-counts', isAuthenticated, async (req: any, res) => {
     try {

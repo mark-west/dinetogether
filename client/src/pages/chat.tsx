@@ -36,6 +36,8 @@ export default function Chat() {
   const [selectedChatType, setSelectedChatType] = useState<ChatType>('group');
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [editingMessage, setEditingMessage] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   // Parse URL params for chat type and ID
   useEffect(() => {
@@ -204,6 +206,142 @@ export default function Chat() {
     document.getElementById('message-input')?.focus();
   };
 
+  const editMessageMutation = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      const endpoint = selectedChatType === 'group' 
+        ? `/api/groups/${selectedChatId}/messages/${messageId}`
+        : `/api/events/${selectedChatId}/messages/${messageId}`;
+      await apiRequest("PUT", endpoint, { content });
+    },
+    onSuccess: () => {
+      setEditingMessage(null);
+      setEditContent("");
+      const queryKey = selectedChatType === 'group'
+        ? ["/api/groups", selectedChatId, "messages"]
+        : ["/api/events", selectedChatId, "messages"];
+      queryClient.invalidateQueries({ queryKey });
+      toast({
+        title: "Message updated",
+        description: "Your message has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      const endpoint = selectedChatType === 'group' 
+        ? `/api/groups/${selectedChatId}/messages/${messageId}`
+        : `/api/events/${selectedChatId}/messages/${messageId}`;
+      await apiRequest("DELETE", endpoint);
+    },
+    onSuccess: () => {
+      const queryKey = selectedChatType === 'group'
+        ? ["/api/groups", selectedChatId, "messages"]
+        : ["/api/events", selectedChatId, "messages"];
+      queryClient.invalidateQueries({ queryKey });
+      toast({
+        title: "Message deleted",
+        description: "Your message has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditMessage = (messageId: string, currentContent: string) => {
+    setEditingMessage(messageId);
+    setEditContent(currentContent);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editContent.trim() || !editingMessage) return;
+    editMessageMutation.mutate({ messageId: editingMessage, content: editContent.trim() });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessage(null);
+    setEditContent("");
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    deleteMessageMutation.mutate(messageId);
+  };
+
+  const clearChatMutation = useMutation({
+    mutationFn: async () => {
+      if (selectedChatType !== 'group' || !selectedChatId) {
+        throw new Error("Can only clear group chats");
+      }
+      await apiRequest("DELETE", `/api/groups/${selectedChatId}/messages`);
+    },
+    onSuccess: () => {
+      const queryKey = ["/api/groups", selectedChatId, "messages"];
+      queryClient.invalidateQueries({ queryKey });
+      toast({
+        title: "Chat cleared",
+        description: "All messages have been removed from this group chat.",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to clear chat",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleClearChat = () => {
+    if (confirm("Are you sure you want to clear all messages in this chat? This action cannot be undone.")) {
+      clearChatMutation.mutate();
+    }
+  };
+
   const renderMessage = (msg: ThreadedMessage, isReply = false) => (
     <div key={msg.id} className={`flex gap-3 ${isReply ? 'ml-8 mt-2' : ''}`} data-testid={`message-${msg.id}`}>
       {msg.user.profileImageUrl ? (
@@ -234,12 +372,50 @@ export default function Chat() {
         <div className={`chat-bubble p-3 rounded-lg ${
           msg.userId === user?.id ? 'own ml-auto bg-primary text-primary-foreground' : 'bg-muted'
         }`}>
-          <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${msg.id}`}>
-            {msg.content}
-          </p>
+          {editingMessage === msg.id ? (
+            <div className="space-y-2">
+              <Input
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="text-sm"
+                data-testid={`input-edit-message-${msg.id}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSaveEdit();
+                  } else if (e.key === 'Escape') {
+                    handleCancelEdit();
+                  }
+                }}
+              />
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="default"
+                  onClick={handleSaveEdit}
+                  disabled={editMessageMutation.isPending}
+                  data-testid={`button-save-edit-${msg.id}`}
+                >
+                  Save
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  data-testid={`button-cancel-edit-${msg.id}`}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${msg.id}`}>
+              {msg.content}
+            </p>
+          )}
         </div>
         {!isReply && (
-          <div className="mt-1">
+          <div className="mt-1 flex gap-1">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -250,6 +426,33 @@ export default function Chat() {
               <i className="fas fa-reply mr-1"></i>
               Reply
             </Button>
+            {(msg.userId === user?.id || 
+              (selectedChatType === 'group' && currentChat?.adminId === user?.id) ||
+              (selectedChatType === 'event' && currentChat?.createdBy === user?.id)) && (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 text-xs"
+                  onClick={() => handleEditMessage(msg.id, msg.content)}
+                  data-testid={`button-edit-${msg.id}`}
+                >
+                  <i className="fas fa-edit mr-1"></i>
+                  Edit
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                  onClick={() => handleDeleteMessage(msg.id)}
+                  disabled={deleteMessageMutation.isPending}
+                  data-testid={`button-delete-${msg.id}`}
+                >
+                  <i className="fas fa-trash mr-1"></i>
+                  Delete
+                </Button>
+              </>
+            )}
           </div>
         )}
         
@@ -454,22 +657,38 @@ export default function Chat() {
                           )}
                         </div>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-shrink-0"
-                        onClick={() => {
-                          const detailsPath = selectedChatType === 'group' 
-                            ? `/groups/${selectedChatId}`
-                            : `/events/${selectedChatId}`;
-                          window.location.href = detailsPath;
-                        }}
-                        data-testid="button-chat-details"
-                      >
-                        <i className="fas fa-info-circle mr-2 hidden sm:inline"></i>
-                        <span className="hidden sm:inline">Details</span>
-                        <i className="fas fa-info-circle sm:hidden"></i>
-                      </Button>
+                      <div className="flex gap-2">
+                        {selectedChatType === 'group' && currentChat?.adminId === user?.id && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-shrink-0 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={handleClearChat}
+                            disabled={clearChatMutation.isPending}
+                            data-testid="button-clear-chat"
+                          >
+                            <i className="fas fa-trash mr-2 hidden sm:inline"></i>
+                            <span className="hidden sm:inline">Clear Chat</span>
+                            <i className="fas fa-trash sm:hidden"></i>
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-shrink-0"
+                          onClick={() => {
+                            const detailsPath = selectedChatType === 'group' 
+                              ? `/groups/${selectedChatId}`
+                              : `/events/${selectedChatId}`;
+                            window.location.href = detailsPath;
+                          }}
+                          data-testid="button-chat-details"
+                        >
+                          <i className="fas fa-info-circle mr-2 hidden sm:inline"></i>
+                          <span className="hidden sm:inline">Details</span>
+                          <i className="fas fa-info-circle sm:hidden"></i>
+                        </Button>
+                      </div>
                     </div>
                     {replyTo && (
                       <div className="flex items-center justify-between bg-muted/50 p-2 rounded-md">

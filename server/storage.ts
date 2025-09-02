@@ -574,6 +574,38 @@ export class DatabaseStorage implements IStorage {
       .onConflictDoNothing();
   }
 
+  async updateMessage(messageId: string, content: string): Promise<Message | undefined> {
+    const [message] = await db
+      .update(messages)
+      .set({ 
+        content,
+        editedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(messages.id, messageId))
+      .returning();
+    return message;
+  }
+
+  async deleteMessage(messageId: string): Promise<void> {
+    await db.delete(messages).where(eq(messages.id, messageId));
+  }
+
+  async getMessage(messageId: string): Promise<(Message & { user: User }) | undefined> {
+    const [result] = await db
+      .select()
+      .from(messages)
+      .innerJoin(users, eq(messages.userId, users.id))
+      .where(eq(messages.id, messageId));
+    
+    if (!result) return undefined;
+    
+    return {
+      ...result.messages,
+      user: result.users,
+    };
+  }
+
   // Group message operations
   async createGroupMessage(messageData: InsertGroupMessage): Promise<GroupMessage> {
     const [message] = await db.insert(groupMessages).values(messageData).returning();
@@ -626,6 +658,42 @@ export class DatabaseStorage implements IStorage {
       .insert(groupMessageReads)
       .values({ groupMessageId: messageId, userId })
       .onConflictDoNothing();
+  }
+
+  async updateGroupMessage(messageId: string, content: string): Promise<GroupMessage | undefined> {
+    const [message] = await db
+      .update(groupMessages)
+      .set({ 
+        content,
+        editedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(groupMessages.id, messageId))
+      .returning();
+    return message;
+  }
+
+  async deleteGroupMessage(messageId: string): Promise<void> {
+    await db.delete(groupMessages).where(eq(groupMessages.id, messageId));
+  }
+
+  async getGroupMessage(messageId: string): Promise<(GroupMessage & { user: User }) | undefined> {
+    const [result] = await db
+      .select()
+      .from(groupMessages)
+      .innerJoin(users, eq(groupMessages.userId, users.id))
+      .where(eq(groupMessages.id, messageId));
+    
+    if (!result) return undefined;
+    
+    return {
+      ...result.group_messages,
+      user: result.users,
+    };
+  }
+
+  async clearAllGroupMessages(groupId: string): Promise<void> {
+    await db.delete(groupMessages).where(eq(groupMessages.groupId, groupId));
   }
 
   async markAllGroupMessagesAsRead(groupId: string, userId: string): Promise<void> {
