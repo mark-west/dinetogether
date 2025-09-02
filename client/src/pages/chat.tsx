@@ -185,7 +185,7 @@ export default function Chat() {
     setSelectedChatType(type);
     setSelectedChatId(id);
     setReplyTo(null);
-    window.history.pushState({}, '', `/chat/${type}/${id}`);
+    navigate(`/chat/${type}/${id}`);
     
     // Mark messages as read when entering a chat
     markAsReadMutation.mutate({ chatType: type, chatId: id });
@@ -194,7 +194,7 @@ export default function Chat() {
   const handleBackToChats = () => {
     setSelectedChatId(null);
     setReplyTo(null);
-    window.history.pushState({}, '', '/chat');
+    navigate('/chat');
   };
 
   const handleReply = (messageId: string) => {

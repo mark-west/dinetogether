@@ -250,7 +250,7 @@ export default function GroupDetails() {
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Group not found</h2>
             <p className="text-muted-foreground mb-4">The group you're looking for doesn't exist or you don't have access to it.</p>
-            <Button onClick={() => window.location.href = '/groups'}>
+            <Button onClick={() => navigate('/groups')}>
               Back to Groups
             </Button>
           </div>
@@ -455,7 +455,7 @@ export default function GroupDetails() {
                     <Card 
                       key={event.id} 
                       className="hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => window.location.href = `/events/${event.id}`}
+                      onClick={() => navigate(`/events/${event.id}`)}
                       data-testid={`card-event-${event.id}`}
                     >
                       <CardContent className="p-6">

@@ -281,7 +281,7 @@ export function AIRecommendations() {
               </p>
               <Button 
                 variant="outline"
-                onClick={() => window.location.href = '/events'}
+                onClick={() => navigate('/events')}
                 data-testid="button-view-events"
               >
                 View Your Events
