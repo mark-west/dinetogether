@@ -665,11 +665,25 @@ export default function EventDetails() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: event, isLoading: eventLoading } = useQuery({
+  const { data: event, isLoading: eventLoading, error: eventError } = useQuery({
     queryKey: ["/api/events", eventId],
     retry: false,
     enabled: isAuthenticated && !!eventId,
   });
+
+  // Handle 404 errors immediately by redirecting to events page
+  useEffect(() => {
+    if (eventError && eventError.message.includes('404')) {
+      toast({
+        title: "Event Not Found",
+        description: "This event no longer exists. Redirecting to events page...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        navigateWithLoading('/events');
+      }, 1500);
+    }
+  }, [eventError, toast, navigateWithLoading]);
 
   const { data: rsvps, isLoading: rsvpsLoading } = useQuery({
     queryKey: ["/api/events", eventId, "rsvps"],

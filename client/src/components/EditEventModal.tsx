@@ -106,8 +106,18 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
         title: "Event Cancelled",
         description: "Event has been cancelled and participants notified.",
       });
+      // Comprehensive cache invalidation to prevent stale data
       queryClient.invalidateQueries({ queryKey: ['/api/events'] });
       queryClient.invalidateQueries({ queryKey: ['/api/events/upcoming'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rsvps`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/messages`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rating`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/average-rating`] });
+      
+      // Remove the specific event from cache completely
+      queryClient.removeQueries({ queryKey: ['/api/events', event.id] });
+      
       onClose();
       navigate('/events');
     },
