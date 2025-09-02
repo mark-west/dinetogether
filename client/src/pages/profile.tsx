@@ -8,8 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User } from "@shared/schema";
-import Sidebar from "@/components/Sidebar";
-import MobileNavigation from "@/components/MobileNavigation";
 import PhotoUploader from "@/components/PhotoUploader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -141,50 +139,43 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="app-container">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-          <div className="md:hidden bg-card border-b border-border p-4">
-            <Skeleton className="h-8 w-32" />
-          </div>
-          <div className="flex-1 p-4 md:p-6 space-y-6">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
+      <>
+        <div className="md:hidden bg-card border-b border-border p-4">
+          <Skeleton className="h-8 w-32" />
         </div>
-        <MobileNavigation />
-      </div>
+        <div className="flex-1 p-4 md:p-6 space-y-6">
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="app-container">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col min-h-screen md:min-h-0">
-        {/* Mobile Header */}
-        <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center">
-                <i className="fas fa-user text-white text-sm"></i>
-              </div>
-              <h1 className="font-bold text-lg text-foreground">My Profile</h1>
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 gradient-bg rounded-lg flex items-center justify-center">
+              <i className="fas fa-user text-white text-sm"></i>
             </div>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.history.back()}
-              data-testid="button-back"
-            >
-              <i className="fas fa-arrow-left"></i>
-            </Button>
+            <h1 className="font-bold text-lg text-foreground">My Profile</h1>
           </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
+            data-testid="button-back"
+          >
+            <i className="fas fa-arrow-left"></i>
+          </Button>
         </div>
+      </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-2xl mx-auto space-y-6">
             {/* Header */}
             <div>
@@ -432,10 +423,7 @@ export default function Profile() {
               </CardContent>
             </Card>
           </div>
-        </div>
       </div>
-
-      <MobileNavigation />
       
       {/* Photo Uploader Modal */}
       <PhotoUploader
@@ -446,6 +434,6 @@ export default function Profile() {
         title="Update Profile Photo"
         description="Upload a new profile photo that will be displayed across the app"
       />
-    </div>
+    </>
   );
 }
