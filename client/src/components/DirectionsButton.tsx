@@ -86,8 +86,9 @@ export default function DirectionsButton({
         <DropdownMenuItem 
           onClick={() => handleDirections('google')}
           data-testid="directions-google"
+          className="flex items-center"
         >
-          <i className="fab fa-google mr-2"></i>
+          <span className="mr-2 text-sm font-bold text-blue-600 bg-white rounded px-1">G</span>
           Google Maps
         </DropdownMenuItem>
         {(isIOS() || isMac()) && (
