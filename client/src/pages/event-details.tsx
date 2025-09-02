@@ -1034,22 +1034,6 @@ export default function EventDetails() {
                       {/* Restaurant Name & Basic Info */}
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          {event.restaurantName && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <p className="font-medium text-lg" data-testid="text-restaurant-name">{event.restaurantName}</p>
-                              {(event as any).restaurantRating && (
-                                <div className="flex items-center gap-1">
-                                  <i className="fas fa-star text-yellow-400 text-sm"></i>
-                                  <span className="text-sm font-medium">{(event as any).restaurantRating}/5</span>
-                                </div>
-                              )}
-                              {(event as any).restaurantPriceLevel && (
-                                <span className="text-green-600 font-semibold">
-                                  {'$'.repeat(Math.min((event as any).restaurantPriceLevel, 4))}
-                                </span>
-                              )}
-                            </div>
-                          )}
                           
                           {event.restaurantAddress && (
                             <p className="text-sm text-muted-foreground mb-2" data-testid="text-restaurant-address">
