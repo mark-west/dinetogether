@@ -172,11 +172,15 @@ export default function GoogleMapComponent({
         }
       });
 
-      // Adjust map bounds if we have markers
-      if (markers.length > 0) {
+      // Adjust map bounds if we have multiple markers, otherwise center on single marker
+      if (markers.length > 1) {
         const bounds = new window.google.maps.LatLngBounds();
         markers.forEach(marker => bounds.extend(marker.position));
         mapInstanceRef.current.fitBounds(bounds, { padding: 50 });
+      } else if (markers.length === 1) {
+        // For single marker, just center and use default zoom
+        mapInstanceRef.current.setCenter(markers[0].position);
+        mapInstanceRef.current.setZoom(15);
       }
     } catch (error) {
       console.error('Error updating map markers:', error);
