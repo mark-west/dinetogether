@@ -34,6 +34,9 @@ interface EventCardProps {
       averageRating: number;
       totalRatings: number;
     };
+    // Injected rating data to prevent additional API calls
+    userRating?: any;
+    _hasBatchData?: boolean; // Marker indicating batch data was attempted
   };
   variant?: 'summary' | 'detailed';
   showActions?: boolean;
@@ -108,17 +111,22 @@ export function EventCard({
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const { data: averageRating } = useQuery({
+  // Use injected rating data if available, otherwise fallback to individual API calls
+  const { data: averageRatingFromAPI } = useQuery({
     queryKey: [`/api/events/${event.id}/average-rating`],
     retry: false,
-    enabled: !!event.id,
+    enabled: !!event.id && !event._hasBatchData, // Only fetch if batch data not attempted
   });
 
-  const { data: userRating } = useQuery({
+  const { data: userRatingFromAPI } = useQuery({
     queryKey: [`/api/events/${event.id}/rating`],
     retry: false,
-    enabled: isAuthenticated && !!event.id,
+    enabled: isAuthenticated && !!event.id && !event._hasBatchData, // Only fetch if batch data not attempted
   });
+
+  // Use injected data first, then fallback to API data
+  const averageRating = event._hasBatchData ? event.averageRating : (event.averageRating || averageRatingFromAPI);
+  const userRating = event._hasBatchData ? event.userRating : (event.userRating || userRatingFromAPI);
 
   const saveRatingMutation = useMutation({
     mutationFn: async (rating: number) => {

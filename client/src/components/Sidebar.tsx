@@ -21,7 +21,8 @@ export default function Sidebar() {
   const { data: unreadData } = useQuery({
     queryKey: ["/api/messages/unread-count"],
     retry: false,
-    refetchInterval: 10000, // Poll every 10 seconds for unread count
+    refetchInterval: 30000, // Poll every 30 seconds for better performance
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
 
   const navItems = [

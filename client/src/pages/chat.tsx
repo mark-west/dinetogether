@@ -80,7 +80,8 @@ export default function Chat() {
       : ["/api/events", selectedChatId, "messages"],
     retry: false,
     enabled: isAuthenticated && !!selectedChatId,
-    refetchInterval: 5000, // Poll every 5 seconds for new messages
+    refetchInterval: 10000, // Poll every 10 seconds for new messages
+    staleTime: 5000, // Consider data fresh for 5 seconds
   });
 
   // Fetch current chat details
@@ -97,7 +98,8 @@ export default function Chat() {
     queryKey: ["/api/messages/unread-count"],
     retry: false,
     enabled: isAuthenticated,
-    refetchInterval: 10000, // Poll every 10 seconds for unread count
+    refetchInterval: 30000, // Poll every 30 seconds for better performance
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
 
   // Fetch all unread counts in a single query
@@ -105,7 +107,8 @@ export default function Chat() {
     queryKey: ["/api/chats/all-unread-counts"],
     retry: false,
     enabled: isAuthenticated,
-    refetchInterval: 10000,
+    refetchInterval: 30000, // Poll every 30 seconds for better performance
+    staleTime: 20000, // Consider data fresh for 20 seconds
   });
 
   // Helper function to get unread count from the single query

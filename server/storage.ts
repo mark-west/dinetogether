@@ -46,7 +46,7 @@ import {
   type InsertRestaurantTraining,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, ne, isNull } from "drizzle-orm";
+import { eq, and, desc, sql, ne, isNull, inArray } from "drizzle-orm";
 import { MailService } from '@sendgrid/mail';
 
 // Helper function to generate invite codes
@@ -1033,6 +1033,46 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEventRating(eventId: string, userId: string): Promise<void> {
     await db.delete(eventRatings).where(and(eq(eventRatings.eventId, eventId), eq(eventRatings.userId, userId)));
+  }
+
+  // Batch rating operations for performance
+  async getBatchEventRatings(eventIds: string[], userId: string): Promise<Record<string, any>> {
+    if (eventIds.length === 0) return {};
+    
+    const ratings = await db
+      .select()
+      .from(eventRatings)
+      .where(and(
+        inArray(eventRatings.eventId, eventIds),
+        eq(eventRatings.userId, userId)
+      ));
+    
+    return ratings.reduce((acc, rating) => {
+      acc[rating.eventId] = rating;
+      return acc;
+    }, {} as Record<string, any>);
+  }
+
+  async getBatchEventAverageRatings(eventIds: string[]): Promise<Record<string, any>> {
+    if (eventIds.length === 0) return {};
+    
+    const results = await db
+      .select({
+        eventId: eventRatings.eventId,
+        averageRating: sql<number>`AVG(${eventRatings.rating})::float`,
+        totalRatings: sql<number>`COUNT(${eventRatings.rating})::int`,
+      })
+      .from(eventRatings)
+      .where(inArray(eventRatings.eventId, eventIds))
+      .groupBy(eventRatings.eventId);
+    
+    return results.reduce((acc, result) => {
+      acc[result.eventId] = {
+        averageRating: result.averageRating || 0,
+        totalRatings: result.totalRatings || 0,
+      };
+      return acc;
+    }, {} as Record<string, any>);
   }
 
   // Restaurant training operations

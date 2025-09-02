@@ -4,6 +4,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
+import { useBatchRatings } from "@/hooks/useBatchRatings";
 import Sidebar from "@/components/Sidebar";
 import MobileNavigation from "@/components/MobileNavigation";
 import CreateEventModal from "@/components/CreateEventModal";
@@ -54,6 +55,19 @@ export default function Dashboard() {
     queryKey: ["/api/groups"],
     retry: false,
     enabled: isAuthenticated,
+  });
+
+  // Extract event IDs for batch rating requests
+  const eventIds = useMemo(() => {
+    return upcomingEvents && Array.isArray(upcomingEvents) 
+      ? (upcomingEvents as any[]).map(event => event.id) 
+      : [];
+  }, [upcomingEvents]);
+
+  // Use batch ratings hook for performance
+  const batchRatings = useBatchRatings({
+    eventIds,
+    enabled: isAuthenticated && eventIds.length > 0
   });
 
 
@@ -225,7 +239,13 @@ export default function Dashboard() {
                 {(upcomingEvents as any[]).map((event: any) => (
                   <EventCard 
                     key={event.id}
-                    event={event}
+                    event={{
+                      ...event,
+                      // Inject batched rating data with explicit markers
+                      userRating: batchRatings.getUserRating(event.id),
+                      averageRating: batchRatings.getAverageRating(event.id),
+                      _hasBatchData: true // Marker to indicate batch data was attempted
+                    }}
                     variant="summary"
                   />
                 ))}

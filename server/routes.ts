@@ -987,7 +987,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Event rating routes
+  // Event rating routes - Batched for performance
+  app.get('/api/events/batch/ratings', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const eventIds = (req.query.eventIds as string)?.split(',') || [];
+      
+      if (eventIds.length === 0) {
+        return res.json({});
+      }
+      
+      const ratings = await storage.getBatchEventRatings(eventIds, userId);
+      res.json(ratings);
+    } catch (error) {
+      console.error("Error fetching batch ratings:", error);
+      res.status(500).json({ message: "Failed to fetch batch ratings" });
+    }
+  });
+
+  app.get('/api/events/batch/average-ratings', isAuthenticated, async (req: any, res) => {
+    try {
+      const eventIds = (req.query.eventIds as string)?.split(',') || [];
+      
+      if (eventIds.length === 0) {
+        return res.json({});
+      }
+      
+      const averageRatings = await storage.getBatchEventAverageRatings(eventIds);
+      res.json(averageRatings);
+    } catch (error) {
+      console.error("Error fetching batch average ratings:", error);
+      res.status(500).json({ message: "Failed to fetch batch average ratings" });
+    }
+  });
+
+  // Individual rating routes (kept for backward compatibility)
   app.get('/api/events/:eventId/rating', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
