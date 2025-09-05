@@ -184,13 +184,45 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   id="search-prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="E.g., 'I want authentic Italian food for a romantic date night' or 'Find me the best tacos for lunch with my coworkers'"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
+                  placeholder="Describe what kind of dining experience you're looking for..."
                   className="min-h-[80px] resize-none"
                   data-testid="textarea-search-prompt"
                 />
+                
+                {/* Example Prompts */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-foreground">Or try these examples:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Romantic Italian dinner for two",
+                      "Casual lunch spot for work meeting", 
+                      "Best tacos in town",
+                      "Family-friendly breakfast place",
+                      "Trendy sushi for date night",
+                      "Quick healthy lunch",
+                      "Cozy coffee shop to work from"
+                    ].map((example, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setPrompt(example)}
+                        className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        data-testid={`button-example-${index}`}
+                      >
+                        {example}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
                 <p className="text-xs text-muted-foreground">
                   {userLocation ? 
-                    "We'll search near your current location and provide detailed restaurant information." :
+                    "Press Enter to search, or Shift+Enter for new line. We'll search near your current location." :
                     "Please allow location access to get personalized restaurant recommendations."
                   }
                 </p>
