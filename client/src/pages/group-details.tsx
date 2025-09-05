@@ -11,6 +11,7 @@ import InviteModal from "@/components/InviteModal";
 import PhotoUploader from "@/components/PhotoUploader";
 import CreateEventModal from "@/components/CreateEventModal";
 import { InteractiveAISuggestions } from "@/components/InteractiveAISuggestions";
+import { NaturalLanguageSearch } from "@/components/NaturalLanguageSearch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

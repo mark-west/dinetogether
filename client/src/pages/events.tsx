@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventCard } from "@/components/ui/event-card";
 import { PlusIcon, CalendarIcon } from "@/components/ui/app-icons";
+import { NaturalLanguageSearch } from "@/components/NaturalLanguageSearch";
 
 // Star Rating Component
 function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
@@ -184,6 +185,9 @@ export default function Events() {
               Create Event
             </Button>
           </div>
+
+          {/* AI Dining Concierge */}
+          <NaturalLanguageSearch collapsed={true} />
 
           <Tabs defaultValue="upcoming" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
