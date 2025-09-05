@@ -88,6 +88,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
     },
     onError: (error: any) => {
       console.error('Search error:', error);
+      setResults([]);
     }
   });
 
@@ -220,6 +221,35 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
               {[...Array(3)].map((_, i) => (
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
+            </div>
+          )}
+
+          {searchMutation.isError && (
+            <div className="text-center py-8">
+              <div className="max-w-md mx-auto">
+                <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                  <i className="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+                </div>
+                <h3 className="font-medium text-foreground mb-2">Search Failed</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  We couldn't process your request right now. This might be due to:
+                </p>
+                <ul className="text-xs text-muted-foreground text-left mb-4 space-y-1">
+                  <li>• Location access required</li>
+                  <li>• AI service temporarily unavailable</li>
+                  <li>• Network connectivity issues</li>
+                </ul>
+                <Button 
+                  onClick={() => {
+                    searchMutation.reset();
+                    resetSearch();
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Try Again
+                </Button>
+              </div>
             </div>
           )}
 

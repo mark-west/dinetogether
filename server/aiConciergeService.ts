@@ -111,8 +111,7 @@ Respond with only valid JSON, no additional text.`;
           content: `near ${latitude}, ${longitude}, restaurant results only, and add google Places API data: ${prompt}`
         }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.7,
+      response_format: { type: "json_object" }
     });
 
     return JSON.parse(response.choices[0].message.content || '{"restaurants": []}');
