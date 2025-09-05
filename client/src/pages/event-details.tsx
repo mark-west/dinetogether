@@ -1022,32 +1022,76 @@ export default function EventDetails() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Map Display - always try to show map if we have coordinates */}
-                {mapMarkers.length > 0 ? (
-                  <GoogleMapComponent
-                    center={mapMarkers[0].position}
-                    markers={mapMarkers}
-                    zoom={15}
-                    className="w-full h-64 rounded-lg"
-                  />
-                ) : event.restaurantAddress ? (
-                  <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
-                      <p className="text-sm text-muted-foreground">Map not available for this location</p>
-                      <p className="text-xs text-muted-foreground mt-1">Address details below</p>
+                {/* Map and Hours Side-by-Side Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Map Section */}
+                  <div className="order-1">
+                    {mapMarkers.length > 0 ? (
+                      <GoogleMapComponent
+                        center={mapMarkers[0].position}
+                        markers={mapMarkers}
+                        zoom={15}
+                        className="w-full h-64 rounded-lg"
+                      />
+                    ) : event.restaurantAddress ? (
+                      <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+                        <div className="text-center p-6">
+                          <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
+                          <p className="text-sm text-muted-foreground">Map not available for this location</p>
+                          <p className="text-xs text-muted-foreground mt-1">Address details below</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+                        <div className="text-center p-6">
+                          <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
+                          <p className="text-sm text-muted-foreground">No location specified</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hours and Info Section */}
+                  <div className="order-2">
+                    <div className="bg-muted rounded-lg p-4 h-64 flex flex-col">
+                      <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <i className="fas fa-clock"></i>
+                        Restaurant Hours
+                      </h3>
+                      
+                      {(event as any).restaurantHours ? (
+                        <div className="flex-1 overflow-y-auto text-sm text-muted-foreground space-y-1">
+                          {/* Display all week hours */}
+                          {(() => {
+                            const hours = (event as any).restaurantHours;
+                            const hoursData = hours.weekdayDescriptions || hours.weekday_text || hours.periods;
+                            
+                            if (Array.isArray(hoursData) && hoursData.length > 0) {
+                              const today = new Date().getDay();
+                              const googleDay = today === 0 ? 6 : today - 1;
+                              
+                              return hoursData.map((dayHours: string, index: number) => (
+                                <div key={index} className={`py-1 px-2 rounded ${index === googleDay ? 'bg-primary/10 font-medium' : ''}`}>
+                                  {dayHours}
+                                </div>
+                              ));
+                            }
+                            return <p className="text-muted-foreground">Hours information not available</p>;
+                          })()}
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center">
+                          <div className="text-center">
+                            <i className="fas fa-clock text-2xl text-muted-foreground mb-2"></i>
+                            <p className="text-sm text-muted-foreground">Hours not available</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-                    <div className="text-center p-6">
-                      <i className="fas fa-map-marker-alt text-3xl text-muted-foreground mb-3"></i>
-                      <p className="text-sm text-muted-foreground">No location specified</p>
-                    </div>
-                  </div>
-                )}
+                </div>
                 
-                {/* Enhanced Restaurant Info */}
+                {/* Restaurant Contact Info */}
                 {(event.restaurantName || event.restaurantAddress) && (
                   <div className="space-y-4">
                     <div className="p-4 bg-muted rounded-lg space-y-3">
@@ -1060,16 +1104,6 @@ export default function EventDetails() {
                               <i className="fas fa-map-marker-alt mr-2"></i>
                               {event.restaurantAddress}
                             </p>
-                          )}
-                          
-                          {/* Restaurant Hours */}
-                          {(event as any).restaurantHours && (
-                            <div className="text-sm text-muted-foreground">
-                              <i className="fas fa-clock mr-2"></i>
-                              <span data-testid="text-restaurant-hours">
-                                Today: {formatTodaysHours((event as any).restaurantHours)}
-                              </span>
-                            </div>
                           )}
                           
                           {/* Phone Number */}

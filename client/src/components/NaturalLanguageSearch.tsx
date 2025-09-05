@@ -40,7 +40,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [, navigate] = useLocation();
 
-  // Get user's location on component mount
+  // Get user's location and restore search state on component mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -56,7 +56,47 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
         }
       );
     }
+
+    // Restore search state if navigating back
+    const savedResults = sessionStorage.getItem('aiConciergeResults');
+    const savedPrompt = sessionStorage.getItem('aiConciergePrompt');
+    const savedExpanded = sessionStorage.getItem('aiConciergeExpanded');
+    
+    if (savedResults && savedPrompt) {
+      setResults(JSON.parse(savedResults));
+      setPrompt(savedPrompt);
+      setIsExpanded(savedExpanded === 'true');
+    }
   }, []);
+
+  // Save search state when results change or before navigating away
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (results.length > 0) {
+        sessionStorage.setItem('aiConciergeResults', JSON.stringify(results));
+        sessionStorage.setItem('aiConciergePrompt', prompt);
+        sessionStorage.setItem('aiConciergeExpanded', isExpanded.toString());
+      } else {
+        // Clear storage if no results
+        sessionStorage.removeItem('aiConciergeResults');
+        sessionStorage.removeItem('aiConciergePrompt');
+        sessionStorage.removeItem('aiConciergeExpanded');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Also save when results change
+    if (results.length > 0) {
+      sessionStorage.setItem('aiConciergeResults', JSON.stringify(results));
+      sessionStorage.setItem('aiConciergePrompt', prompt);
+      sessionStorage.setItem('aiConciergeExpanded', isExpanded.toString());
+    }
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [results, prompt, isExpanded]);
 
   const searchMutation = useMutation({
     mutationFn: async (searchPrompt: string) => {
@@ -132,6 +172,10 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
   const resetSearch = () => {
     setPrompt('');
     setResults([]);
+    // Clear stored search state
+    sessionStorage.removeItem('aiConciergeResults');
+    sessionStorage.removeItem('aiConciergePrompt');
+    sessionStorage.removeItem('aiConciergeExpanded');
   };
 
   return (

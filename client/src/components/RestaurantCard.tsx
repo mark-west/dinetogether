@@ -92,7 +92,18 @@ export function RestaurantCard({
   const displayRating = restaurant.rating || restaurant.estimatedRating || 0;
   const displayConfidence = restaurant.confidence || restaurant.confidenceScore || 0;
   const displayCuisine = restaurant.type || restaurant.cuisine || 'Restaurant';
-  const displayDescription = restaurant.description || restaurant.reasonForRecommendation || '';
+  // Filter out reasoning from description to avoid duplication
+  let displayDescription = restaurant.description || restaurant.reasonForRecommendation || '';
+  
+  // Remove reasoning text that appears in both description and reasons to avoid duplication
+  if (restaurant.reasons && restaurant.reasons.length > 0) {
+    // Remove common reasoning phrases from description
+    displayDescription = displayDescription.replace(/\.\s*Highly rated.*?\.\s*/gi, '. ')
+                                         .replace(/\.\s*\d+\.\d+\/5 with \d+ reviews.*?\.\s*/gi, '. ')
+                                         .replace(/\.\s*[A-Z][^.]*pricing\s*/gi, '')
+                                         .trim();
+  }
+  
   const displayAddress = restaurant.address || restaurant.location || '';
 
   const businessHours = formatBusinessHours(restaurant.opening_hours || restaurant.openingHours);
