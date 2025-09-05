@@ -165,7 +165,6 @@ export default function GroupDetails() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId] });
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       setShowRenameDialog(false);
       setNewGroupName('');
     },
@@ -181,10 +180,9 @@ export default function GroupDetails() {
   // Duplicate group mutation
   const duplicateGroupMutation = useMutation({
     mutationFn: async (name: string) => {
-      const response = await apiRequest("POST", `/api/groups/${groupId}/duplicate`, { name });
-      return await response.json();
+      return await apiRequest("POST", `/api/groups/${groupId}/duplicate`, { name });
     },
-    onSuccess: (newGroup: any) => {
+    onSuccess: (newGroup) => {
       toast({
         title: "Success",
         description: "Group duplicated successfully",
@@ -193,7 +191,7 @@ export default function GroupDetails() {
       setShowDuplicateDialog(false);
       setDuplicateGroupName('');
       // Navigate to the new group
-      navigate(`/groups/${newGroup?.id || newGroup}`);
+      navigate(`/groups/${newGroup.id}`);
     },
     onError: (error) => {
       toast({
