@@ -8,7 +8,6 @@ import { useBatchRatings } from "@/hooks/useBatchRatings";
 import CreateEventModal from "@/components/CreateEventModal";
 import CreateGroupModal from "@/components/CreateGroupModal";
 import { InteractiveAISuggestions } from "@/components/InteractiveAISuggestions";
-import { NaturalLanguageSearch } from "@/components/NaturalLanguageSearch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -127,15 +126,12 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Here's what's happening with your restaurant groups</p>
             </div>
             
-            {/* AI Dining Concierge */}
-            <NaturalLanguageSearch collapsed={true} />
-            
-            {/* Commented out InteractiveAISuggestions as requested */}
-            {/* <InteractiveAISuggestions
-              title="Find Your Perfect Restaurant"
-              subtitle="Tell us what you're craving and get personalized recommendations"
-              variant="user"
-            /> */}
+            {/* Interactive AI Suggestions */}
+          <InteractiveAISuggestions
+            title="Find Your Perfect Restaurant"
+            subtitle="Tell us what you're craving and get personalized recommendations"
+            variant="user"
+          />
 
           {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
