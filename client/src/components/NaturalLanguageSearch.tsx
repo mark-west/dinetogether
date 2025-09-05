@@ -205,7 +205,7 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
 
               {/* Example Queries */}
               <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Try:</span>
+                <span className="text-xs text-primary dark:text-primary/80 font-medium">Try:</span>
                 {[
                   "Cozy cafe near me",
                   "Best pizza under $20", 
@@ -216,7 +216,7 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
                     key={example}
                     variant="outline"
                     size="sm"
-                    className="text-xs h-6 px-2 border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/30"
+                    className="text-xs h-6 px-2 border-primary/20 text-primary hover:bg-primary/5 dark:border-primary/30 dark:text-primary/80 dark:hover:bg-primary/10"
                     onClick={() => setQuery(example)}
                     data-testid={`button-example-${example.toLowerCase().replace(/\s+/g, '-')}`}
                   >
@@ -228,8 +228,8 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
               {/* Loading State */}
               {searchMutation.isPending && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 text-primary dark:text-primary/80">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm font-medium">Finding perfect restaurants for you...</span>
                   </div>
                   {[...Array(3)].map((_, i) => (
