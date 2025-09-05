@@ -331,7 +331,6 @@ export function NaturalLanguageSearch({ collapsed = false, preselectedGroup }: C
             </DialogHeader>
             <RestaurantInfo 
               restaurant={convertToRestaurantFormat(selectedRestaurant)}
-              preselectedGroup={preselectedGroup}
             />
           </DialogContent>
         </Dialog>
