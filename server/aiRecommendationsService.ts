@@ -135,7 +135,7 @@ User preferences: ${preferences.foodTypes.join(', ')}, ${preferences.atmosphere}
 Write 1-2 sentences highlighting why this restaurant matches the user's preferences.`;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: 'gpt-5', // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 100,
         temperature: 0.7
