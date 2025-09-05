@@ -502,7 +502,7 @@ export function InteractiveAISuggestions({
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      data-testid={`button-website-${recommendation.id}`}
+                      data-testid={`button-website-${index}`}
                     >
                       <Globe className="w-4 h-4 mr-2" />
                       Visit Website

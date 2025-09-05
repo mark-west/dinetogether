@@ -10,7 +10,7 @@ import { Group } from "@shared/schema";
 import InviteModal from "@/components/InviteModal";
 import PhotoUploader from "@/components/PhotoUploader";
 import CreateEventModal from "@/components/CreateEventModal";
-import { InteractiveAISuggestions } from "@/components/InteractiveAISuggestions";
+import { NaturalLanguageSearch } from "@/components/NaturalLanguageSearch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -665,9 +665,7 @@ export default function GroupDetails() {
             </TabsContent>
 
             <TabsContent value="ai-suggestions" className="space-y-4">
-              <InteractiveAISuggestions
-                title="Group Restaurant Finder"
-                subtitle="Get AI-powered recommendations tailored to your group's preferences and history"
+              <NaturalLanguageSearch
                 variant="group"
                 groupId={groupId}
               />

@@ -2,6 +2,35 @@ import { generatePreciseLocationDescription } from './utils/distanceCalculator';
 
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
+// Type definitions
+export interface UserPreferences {
+  userId: string;
+  ratedRestaurants: Array<{
+    restaurantName: string;
+    rating: number;
+    cuisine: string;
+    location?: string;
+  }>;
+  visitHistory: Array<{
+    restaurantName: string;
+    visitCount: number;
+    lastVisit: Date;
+    cuisine: string;
+  }>;
+  preferredCuisines: string[];
+  pricePreference: "budget" | "moderate" | "upscale" | "fine-dining";
+  locationPreference?: string;
+}
+
+export interface CustomPreferences {
+  foodType: string;
+  priceRange: string;
+  groupSize: number;
+  occasion: string;
+  ambiance: string;
+  dietaryRestrictions: string[];
+}
+
 // Stub exports to satisfy imports
 export function analyzeUserDiningPatterns() { return []; }
 export function generateRestaurantRecommendations() { return []; }

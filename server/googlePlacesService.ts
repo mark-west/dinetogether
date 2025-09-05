@@ -130,6 +130,96 @@ export class GooglePlacesService {
   }
 
   /**
+   * Search for places by text query using the New Places API
+   */
+  async searchByText(query: string, latitude: number, longitude: number, radius: number): Promise<NearbyPlace[]> {
+    try {
+      const url = `${GOOGLE_PLACES_BASE_URL}/places:searchText`;
+      
+      const requestBody = {
+        textQuery: query,
+        maxResultCount: 10,
+        locationBias: {
+          circle: {
+            center: {
+              latitude,
+              longitude,
+            },
+            radius,
+          },
+        },
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': this.apiKey,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.primaryType,places.rating,places.userRatingCount,places.priceLevel,places.location,places.formattedAddress',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Google Places Text Search error: ${response.status} ${response.statusText}`);
+        console.error('Error details:', errorText);
+        
+        // Fallback to legacy text search
+        console.log('Falling back to legacy text search...');
+        return await this.searchByTextLegacy(query, latitude, longitude);
+      }
+
+      const data = await response.json() as { places: NearbyPlace[] };
+      return data.places || [];
+    } catch (error) {
+      console.error('Error in text search:', error);
+      return await this.searchByTextLegacy(query, latitude, longitude);
+    }
+  }
+
+  /**
+   * Legacy text search fallback
+   */
+  private async searchByTextLegacy(query: string, latitude: number, longitude: number): Promise<NearbyPlace[]> {
+    try {
+      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${latitude},${longitude}&radius=30000&key=${this.apiKey}`;
+      
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error(`Google Places Legacy Text Search error: ${response.status} ${response.statusText}`);
+        return [];
+      }
+
+      const data = await response.json() as any;
+      
+      if (data.status !== 'OK') {
+        console.error('Google Places Legacy Text Search status error:', data.status);
+        return [];
+      }
+
+      // Convert legacy format to new format
+      return (data.results || []).map((place: any): NearbyPlace => ({
+        id: place.place_id,
+        displayName: { text: place.name },
+        primaryType: place.types?.[0] || 'restaurant',
+        rating: place.rating,
+        userRatingCount: place.user_ratings_total,
+        priceLevel: this.convertLegacyPriceLevel(place.price_level),
+        location: place.geometry?.location ? {
+          latitude: place.geometry.location.lat,
+          longitude: place.geometry.location.lng,
+        } : undefined,
+        formattedAddress: place.formatted_address,
+      }));
+    } catch (error) {
+      console.error('Error in legacy text search:', error);
+      return [];
+    }
+  }
+
+  /**
    * Search for nearby places using the New Places API
    */
   async searchNearbyPlaces(latitude: number, longitude: number, radius: number): Promise<NearbyPlace[]> {

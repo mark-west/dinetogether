@@ -1430,7 +1430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(latitude) || isNaN(longitude)) {
         return res.status(400).json({ message: "User location is required" });
       }
-      const recommendations = await generateRestaurantRecommendations(userPreferences, location as string, latitude, longitude);
+      const recommendations = await generateRestaurantRecommendations(userPreferences, location as string);
       
       // Enrich with external reviews
       const enrichedRecommendations = await enrichWithExternalReviews(recommendations);
@@ -1656,28 +1656,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : 4.0;
       
       // Build comprehensive group history for AI analysis
-      const groupHistory: GroupPreferences = {
-        groupId,
-        memberCount: groupMembers.length,
-        groupEvents: groupEvents.map((event: any) => ({
-          restaurantName: event.restaurantName || event.name,
-          rating: averageRating, // Use calculated average
-          cuisine: 'Various',
-          date: event.dateTime
-        })),
-        memberPreferences: memberDataResults.map(member => ({
-          userId: member.userId,
-          ratedRestaurants: member.ratedRestaurants,
-          visitHistory: member.visitHistory,
-          preferredCuisines: extractPreferredCuisines(member.ratedRestaurants),
-          pricePreference: extractPricePreference(member.ratedRestaurants),
-          averageRating: member.ratedRestaurants.length > 0 
-            ? member.ratedRestaurants.reduce((sum: number, r: any) => sum + r.rating, 0) / member.ratedRestaurants.length 
-            : 0
-        })),
-        groupRatings: allRatings,
-        groupVisits: allVisits,
-        averageGroupRating: averageRating
+      const groupHistory: UserPreferences = {
+        userId: groupId,
+        ratedRestaurants: allRatings,
+        visitHistory: allVisits,
+        preferredCuisines: extractPreferredCuisines(allRatings),
+        pricePreference: extractPricePreference(allRatings)
       };
       
       const { generateCustomRecommendations } = await import('./aiRecommendations');
@@ -1692,6 +1676,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating group recommendations:", error);
       res.status(500).json({ message: "Failed to generate group recommendations" });
+    }
+  });
+
+  // AI Dining Concierge endpoints
+  app.post('/api/ai-concierge', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { prompt } = req.body;
+      
+      if (!prompt || typeof prompt !== 'string') {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      // Get coordinates from query parameters - require real user location
+      const latitude = parseFloat(req.query.lat as string);
+      const longitude = parseFloat(req.query.lng as string);
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ error: 'User location is required' });
+      }
+
+      const { aiConciergeService } = await import('./aiConciergeService');
+      const result = await aiConciergeService.processNaturalLanguageRequest({
+        prompt,
+        latitude,
+        longitude,
+        userId
+      });
+
+      console.log('AI Concierge successful response for user:', userId);
+      res.json(result);
+    } catch (error) {
+      console.error('AI Concierge error:', error);
+      res.status(500).json({ error: 'Failed to process AI concierge request' });
+    }
+  });
+
+  app.post('/api/ai-concierge/group/:groupId', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { groupId } = req.params;
+      const { prompt } = req.body;
+      
+      if (!prompt || typeof prompt !== 'string') {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+
+      // Get coordinates from query parameters - require real user location
+      const latitude = parseFloat(req.query.lat as string);
+      const longitude = parseFloat(req.query.lng as string);
+      
+      if (isNaN(latitude) || isNaN(longitude)) {
+        return res.status(400).json({ error: 'User location is required' });
+      }
+
+      // Verify user is member of the group
+      const group = await storage.getGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
+
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some((member: any) => member.userId === userId);
+      if (!isMember) {
+        return res.status(403).json({ error: 'Not authorized to access this group' });
+      }
+
+      const { aiConciergeService } = await import('./aiConciergeService');
+      const result = await aiConciergeService.processNaturalLanguageRequest({
+        prompt,
+        latitude,
+        longitude,
+        userId,
+        groupId
+      });
+
+      console.log('AI Concierge successful group response for group:', groupId);
+      res.json(result);
+    } catch (error) {
+      console.error('AI Concierge group error:', error);
+      res.status(500).json({ error: 'Failed to process AI concierge group request' });
     }
   });
 
@@ -1731,7 +1796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       // Analyze dining patterns
-      const analysis = await analyzeUserDiningPatterns(userPreferences);
+      const analysis = await analyzeUserDiningPatterns();
       
       res.json(analysis);
     } catch (error) {

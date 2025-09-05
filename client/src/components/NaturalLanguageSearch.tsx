@@ -1,0 +1,338 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { AISparklesIcon } from '@/components/icons/AISparklesIcon';
+import { ChevronDown, ChevronUp, MapPin, Clock, Globe } from 'lucide-react';
+import { useLocation } from 'wouter';
+
+interface NaturalLanguageSearchProps {
+  variant: 'user' | 'group';
+  groupId?: string;
+  className?: string;
+}
+
+interface RestaurantResult {
+  id: string;
+  name: string;
+  type: string;
+  rating: number;
+  priceRange: string;
+  description: string;
+  confidence: number;
+  reasons: string[];
+  address?: string;
+  location?: string;
+  openingHours?: any;
+  phone?: string;
+  website?: string;
+  placeId?: string;
+}
+
+export function NaturalLanguageSearch({ variant, groupId, className = "" }: NaturalLanguageSearchProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [prompt, setPrompt] = useState('');
+  const [results, setResults] = useState<RestaurantResult[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [, navigate] = useLocation();
+
+  // Get user's location on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.warn('Geolocation error:', error);
+          setUserLocation(null);
+        }
+      );
+    }
+  }, []);
+
+  const searchMutation = useMutation({
+    mutationFn: async (searchPrompt: string) => {
+      if (!userLocation) {
+        throw new Error('Location not available');
+      }
+      
+      const endpoint = variant === 'group' && groupId 
+        ? `/api/ai-concierge/group/${groupId}`
+        : '/api/ai-concierge';
+      
+      const params = new URLSearchParams();
+      params.set('lat', userLocation.lat.toString());
+      params.set('lng', userLocation.lng.toString());
+      
+      const response = await apiRequest('POST', `${endpoint}?${params}`, { prompt: searchPrompt });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Search error:', error);
+        throw new Error(`Search failed: ${response.status}`);
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      console.log('AI Dining Concierge results:', data);
+      setResults(data.restaurants || []);
+    },
+    onError: (error: any) => {
+      console.error('Search error:', error);
+    }
+  });
+
+  const handleSearch = () => {
+    if (!prompt.trim()) return;
+    if (!userLocation) {
+      console.error('Location not available for search');
+      return;
+    }
+    searchMutation.mutate(prompt.trim());
+  };
+
+  const handleRestaurantClick = (restaurant: RestaurantResult, index: number) => {
+    const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
+    
+    const restaurantData = {
+      id: restaurantId,
+      name: restaurant.name,
+      type: restaurant.type,
+      priceRange: restaurant.priceRange,
+      description: restaurant.description,
+      address: restaurant.address || restaurant.location || '',
+      location: restaurant.address || restaurant.location || '',
+      phone: restaurant.phone || '',
+      website: restaurant.website || '',
+      hours: '',
+      openingHours: restaurant.openingHours || null,
+      rating: restaurant.rating,
+      reviewCount: 0,
+      menuHighlights: [],
+      features: ['AI-generated recommendation', 'Natural language search result'],
+      confidence: restaurant.confidence || 0.85,
+      placeId: restaurant.placeId || restaurant.id
+    };
+    
+    sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
+    const currentPath = window.location.pathname;
+    navigate(`/restaurant/${restaurantId}?back=${currentPath}`);
+  };
+
+  const resetSearch = () => {
+    setPrompt('');
+    setResults([]);
+  };
+
+  return (
+    <Card className={`ai-concierge-card ${className}`}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center">
+              <AISparklesIcon size={24} className="text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-semibold text-foreground">AI Dining Concierge</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Tell us what you're craving in plain English
+              </p>
+            </div>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="shrink-0"
+            data-testid="button-toggle-concierge"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-4 h-4 mr-1" />
+                Collapse
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4 mr-1" />
+                AI Dining Concierge
+              </>
+            )}
+          </Button>
+        </div>
+      </CardHeader>
+
+      {isExpanded && (
+        <CardContent className="space-y-4">
+          {!results.length && !searchMutation.isPending && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="search-prompt" className="text-sm font-medium text-foreground">
+                  What are you looking for?
+                </label>
+                <Textarea
+                  id="search-prompt"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="E.g., 'I want authentic Italian food for a romantic date night' or 'Find me the best tacos for lunch with my coworkers'"
+                  className="min-h-[80px] resize-none"
+                  data-testid="textarea-search-prompt"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {userLocation ? 
+                    "We'll search near your current location and provide detailed restaurant information." :
+                    "Please allow location access to get personalized restaurant recommendations."
+                  }
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSearch}
+                  disabled={!prompt.trim() || !userLocation || searchMutation.isPending}
+                  className="gradient-bg"
+                  data-testid="button-search-restaurants"
+                >
+                  <AISparklesIcon size={16} className="mr-2" />
+                  Find Restaurants
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {searchMutation.isPending && (
+            <div className="space-y-4">
+              <div className="text-center py-6">
+                <div className="inline-flex items-center gap-3 text-muted-foreground">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full"></div>
+                  <span className="font-medium">AI is finding perfect restaurants for you...</span>
+                </div>
+              </div>
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-foreground">Your AI-Powered Recommendations</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={resetSearch}
+                  data-testid="button-new-search"
+                >
+                  New Search
+                </Button>
+              </div>
+              
+              {results.map((restaurant, index) => (
+                <Card 
+                  key={index} 
+                  className="border-l-4 border-l-purple-500 cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleRestaurantClick(restaurant, index)}
+                  data-testid={`card-restaurant-${index}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h5 className="font-medium text-foreground">{restaurant.name}</h5>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary">{restaurant.type}</Badge>
+                          <Badge variant="outline">{restaurant.priceRange}</Badge>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <i
+                                key={i}
+                                className={`fas fa-star text-xs ${
+                                  i < Math.floor(restaurant.rating)
+                                    ? 'text-yellow-500'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="text-sm text-muted-foreground ml-1">
+                              {restaurant.rating.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-purple-600">
+                          {Math.round(restaurant.confidence * 100)}% match
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {restaurant.description}
+                    </p>
+                    
+                    {/* Address & Hours */}
+                    <div className="space-y-2 mb-3">
+                      {(restaurant.address || restaurant.location) && (
+                        <div className="flex items-start gap-1">
+                          <MapPin className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <p className="text-xs text-muted-foreground">
+                            {restaurant.address || restaurant.location}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {restaurant.openingHours?.open_now !== undefined && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <p className={`text-xs font-medium ${restaurant.openingHours.open_now ? 'text-green-600' : 'text-red-600'}`}>
+                            {restaurant.openingHours.open_now ? 'Open Now' : 'Closed'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {(restaurant.reasons || []).map((reason, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {reason}
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    {/* Website Button */}
+                    {restaurant.website && (
+                      <div className="flex gap-2 mt-4 pt-3 border-t">
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(restaurant.website, '_blank', 'noopener,noreferrer');
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          data-testid={`button-website-${restaurant.id}`}
+                        >
+                          <Globe className="w-4 h-4 mr-2" />
+                          Visit Website
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
