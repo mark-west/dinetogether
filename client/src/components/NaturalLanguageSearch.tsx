@@ -144,7 +144,7 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
 
   return (
     <>
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-blue-200 dark:border-blue-800">
+      <Card className="bg-gradient-to-r from-primary/5 to-secondary/10 dark:from-primary/10 dark:to-secondary/5 border-primary/20 dark:border-primary/30">
         <CardHeader 
           className="pb-3 cursor-pointer" 
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -152,14 +152,14 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                <CardTitle className="text-lg font-semibold text-primary dark:text-primary">
                   AI Dining Concierge
                 </CardTitle>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="text-sm text-primary/80 dark:text-primary/70">
                   Tell me what you're craving and I'll find the perfect restaurant
                 </p>
               </div>
@@ -167,7 +167,7 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
             <Button 
               variant="ghost" 
               size="sm"
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+              className="text-primary hover:text-primary/80 dark:text-primary dark:hover:text-primary/80"
             >
               {isCollapsed ? '+' : '-'}
             </Button>
@@ -184,7 +184,7 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="E.g., 'romantic Italian restaurant for date night' or 'quick lunch under $15'"
-                    className="border-blue-200 dark:border-blue-800 focus:border-blue-500 dark:focus:border-blue-400"
+                    className="border-primary/20 dark:border-primary/30 focus:border-primary dark:focus:border-primary"
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     data-testid="input-ai-search-query"
                   />
@@ -192,7 +192,7 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
                 <Button 
                   onClick={handleSearch}
                   disabled={searchMutation.isPending}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90"
                   data-testid="button-ai-search"
                 >
                   {searchMutation.isPending ? (
@@ -242,8 +242,8 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
               {results.length > 0 && !searchMutation.isPending && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    <Sparkles className="w-4 h-4 text-primary dark:text-primary" />
+                    <span className="text-sm font-medium text-primary dark:text-primary">
                       Found {results.length} great options for you:
                     </span>
                   </div>
@@ -252,13 +252,13 @@ export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
                     {results.map((restaurant) => (
                       <Card 
                         key={restaurant.id} 
-                        className="hover:shadow-md transition-shadow cursor-pointer border-blue-100 dark:border-blue-900 hover:border-blue-300 dark:hover:border-blue-700"
+                        className="hover:shadow-md transition-shadow cursor-pointer border-primary/10 dark:border-primary/20 hover:border-primary/30 dark:hover:border-primary/40"
                         onClick={() => handleRestaurantClick(restaurant)}
                         data-testid={`card-restaurant-${restaurant.id}`}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold text-sm">
                               {restaurant.displayName?.text?.charAt(0) || 'R'}
                             </div>
                             
