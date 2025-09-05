@@ -34,10 +34,9 @@ interface Recommendation {
 
 interface CollapsibleProps {
   collapsed?: boolean;
-  preselectedGroup?: string;
 }
 
-export function NaturalLanguageSearch({ collapsed = false, preselectedGroup }: CollapsibleProps = {}) {
+export function NaturalLanguageSearch({ collapsed = false }: CollapsibleProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Recommendation[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Recommendation | null>(null);
