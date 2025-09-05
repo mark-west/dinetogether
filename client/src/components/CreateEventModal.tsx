@@ -101,8 +101,16 @@ export default function CreateEventModal({ onClose, groups, preSelectedGroupId }
 
   const createEventMutation = useMutation({
     mutationFn: async (data: CreateEventFormData) => {
-      // Convert datetime-local input to ISO string
-      const dateTime = new Date(data.dateTime).toISOString();
+      // The issue: datetime-local gives "2024-01-15T19:30" (no timezone)
+      // When we do new Date("2024-01-15T19:30"), it interprets as local time
+      // But .toISOString() converts to UTC, changing the actual time
+      // Solution: Create date object and keep the local time as intended
+      const localDate = new Date(data.dateTime);
+      // Get the timezone offset to preserve user's intended local time
+      const timezoneOffset = localDate.getTimezoneOffset();
+      // Adjust for the offset to keep the same wall clock time
+      const adjustedDate = new Date(localDate.getTime() + (timezoneOffset * 60 * 1000));
+      const dateTime = adjustedDate.toISOString();
       
       await apiRequest("POST", "/api/events", {
         ...data,
