@@ -1498,6 +1498,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Natural language restaurant search endpoint
+  app.post('/api/recommendations/natural', async (req, res) => {
+    try {
+      const { query, coordinates } = req.body;
+      
+      if (!query || !coordinates) {
+        return res.status(400).json({ message: "Query and coordinates are required" });
+      }
+
+      const { lat, lng } = coordinates;
+      if (typeof lat !== 'number' || typeof lng !== 'number') {
+        return res.status(400).json({ message: "Valid coordinates are required" });
+      }
+
+      // Import and use the AI recommendations service
+      const aiRecommendationsService = new (await import('./aiRecommendationsService')).AIRecommendationsService();
+      const recommendations = await aiRecommendationsService.searchWithNaturalLanguage(query, { lat, lng });
+
+      res.json({ recommendations });
+    } catch (error) {
+      console.error("Error in natural language search:", error);
+      res.status(500).json({ message: "Failed to process natural language search" });
+    }
+  });
+
   // Restaurant training routes
   app.get('/api/training/restaurants/:variant/:groupId?', isAuthenticated, async (req: any, res) => {
     try {

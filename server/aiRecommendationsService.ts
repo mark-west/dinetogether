@@ -39,6 +39,63 @@ export interface CustomPreferences {
 export class AIRecommendationsService {
   
   /**
+   * NEW: Natural language restaurant search powered by OpenAI
+   */
+  async searchWithNaturalLanguage(
+    query: string,
+    coordinates: { lat: number; lng: number },
+    userId?: string
+  ): Promise<RestaurantRecommendation[]> {
+    console.log('=== NATURAL LANGUAGE RESTAURANT SEARCH ===');
+    console.log('Query:', query);
+    console.log('Location:', coordinates);
+
+    // Step 1: Extract preferences from natural language using OpenAI
+    const preferences = await this.parseNaturalLanguageQuery(query);
+    console.log('Extracted preferences:', preferences);
+
+    // Step 2: Search Google Places  
+    const radius = (preferences.distance || 10) * 1609.34; // Default 10 miles
+    const nearbyPlaces = await googlePlacesService.searchNearbyPlaces(
+      coordinates.lat,
+      coordinates.lng,
+      radius
+    );
+
+    console.log(`Found ${nearbyPlaces.length} nearby restaurants`);
+
+    // Step 3: Get detailed data for AI analysis
+    const restaurantData = [];
+    for (const place of nearbyPlaces.slice(0, 15)) {
+      try {
+        const placeDetails = await googlePlacesService.getPlaceDetails(place.id);
+        if (placeDetails) {
+          restaurantData.push({
+            place,
+            placeDetails,
+            basicInfo: {
+              name: place.displayName.text,
+              rating: place.rating,
+              priceLevel: this.formatPriceLevelFromGoogle(place.priceLevel),
+              reviewCount: place.userRatingCount,
+              address: place.formattedAddress,
+              type: place.primaryType
+            }
+          });
+        }
+      } catch (error) {
+        console.error(`Error processing ${place.displayName.text}:`, error);
+      }
+    }
+
+    // Step 4: Let OpenAI analyze and recommend
+    const recommendations = await this.getAIRecommendations(query, restaurantData, preferences);
+    
+    console.log(`Returning ${recommendations.length} AI-curated recommendations`);
+    return recommendations;
+  }
+
+  /**
    * Generate custom restaurant recommendations based on user preferences
    */
   async generateCustomRecommendations(
@@ -211,6 +268,160 @@ Write 1-2 sentences highlighting why this restaurant matches the user's preferen
     if (details.businessStatus === 'OPERATIONAL') score += 0.1;
 
     return Math.min(score, 1.0);
+  }
+
+  /**
+   * Parse natural language query into structured preferences using OpenAI
+   */
+  private async parseNaturalLanguageQuery(query: string): Promise<any> {
+    if (!openai) return { distance: 10 }; // Fallback
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // Using gpt-4o which supports JSON mode
+        messages: [{
+          role: "user",
+          content: `Parse this restaurant search query into structured preferences:
+"${query}"
+
+Extract and return JSON with these fields (use null if not mentioned):
+- occasion: string (e.g., "date night", "business meeting", "casual dining", "celebration")
+- priceRange: string ("$", "$$", "$$$", "$$$$")  
+- foodType: string (e.g., "Italian", "sushi", "steakhouse")
+- ambiance: string (e.g., "romantic", "casual", "upscale", "quiet")
+- dietaryRestrictions: array of strings
+- distance: number (miles, default 10 if not specified)
+- groupSize: number (default 2)
+- specialRequests: array of strings (outdoor seating, live music, etc.)
+
+Respond with only valid JSON.`
+        }],
+        response_format: { type: "json_object" }
+      });
+
+      return JSON.parse(response.choices[0].message.content || '{}');
+    } catch (error) {
+      console.error('Error parsing natural language query:', error);
+      return { distance: 10 };
+    }
+  }
+
+  /**
+   * Get AI-powered restaurant recommendations with improved JSON format handling
+   */
+  private async getAIRecommendations(
+    originalQuery: string,
+    restaurantData: any[],
+    preferences: any
+  ): Promise<RestaurantRecommendation[]> {
+    if (!openai) return []; // No AI available
+
+    try {
+      const restaurantSummaries = restaurantData.map(r => ({
+        name: r.basicInfo.name,
+        rating: r.basicInfo.rating,
+        priceLevel: r.basicInfo.priceLevel,
+        reviewCount: r.basicInfo.reviewCount,
+        type: r.basicInfo.type,
+        reviews: r.placeDetails.reviews?.slice(0, 3).map((rev: any) => rev.text?.text).join(' ') || ''
+      }));
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // Using gpt-4o which supports JSON mode
+        messages: [{
+          role: "user",
+          content: `User query: "${originalQuery}"
+Extracted preferences: ${JSON.stringify(preferences, null, 2)}
+
+Available restaurants: ${JSON.stringify(restaurantSummaries, null, 2)}
+
+Analyze these restaurants and select the 3-6 best matches for the user's query. Consider:
+- How well each restaurant matches the specific request
+- Review content mentioning relevant keywords
+- Price appropriateness
+- Rating and popularity
+- Overall suitability for the occasion
+
+IMPORTANT: Return ONLY valid JSON format. Do NOT use tables, markdown, or any other formatting. 
+
+Return JSON array with selected restaurants, each containing:
+- name: string
+- rating: number  
+- priceRange: string
+- confidence: number (0-1, how well it matches)
+- reasons: array of 2-3 specific reasons why it's a good match
+- description: engaging 1-sentence description highlighting why it fits their request
+
+Be selective - only recommend restaurants that truly match the request. Respond with valid JSON only.`
+        }],
+        response_format: { type: "json_object" }
+      });
+
+      const aiResults = JSON.parse(response.choices[0].message.content || '{"restaurants":[]}');
+      
+      // Convert to our format
+      return await this.convertAIResultsToRecommendations(aiResults.restaurants || [], restaurantData);
+    } catch (error) {
+      console.error('Error getting AI recommendations:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Convert AI results back to our recommendation format
+   */
+  private async convertAIResultsToRecommendations(
+    aiResults: any[],
+    restaurantData: any[]
+  ): Promise<RestaurantRecommendation[]> {
+    const recommendations: RestaurantRecommendation[] = [];
+
+    for (const aiResult of aiResults) {
+      const matchingData = restaurantData.find(r => 
+        r.basicInfo.name.toLowerCase() === aiResult.name.toLowerCase()
+      );
+
+      if (matchingData) {
+        const { place, placeDetails } = matchingData;
+        
+        const recommendation: RestaurantRecommendation = {
+          id: place.id,
+          name: place.displayName.text,
+          type: place.primaryType || 'restaurant',
+          priceRange: this.formatPriceLevelFromGoogle(place.priceLevel),
+          rating: place.rating || 0,
+          description: aiResult.description || `${place.displayName.text} - ${place.primaryType}`,
+          address: place.formattedAddress || '',
+          phoneNumber: placeDetails.nationalPhoneNumber || '',
+          website: placeDetails.websiteUri || '',
+          hours: googlePlacesService.formatOpeningHours(placeDetails.regularOpeningHours),
+          confidence: aiResult.confidence || 0.5,
+          reasons: aiResult.reasons || ['Good match for your query'],
+          menuHighlights: googlePlacesService.extractMenuHighlights(placeDetails.reviews),
+          reviewCount: place.userRatingCount || 0,
+          businessStatus: placeDetails.businessStatus,
+          placeId: place.id
+        };
+        
+        recommendations.push(recommendation);
+      }
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Format price level from Google Places API
+   */
+  private formatPriceLevelFromGoogle(priceLevel?: string): string {
+    switch (priceLevel) {
+      case 'PRICE_LEVEL_FREE': return '$';
+      case 'PRICE_LEVEL_INEXPENSIVE': return '$';
+      case 'PRICE_LEVEL_MODERATE': return '$$';
+      case 'PRICE_LEVEL_EXPENSIVE': return '$$$';
+      case 'PRICE_LEVEL_VERY_EXPENSIVE': return '$$$$';
+      default: return '$$';
+    }
   }
 }
 
