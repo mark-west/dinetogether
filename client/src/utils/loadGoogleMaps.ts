@@ -13,11 +13,12 @@ export async function loadGoogleMapsScript(): Promise<void> {
       existingScript.remove();
     }
 
-    // Use direct script loading with the API key
+    // Use direct script loading with proper async loading pattern
     const script = document.createElement('script');
     script.id = 'google-maps-script';
     script.async = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.defer = true;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     
     await new Promise<void>((resolve, reject) => {
       script.onload = () => {
