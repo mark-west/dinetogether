@@ -31,11 +31,11 @@ export default function GoogleMapComponent({
   const isInitializedRef = useRef(false);
   const { isLoaded, error } = useGoogleMaps();
   
-  // Check for Google Maps API key expiration error
+  // Monitor for Google Maps API errors
   useEffect(() => {
     const handleGoogleMapsError = (event: any) => {
-      if (event.error && event.error.includes('ExpiredKeyMapError')) {
-        console.error('Google Maps API key has expired');
+      if (event.error && event.error.includes && event.error.includes('ExpiredKeyMapError')) {
+        console.log('Google Maps JavaScript API authentication issue detected');
       }
     };
     

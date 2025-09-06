@@ -18,8 +18,6 @@ export async function loadGoogleMapsScript(): Promise<void> {
     // Fetch API key from environment variable
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     
-    // Loading Google Maps JavaScript API
-    
     if (!apiKey) {
       console.error('Google Maps API key not configured. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.');
       return;
@@ -29,8 +27,7 @@ export async function loadGoogleMapsScript(): Promise<void> {
     script.id = 'google-maps-script';
     script.async = true;
     script.defer = true;
-    // Force fresh load with cache busting and explicit version
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=3.55&callback=initGoogleMaps&_=${Date.now()}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`;
     
     window.initGoogleMaps = function() {
       window.googleMapsLoaded = true;
@@ -38,14 +35,8 @@ export async function loadGoogleMapsScript(): Promise<void> {
     };
     
     script.onerror = function(error) {
-      console.error('❌ Google Maps script failed to load:', error);
+      console.error('Google Maps script failed to load:', error);
       window.googleMapsLoaded = false;
-    };
-    
-    // Suppress Google Maps error overlays while keeping functionality
-    (window as any).gm_authFailure = function() {
-      // Silently suppress auth failure overlays - map should remain functional
-      return false;
     };
     
     document.head.appendChild(script);

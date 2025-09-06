@@ -2,24 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide only specific Google Maps error overlays, not the entire map */
-.gm-err-container {
-  display: none !important;
-}
-
 /* Ensure Google Maps container stays visible */
 div[data-testid="google-map"] {
   background: transparent !important;
-}
-
-/* Ensure Google Maps tiles load properly even with auth errors */
-.gm-style > div:first-child {
-  opacity: 1 !important;
-}
-
-/* Hide specific auth error overlays but keep map functional */
-.gm-err-message {
-  display: none !important;
 }
 
 :root {
