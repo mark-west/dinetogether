@@ -30,30 +30,12 @@ export default function GoogleMapComponent({
   const infoWindowRef = useRef<any>(null);
   const isInitializedRef = useRef(false);
   const { isLoaded, error } = useGoogleMaps();
-  
-  console.log('GoogleMapComponent render - isLoaded:', isLoaded, 'error:', error, 'center:', center);
-  
-  // Monitor for Google Maps API errors
-  useEffect(() => {
-    const handleGoogleMapsError = (event: any) => {
-      if (event.error && event.error.includes && event.error.includes('ExpiredKeyMapError')) {
-        console.log('Google Maps JavaScript API authentication issue detected');
-      }
-    };
-    
-    window.addEventListener('error', handleGoogleMapsError);
-    return () => window.removeEventListener('error', handleGoogleMapsError);
-  }, []);
 
   // Initialize map only once
   useEffect(() => {
-    console.log('Map initialization check - isLoaded:', isLoaded, 'mapRef.current:', !!mapRef.current, 'window.google:', !!window.google, 'already initialized:', isInitializedRef.current);
     if (!isLoaded || !mapRef.current || !window.google || isInitializedRef.current) return;
 
     try {
-      console.log('🗺️ Starting map initialization...');
-      
-      // Initialize map with proper configuration for tile loading
       const mapConfig: any = {
         center,
         zoom,
@@ -67,50 +49,8 @@ export default function GoogleMapComponent({
         gestureHandling: 'cooperative'
       };
       
-      console.log('Creating Map instance...');
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
-      console.log('✅ Map instance created successfully:', !!mapInstanceRef.current);
-      
-      // Mark as initialized IMMEDIATELY after creation
       isInitializedRef.current = true;
-      console.log('Map marked as initialized');
-      
-      // Add error listener for map loading issues
-      mapInstanceRef.current.addListener('error', (error: any) => {
-        console.log('Map error detected but map should remain functional:', error);
-      });
-      
-      // Monitor map health and show fallback if needed
-      let mapHealthTimer: NodeJS.Timeout;
-      
-      const checkMapHealth = () => {
-        const mapDiv = mapRef.current;
-        const fallback = document.getElementById('map-fallback');
-        
-        if (mapDiv && fallback) {
-          // If map appears broken (gray or empty), show fallback
-          const mapRect = mapDiv.getBoundingClientRect();
-          const isMapVisible = mapRect.height > 0 && mapDiv.children.length > 0;
-          
-          if (!isMapVisible) {
-            fallback.style.opacity = '1';
-            fallback.style.zIndex = '1';
-          } else {
-            fallback.style.opacity = '0';
-            fallback.style.zIndex = '-1';
-          }
-        }
-      };
-      
-      mapInstanceRef.current.addListener('idle', () => {
-        clearTimeout(mapHealthTimer);
-        mapHealthTimer = setTimeout(checkMapHealth, 1000);
-      });
-      
-      // Initial health check - but give Google more time to load tiles
-      setTimeout(checkMapHealth, 5000);
-      
-      console.log('Map setup complete, waiting for tiles to load...');
       
       // Force a resize after initialization to ensure proper rendering
       setTimeout(() => {
@@ -279,19 +219,9 @@ export default function GoogleMapComponent({
       >
         <div className="text-center text-muted-foreground p-8">
           <div className="text-4xl mb-4">📍</div>
-          <p className="text-sm font-medium mb-2">
-            {restaurantName || "Restaurant Location"}
-          </p>
-          {restaurantAddress && (
-            <p className="text-xs mb-2 opacity-75">
-              {restaurantAddress}
-            </p>
-          )}
-          <p className="text-xs opacity-50">
-            Coordinates: {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
-          </p>
+          <p className="text-sm font-medium">Interactive Map</p>
           <p className="text-xs mt-2 opacity-75">
-            Use the website button above for navigation
+            Restaurant location and directions
           </p>
         </div>
       </div>

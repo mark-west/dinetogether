@@ -23,32 +23,19 @@ export async function loadGoogleMapsScript(): Promise<void> {
       return;
     }
 
-    console.log('Loading Google Maps with API key length:', apiKey.length);
-    
-    // Ensure API key is properly encoded for URL
-    const encodedApiKey = encodeURIComponent(apiKey);
-    
     const script = document.createElement('script');
     script.id = 'google-maps-script';
     script.async = true;
     script.defer = true;
-    const scriptUrl = `https://maps.googleapis.com/maps/api/js?key=${encodedApiKey}&libraries=places&callback=initGoogleMaps`;
-    console.log('Google Maps script URL (key masked):', scriptUrl.replace(encodedApiKey, 'KEY_MASKED'));
-    console.log('API key first/last chars:', `${apiKey.charAt(0)}...${apiKey.charAt(apiKey.length-1)}`);
-    script.src = scriptUrl;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`;
     
     window.initGoogleMaps = function() {
-      console.log('✅ Google Maps JavaScript API loaded successfully');
       window.googleMapsLoaded = true;
       window.dispatchEvent(new Event('googleMapsLoaded'));
     };
     
-    script.onload = function() {
-      console.log('Google Maps script element loaded (but callback may not have fired yet)');
-    };
-    
     script.onerror = function(error) {
-      console.error('❌ Google Maps script failed to load:', error);
+      console.error('Google Maps script failed to load:', error);
       window.googleMapsLoaded = false;
     };
     
