@@ -65,14 +65,35 @@ export default function GoogleMapComponent({
         console.log('Map error detected but map should remain functional:', error);
       });
       
-      // Force map to remain visible even with API key issues
-      mapInstanceRef.current.addListener('idle', () => {
+      // Monitor map health and show fallback if needed
+      let mapHealthTimer: NodeJS.Timeout;
+      
+      const checkMapHealth = () => {
         const mapDiv = mapRef.current;
-        if (mapDiv) {
-          mapDiv.style.backgroundColor = 'transparent';
-          mapDiv.style.opacity = '1';
+        const fallback = document.getElementById('map-fallback');
+        
+        if (mapDiv && fallback) {
+          // If map appears broken (gray or empty), show fallback
+          const mapRect = mapDiv.getBoundingClientRect();
+          const isMapVisible = mapRect.height > 0 && mapDiv.children.length > 0;
+          
+          if (!isMapVisible) {
+            fallback.style.opacity = '1';
+            fallback.style.zIndex = '1';
+          } else {
+            fallback.style.opacity = '0';
+            fallback.style.zIndex = '-1';
+          }
         }
+      };
+      
+      mapInstanceRef.current.addListener('idle', () => {
+        clearTimeout(mapHealthTimer);
+        mapHealthTimer = setTimeout(checkMapHealth, 1000);
       });
+      
+      // Initial health check
+      setTimeout(checkMapHealth, 2000);
       
       // Force a resize after initialization to ensure proper rendering
       setTimeout(() => {
@@ -222,11 +243,32 @@ export default function GoogleMapComponent({
   }
 
   return (
-    <div 
-      ref={mapRef} 
-      className={className} 
-      data-testid="google-map"
-      style={{ minHeight: '400px', width: '100%' }}
-    />
+    <div className="relative">
+      <div 
+        ref={mapRef} 
+        className={className} 
+        data-testid="google-map"
+        style={{ minHeight: '400px', width: '100%' }}
+      />
+      {/* Fallback content that shows when Google Maps fails */}
+      <div 
+        className="absolute inset-0 bg-muted rounded-lg flex items-center justify-center pointer-events-none"
+        style={{ 
+          opacity: 0,
+          transition: 'opacity 2s ease-in-out',
+          zIndex: -1
+        }}
+        id="map-fallback"
+      >
+        <div className="text-center text-muted-foreground p-8">
+          <div className="text-4xl mb-4">📍</div>
+          <p className="text-sm font-medium">Interactive Map</p>
+          <p className="text-xs mt-2 opacity-75">
+            Restaurant location and directions available<br/>
+            Use the website button above for navigation
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
