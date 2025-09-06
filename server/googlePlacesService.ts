@@ -122,8 +122,6 @@ export class GooglePlacesService {
       }
 
       const data = await response.json() as PlaceDetails;
-      console.log(`=== NEW PLACES API DATA for ${data.displayName?.text} ===`);
-      console.log('regularOpeningHours:', JSON.stringify(data.regularOpeningHours, null, 2));
       return data;
     } catch (error) {
       console.error('Error fetching place details:', error);
@@ -334,8 +332,6 @@ export class GooglePlacesService {
 
       const place = data.result;
       
-      console.log(`=== LEGACY PLACES API DATA for ${place.name} ===`);
-      console.log('Raw legacy opening_hours:', JSON.stringify(place.opening_hours, null, 2));
       
       // Convert legacy format to new format
       return {

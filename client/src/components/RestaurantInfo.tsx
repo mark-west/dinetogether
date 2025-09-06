@@ -209,12 +209,6 @@ export function RestaurantInfo({
 
   const displayRating = restaurant.rating || restaurant.estimatedRating || 0;
   const displayAddress = restaurant.address || restaurant.location || '';
-  // Debug: Log the actual openingHours data for BelAir Cantina
-  if (restaurant.name?.includes('BelAir') || restaurant.name?.includes('Cantina')) {
-    console.log('=== FRONTEND BELAIR CANTINA HOURS DEBUG ===');
-    console.log('Restaurant name:', restaurant.name);
-    console.log('Raw restaurant.openingHours:', JSON.stringify(restaurant.openingHours, null, 2));
-  }
   
   const businessHours = formatBusinessHours(restaurant.openingHours);
   const todaysHours = formatTodaysHours(restaurant.openingHours);
