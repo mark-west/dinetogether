@@ -27,6 +27,8 @@ interface RestaurantRecommendation {
   website?: string;
   openingHours?: any;
   placeId?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export class AIConciergeService {
@@ -168,8 +170,12 @@ Respond with only valid JSON, no additional text.`;
               location: details.formattedAddress || '',
               phone: details.nationalPhoneNumber || '',
               website: details.websiteUri || '',
+              latitude: details.location?.latitude,
+              longitude: details.location?.longitude,
               openingHours: details.regularOpeningHours ? {
-                open_now: details.regularOpeningHours.openNow
+                open_now: details.regularOpeningHours.openNow,
+                weekdayDescriptions: details.regularOpeningHours.weekdayDescriptions,
+                periods: details.regularOpeningHours.periods
               } : null,
               placeId: place.id
             };

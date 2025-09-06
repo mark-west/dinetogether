@@ -31,10 +31,19 @@ interface Restaurant {
   confidence?: number;
   phoneNumber?: string;
   website?: string;
-  openingHours?: any;
+  openingHours?: {
+    open_now?: boolean;
+    weekdayDescriptions?: string[];
+    periods?: Array<{
+      open: { day: number; hour: number; minute: number };
+      close: { day: number; hour: number; minute: number };
+    }>;
+  };
   menuHighlights?: string[];
   features?: string[];
   reviews?: any[];
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Group {
@@ -56,10 +65,14 @@ function formatBusinessHours(openingHours: any): string {
   if (!openingHours) return 'Hours not available';
   
   try {
+    // Check for the enhanced weekdayDescriptions first
+    if (openingHours.weekdayDescriptions && Array.isArray(openingHours.weekdayDescriptions)) {
+      return openingHours.weekdayDescriptions.join('\n');
+    }
+    
+    // Fallback to other possible formats
     const hoursData = openingHours.weekday_text || 
-                     openingHours.periods || 
-                     openingHours.regularOpeningHours?.weekdayDescriptions ||
-                     openingHours.weekdayDescriptions;
+                     openingHours.regularOpeningHours?.weekdayDescriptions;
     
     if (Array.isArray(hoursData)) {
       return hoursData.join('\n') || 'Hours not available';
@@ -76,9 +89,13 @@ function formatTodaysHours(openingHours: any): string {
   if (!openingHours) return 'Hours not available';
   
   try {
-    const hoursData = openingHours.weekday_text || 
-                     openingHours.regularOpeningHours?.weekdayDescriptions ||
-                     openingHours.weekdayDescriptions;
+    // Check for the enhanced weekdayDescriptions first
+    let hoursData = openingHours.weekdayDescriptions;
+    
+    if (!Array.isArray(hoursData)) {
+      hoursData = openingHours.weekday_text || 
+                  openingHours.regularOpeningHours?.weekdayDescriptions;
+    }
     
     if (Array.isArray(hoursData)) {
       const today = new Date().getDay();
@@ -88,6 +105,11 @@ function formatTodaysHours(openingHours: any): string {
         return hoursData[googleDay];
       }
       return hoursData[0] || 'Hours not available';
+    }
+    
+    // Fallback to basic open/closed status
+    if (openingHours.open_now !== undefined) {
+      return openingHours.open_now ? 'Currently Open' : 'Currently Closed';
     }
     
     return 'Hours not available';
@@ -117,7 +139,7 @@ export function RestaurantInfo({
     maxAttendees: 4
   });
 
-  const { data: groups = [] } = useQuery({
+  const { data: groups = [] } = useQuery<Group[]>({
     queryKey: ['/api/groups'],
     enabled: !!user && showEventCreation
   });
@@ -180,7 +202,7 @@ export function RestaurantInfo({
   const displayAddress = restaurant.address || restaurant.location || '';
   const businessHours = formatBusinessHours(restaurant.openingHours);
   const todaysHours = formatTodaysHours(restaurant.openingHours);
-  const websiteText = getWebsiteLinkText(restaurant.website);
+  const websiteText = getWebsiteLinkText();
 
   return (
     <div className={`min-h-screen bg-background ${className}`}>
@@ -315,7 +337,7 @@ export function RestaurantInfo({
                             <SelectValue placeholder="Choose a group" />
                           </SelectTrigger>
                           <SelectContent>
-                            {groups.map((group: Group) => (
+                            {groups.map((group) => (
                               <SelectItem key={group.id} value={group.id}>
                                 {group.name}
                               </SelectItem>
@@ -392,12 +414,15 @@ export function RestaurantInfo({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {displayAddress ? (
+              {displayAddress && restaurant.latitude && restaurant.longitude ? (
                 <GoogleMapComponent
-                  center={{ lat: 0, lng: 0 }}
-                  markers={[]}
+                  center={{ lat: restaurant.latitude, lng: restaurant.longitude }}
+                  markers={[{
+                    position: { lat: restaurant.latitude, lng: restaurant.longitude },
+                    title: restaurant.name,
+                    info: `${restaurant.name}<br/>${displayAddress}`
+                  }]}
                   zoom={15}
-                  address={displayAddress}
                   className="w-full h-64 rounded-lg"
                 />
               ) : (

@@ -12,8 +12,13 @@ export async function loadGoogleMapsScript(): Promise<void> {
   }
 
   try {
-    // Use the specific API key provided
-    const apiKey = 'AIzaSyCPTS0slU5KnKal2T_fWtO7XaGAYM78_5U';
+    // Fetch API key from environment variable
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    
+    if (!apiKey) {
+      console.error('Google Maps API key not configured. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.');
+      return;
+    }
 
     const script = document.createElement('script');
     script.id = 'google-maps-script';
