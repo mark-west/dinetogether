@@ -346,7 +346,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
               {results.map((restaurant, index) => (
                 <Card 
                   key={index} 
-                  className="border-l-4 border-l-purple-500 cursor-pointer hover:shadow-md transition-shadow"
+                  className="border-l-4 border-l-primary cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => handleRestaurantClick(restaurant, index)}
                   data-testid={`card-restaurant-${index}`}
                 >

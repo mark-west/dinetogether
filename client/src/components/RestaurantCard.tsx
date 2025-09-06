@@ -183,9 +183,6 @@ export function RestaurantCard({
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-          {displayDescription}
-        </p>
 
         {restaurant.reasons && restaurant.reasons.length > 0 && (
           <div className="mb-3">
