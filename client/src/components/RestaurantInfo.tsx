@@ -467,6 +467,8 @@ export function RestaurantInfo({
                   }]}
                   zoom={15}
                   className="w-full h-64 rounded-lg"
+                  restaurantName={restaurant.name}
+                  restaurantAddress={displayAddress}
                 />
               ) : (
                 <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">

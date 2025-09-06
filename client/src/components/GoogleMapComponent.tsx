@@ -11,6 +11,8 @@ interface GoogleMapComponentProps {
   }>;
   onMapClick?: (location: { lat: number; lng: number }) => void;
   className?: string;
+  restaurantName?: string;
+  restaurantAddress?: string;
 }
 
 export default function GoogleMapComponent({
@@ -18,7 +20,9 @@ export default function GoogleMapComponent({
   zoom = 13,
   markers = [],
   onMapClick,
-  className = "w-full h-64 rounded-lg"
+  className = "w-full h-64 rounded-lg",
+  restaurantName,
+  restaurantAddress
 }: GoogleMapComponentProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -262,9 +266,18 @@ export default function GoogleMapComponent({
       >
         <div className="text-center text-muted-foreground p-8">
           <div className="text-4xl mb-4">📍</div>
-          <p className="text-sm font-medium">Interactive Map</p>
+          <p className="text-sm font-medium mb-2">
+            {restaurantName || "Restaurant Location"}
+          </p>
+          {restaurantAddress && (
+            <p className="text-xs mb-2 opacity-75">
+              {restaurantAddress}
+            </p>
+          )}
+          <p className="text-xs opacity-50">
+            Coordinates: {center.lat.toFixed(6)}, {center.lng.toFixed(6)}
+          </p>
           <p className="text-xs mt-2 opacity-75">
-            Restaurant location and directions available<br/>
             Use the website button above for navigation
           </p>
         </div>
