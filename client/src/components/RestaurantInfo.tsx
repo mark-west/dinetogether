@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Calendar, Users, Star, MapPin, DollarSign, Utensils, Sparkles, Globe, Clock } from 'lucide-react';
 import { getRestaurantWebsiteUrl, getWebsiteLinkText } from '@/lib/restaurantUtils';
+import GoogleMapComponent from './GoogleMapComponent';
 
 interface Restaurant {
   id: string;
@@ -380,20 +381,51 @@ export function RestaurantInfo({
           </CardContent>
         </Card>
 
-        {/* Business Hours Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Business Hours
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="text-sm whitespace-pre-line text-muted-foreground">
-              {businessHours}
-            </pre>
-          </CardContent>
-        </Card>
+        {/* Map and Hours Side-by-Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Map Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Location
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {displayAddress ? (
+                <GoogleMapComponent
+                  center={{ lat: 0, lng: 0 }}
+                  markers={[]}
+                  zoom={15}
+                  address={displayAddress}
+                  className="w-full h-64 rounded-lg"
+                />
+              ) : (
+                <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No location available</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Business Hours Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Business Hours
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-sm whitespace-pre-line text-muted-foreground">
+                {businessHours}
+              </pre>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -92,16 +92,26 @@ export function RestaurantCard({
   const displayRating = restaurant.rating || restaurant.estimatedRating || 0;
   const displayConfidence = restaurant.confidence || restaurant.confidenceScore || 0;
   const displayCuisine = restaurant.type || restaurant.cuisine || 'Restaurant';
-  // Filter out reasoning from description to avoid duplication
+  // Extract clean description without reasoning to avoid duplication
   let displayDescription = restaurant.description || restaurant.reasonForRecommendation || '';
   
-  // Remove reasoning text that appears in both description and reasons to avoid duplication
+  // Remove all reasoning text that appears in the badges to avoid duplication
   if (restaurant.reasons && restaurant.reasons.length > 0) {
-    // Remove common reasoning phrases from description
-    displayDescription = displayDescription.replace(/\.\s*Highly rated.*?\.\s*/gi, '. ')
-                                         .replace(/\.\s*\d+\.\d+\/5 with \d+ reviews.*?\.\s*/gi, '. ')
-                                         .replace(/\.\s*[A-Z][^.]*pricing\s*/gi, '')
-                                         .trim();
+    // Get the first sentence before any reasoning
+    const sentences = displayDescription.split('.');
+    if (sentences.length > 1) {
+      // Take just the first sentence which should be the actual description
+      displayDescription = sentences[0] + '.';
+    } else {
+      // If no clear separation, remove typical reasoning patterns
+      displayDescription = displayDescription
+        .replace(/\.\s*Highly rated.*$/gi, '.')
+        .replace(/\.\s*\d+\.\d+\/5.*$/gi, '.')
+        .replace(/\s*\(popular.*?\)/gi, '')
+        .replace(/\s*\(.*?rated.*?\)/gi, '')
+        .replace(/\.\s*[A-Z][^.]*pricing.*$/gi, '.')
+        .trim();
+    }
   }
   
   const displayAddress = restaurant.address || restaurant.location || '';
