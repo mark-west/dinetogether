@@ -332,7 +332,6 @@ export class GooglePlacesService {
 
       const place = data.result;
       
-      
       // Convert legacy format to new format
       return {
         id: placeId,
