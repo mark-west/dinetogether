@@ -1,199 +1,388 @@
-# Restaurant Hours Data Analysis - Comprehensive Investigation Report
+# Google Search Function Debug Analysis & Fix Plan
+*Event Scheduler Component Analysis*
 
 ## Overview
-Investigation into why restaurant hours of operation are not displaying properly despite API returning accurate data. This analysis covers the complete data flow from Google Places API to frontend display.
+Deep analysis of the Google search functionality issues in the DineTogether event scheduler component. This report identifies the core problems, root causes, and provides a comprehensive fix plan.
 
-## Root Cause Analysis
+## Key Files & Components Analyzed
 
-### 1. API Data Flow Investigation
+### Frontend Components
+- **CreateEventModal.tsx** - Main event creation interface with restaurant search integration
+- **RestaurantSearch.tsx** - Primary Google search component with toggle between manual and Google search modes
+- **GoogleMapComponent.tsx** - Map display for selected restaurants
+- **useGoogleMaps.ts** - Hook managing Google Maps and Places API integration
 
-**Google Places API Response:**
-- ✅ **NEW API**: Returns `regularOpeningHours` with complete structure
-- ✅ **LEGACY API**: Returns `opening_hours.weekday_text` with full schedule
-- ✅ **Data Transformation**: Server correctly maps both formats
+### Backend Services  
+- **googlePlacesService.ts** - Server-side Google Places API integration with new and legacy API support
+- **routes.ts** - Server endpoints with geocoding and restaurant search functions
+- **loadGoogleMaps.ts** - Client-side Google Maps script loading utility
 
-**Evidence from Console Logs:**
-```json
-{
-  "name": "BelAir Cantina",
-  "openingHours": {
-    "open_now": true
-  }
+## Current Architecture Assessment
+
+### What's Working ✅
+1. **Server-side Google Places API** - Fully functional with comprehensive fallback system
+2. **Manual restaurant entry** - Users can manually type restaurant names
+3. **Restaurant selection & form integration** - Selected restaurants properly populate event form
+4. **Geolocation access** - Location permissions and coordinates retrieval working
+5. **Error handling infrastructure** - Comprehensive logging and fallback mechanisms in place
+
+### Core Problems Identified 🚨
+
+#### 1. **Google Maps JavaScript API Authentication Failure**
+- **Error**: `ExpiredKeyMapError` occurring in browser console
+- **Impact**: Prevents Google Places Autocomplete Service from initializing
+- **Root Cause**: API key restrictions or billing configuration in Google Cloud Console
+
+#### 2. **Silent Service Initialization Failures** 
+```typescript
+// client/src/hooks/useGoogleMaps.ts:84-86
+catch (error) {
+  // Silently handle Places service initialization errors
 }
 ```
+- **Issue**: PlacesService and AutocompleteService initialization failures are suppressed
+- **Impact**: Google search toggle appears functional but doesn't work
 
-### 2. Critical Data Loss Point Identified
+#### 3. **Inconsistent Error State Management**
+- **Problem**: Component shows "Google search unavailable" but doesn't specify why
+- **Missing**: Specific error messages for different failure modes (API key, permissions, quota)
 
-**THE PROBLEM**: Data loss occurs during the **sessionStorage transformation** in frontend components.
+#### 4. **Client-Server API Inconsistency**
+- **Server**: Uses both new Places API v1 and legacy APIs with proper fallbacks
+- **Client**: Only uses legacy JavaScript API without modern async patterns
+- **Result**: Server can find restaurants but client autocomplete fails
 
-**Data Flow Breakdown:**
-1. 🟢 **Server**: `aiConciergeService.ts` correctly enriches data with `weekdayDescriptions`
-2. 🟢 **API Response**: Contains complete hours structure 
-3. 🔴 **Frontend Storage**: `NaturalLanguageSearch.tsx` strips hours data during sessionStorage transform
-4. 🔴 **Display**: `RestaurantInfo.tsx` receives incomplete data
+## Technical Analysis
 
-### 3. Specific Code Issues Found
+### Google Maps/Places API Integration Points
 
-**Issue 1: Data Transformation in NaturalLanguageSearch.tsx**
-```typescript
-// Line ~160: Missing openingHours field mapping
-const restaurantData = {
-  id: restaurantId,
-  name: restaurant.name,
-  type: restaurant.type,
-  // ... other fields mapped
-  // ❌ MISSING: openingHours: restaurant.openingHours
-};
-```
+1. **Client-side (Browser)**:
+   - AutocompleteService for search suggestions
+   - PlacesService for place details 
+   - Geolocation API for user location
 
-**Issue 2: Interface Mismatch in RestaurantDetails.tsx**
-```typescript
-// Line 21: Generic 'any' type loses structure
-openingHours?: any;  // ❌ Should be properly typed
-```
+2. **Server-side (Node.js)**:
+   - Places API v1 for place details
+   - Legacy Places API for fallback
+   - Geocoding API for address conversion
 
-**Issue 3: Map Display Issues**
-- API key error still occurring despite fixes
-- Coordinate data present but map not rendering
-- "No location available" shown when coordinates exist
-
-## Files Requiring Fixes
-
-### Critical Files:
-1. **`client/src/components/NaturalLanguageSearch.tsx`** - Data loss during storage
-2. **`client/src/components/InteractiveAISuggestions.tsx`** - Same data loss pattern
-3. **`client/src/components/AIRecommendations.tsx`** - Same data loss pattern
-4. **`client/src/pages/RestaurantDetails.tsx`** - Interface typing issues
-
-### Supporting Files:
-5. **`client/src/components/RestaurantInfo.tsx`** - Display formatting (already enhanced)
-6. **`server/googlePlacesService.ts`** - Working correctly
-7. **`server/aiConciergeService.ts`** - Working correctly
-
-## Assessment: Is This Task Possible?
-
-**✅ YES - This is completely fixable.** The issue is not with the Google Places API or server-side processing, but with frontend data handling.
-
-**Evidence Supporting Feasibility:**
-- API returns complete hours data
-- Server correctly processes and enriches data
-- Legacy API fallback provides `weekday_text` arrays
-- Only frontend storage/retrieval needs fixing
+### Authentication Requirements
+- **Maps JavaScript API**: Needs browser-compatible key with HTTP referrer restrictions
+- **Places API**: Works with server-side key (confirmed working)
+- **Issue**: Same key works server-side but fails client-side = configuration problem
 
 ## Comprehensive Fix Plan
 
-### Phase 1: Fix Data Storage (CRITICAL)
-**Priority: URGENT - Root cause fix**
+### Phase 1: Immediate Debugging & Visibility 🔍
 
-1. **Fix NaturalLanguageSearch.tsx** (Lines ~160-170):
+#### 1.1 Add Detailed Error Reporting
 ```typescript
-const restaurantData = {
-  // ... existing fields
-  openingHours: restaurant.openingHours,  // ✅ ADD
-  latitude: restaurant.latitude,          // ✅ ADD  
-  longitude: restaurant.longitude         // ✅ ADD
+// Enhanced error handling in useGoogleMaps.ts
+const initializePlacesServices = async () => {
+  try {
+    if (!window.google?.maps?.places) {
+      throw new Error('Google Places library not loaded');
+    }
+    
+    const map = new window.google.maps.Map(document.createElement('div'));
+    const placesService = new window.google.maps.places.PlacesService(map);
+    const autocompleteService = new window.google.maps.places.AutocompleteService();
+    
+    // Test autocomplete service with minimal request
+    await testAutocompleteService(autocompleteService);
+    
+    setPlacesService(placesService);
+    setAutocompleteService(autocompleteService);
+    
+  } catch (error) {
+    console.error('Places service initialization failed:', error);
+    setError(`Google search unavailable: ${error.message}`);
+    // Don't hide the error - show it to user
+  }
 };
 ```
 
-2. **Fix InteractiveAISuggestions.tsx** (Same pattern):
+#### 1.2 Implement Service Health Checks
 ```typescript
-// Apply identical fix to handleCardClick function
+// Add to RestaurantSearch.tsx
+const checkGoogleServicesHealth = async () => {
+  if (!isLoaded) return 'not_loaded';
+  if (error) return 'load_error';
+  if (!placesService || !autocompleteService) return 'service_error';
+  
+  try {
+    // Test with minimal autocomplete request
+    await autocompleteRestaurants('test', userLocation);
+    return 'healthy';
+  } catch (err) {
+    return 'api_error';
+  }
+};
 ```
 
-3. **Fix AIRecommendations.tsx** (Same pattern):
+#### 1.3 Enhanced User Feedback
 ```typescript
-// Apply identical fix to handleRestaurantSelect function
+// Update RestaurantSearch.tsx UI
+const getSearchStatusMessage = () => {
+  switch (serviceHealth) {
+    case 'not_loaded': return 'Loading Google search...';
+    case 'load_error': return 'Google Maps failed to load. Check your internet connection.';
+    case 'service_error': return 'Google search services unavailable. API configuration issue.';
+    case 'api_error': return 'Google search temporarily unavailable. Try manual entry.';
+    case 'healthy': return 'Google search ready';
+    default: return '';
+  }
+};
 ```
 
-### Phase 2: Fix Interface Typing
-**Priority: HIGH - Ensures data integrity**
+### Phase 2: API Key Configuration Fix 🔑
 
-1. **Update RestaurantDetails.tsx Interface**:
+#### 2.1 Google Cloud Console Configuration Checklist
+- **APIs & Services → Enabled APIs**: Verify "Maps JavaScript API" is enabled
+- **Credentials → API Key**: Check the key restrictions:
+  - **Application restrictions**: Set to "HTTP referrers (web sites)"
+  - **API restrictions**: Enable both "Maps JavaScript API" and "Places API"
+  - **HTTP referrer restrictions**: Add your Replit domain patterns
+
+#### 2.2 API Key Testing Strategy
 ```typescript
-interface Restaurant {
-  // ... existing fields
-  openingHours?: {
-    open_now?: boolean;
-    weekdayDescriptions?: string[];
-    periods?: Array<{
-      open: { day: number; hour: number; minute: number };
-      close: { day: number; hour: number; minute: number };
-    }>;
-  };
-  latitude?: number;
-  longitude?: number;
+// Add API key validation endpoint
+// server/routes.ts
+app.get('/api/test-google-api', async (req, res) => {
+  try {
+    const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+    
+    // Test Maps JavaScript API access
+    const testUrl = `https://maps.googleapis.com/maps/api/js/AuthenticationService.Authenticate?key=${apiKey}`;
+    const response = await fetch(testUrl);
+    
+    res.json({
+      serverSideWorking: true,
+      apiKeyPresent: !!apiKey,
+      testResponse: response.status
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+### Phase 3: Fallback Strategy Implementation 🔄
+
+#### 3.1 Server-Side Search Proxy
+```typescript
+// Add to server/routes.ts
+app.post('/api/restaurant-search', async (req, res) => {
+  try {
+    const { query, location } = req.body;
+    const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY!);
+    
+    // Use working server-side API as fallback
+    const results = await googlePlaces.searchByText(
+      query, 
+      location?.lat || 0, 
+      location?.lng || 0, 
+      15000
+    );
+    
+    // Transform to client-expected format
+    const suggestions = results.map(place => ({
+      place_id: place.id,
+      description: place.displayName.text,
+      structured_formatting: {
+        main_text: place.displayName.text,
+        secondary_text: place.formattedAddress
+      }
+    }));
+    
+    res.json({ suggestions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+#### 3.2 Client-Side Fallback Integration
+```typescript
+// Update RestaurantSearch.tsx
+const performServerSideSearch = async (query: string, location?: {lat: number, lng: number}) => {
+  try {
+    const response = await fetch('/api/restaurant-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, location })
+    });
+    
+    if (!response.ok) throw new Error('Server search failed');
+    
+    const data = await response.json();
+    return data.suggestions || [];
+  } catch (error) {
+    console.error('Server-side search failed:', error);
+    return [];
+  }
+};
+
+// Enhanced search with fallback
+const performSearch = async (inputValue: string) => {
+  setIsSearching(true);
+  
+  try {
+    // Try client-side Google API first
+    if (autocompleteService && placesService) {
+      const results = await autocompleteRestaurants(inputValue, userLocation || undefined);
+      setSuggestions(results);
+      return;
+    }
+    
+    // Fallback to server-side search
+    console.log('Using server-side search fallback...');
+    const results = await performServerSideSearch(inputValue, userLocation || undefined);
+    setSuggestions(results);
+    
+  } catch (error) {
+    console.error('All search methods failed:', error);
+    setSuggestions([]);
+  } finally {
+    setIsSearching(false);
+  }
+};
+```
+
+### Phase 4: Modern API Implementation 🆕
+
+#### 4.1 Migrate to Modern Google Maps Loading
+```typescript
+// Update loadGoogleMaps.ts to use importLibrary pattern
+export async function loadGoogleMapsScript(): Promise<void> {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('Google Maps API key not configured');
+  }
+
+  // Use Google's recommended bootstrap loader
+  const script = document.createElement('script');
+  script.innerHTML = `
+    (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=\`https://maps.googleapis.com/maps/api/js?\`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+      key: "${apiKey}",
+      v: "weekly"
+    });
+  `;
+  
+  document.head.appendChild(script);
+  
+  // Modern initialization with importLibrary
+  const { Map } = await google.maps.importLibrary("maps");
+  const { PlacesService, AutocompleteService } = await google.maps.importLibrary("places");
+  
+  window.googleMapsLoaded = true;
 }
 ```
 
-### Phase 3: Validate Map Integration
-**Priority: MEDIUM - Secondary feature**
+#### 4.2 Update Component to Use Modern APIs
+```typescript
+// Update useGoogleMaps.ts
+const initializeModernPlacesAPI = async () => {
+  try {
+    const { PlacesService, AutocompleteService } = await google.maps.importLibrary("places");
+    const { Map } = await google.maps.importLibrary("maps");
+    
+    const map = new Map(document.createElement('div'));
+    const placesService = new PlacesService(map);
+    const autocompleteService = new AutocompleteService();
+    
+    setPlacesService(placesService);
+    setAutocompleteService(autocompleteService);
+    
+  } catch (error) {
+    console.error('Modern Places API initialization failed:', error);
+    throw error;
+  }
+};
+```
 
-1. **Check API Key Configuration**:
-   - Verify VITE_GOOGLE_MAPS_API_KEY is correctly set
-   - Test map loading without errors
+### Phase 5: Testing & Monitoring 🧪
 
-2. **Validate Coordinate Data Flow**:
-   - Ensure latitude/longitude reach GoogleMapComponent
-   - Test map rendering with valid coordinates
+#### 5.1 Comprehensive Test Suite
+```typescript
+// Add to RestaurantSearch.tsx
+const runDiagnostics = async () => {
+  const report = {
+    timestamp: new Date().toISOString(),
+    apiKeyPresent: !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    googleMapsLoaded: !!window.google?.maps,
+    placesLibraryLoaded: !!window.google?.maps?.places,
+    servicesInitialized: !!(placesService && autocompleteService),
+    userLocation: userLocation,
+    locationPermission: locationStatus,
+    lastError: error
+  };
+  
+  console.log('Google Search Diagnostics:', report);
+  return report;
+};
+```
 
-### Phase 4: Error Handling Enhancement
-**Priority: LOW - User experience**
+#### 5.2 User-Friendly Diagnostics Panel
+```tsx
+// Add diagnostic panel to RestaurantSearch.tsx
+{process.env.NODE_ENV === 'development' && (
+  <details className="mt-2">
+    <summary className="text-xs text-gray-500 cursor-pointer">
+      🔧 Search Diagnostics
+    </summary>
+    <div className="text-xs bg-gray-50 p-2 rounded mt-1">
+      <div>API Key: {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? '✅ Present' : '❌ Missing'}</div>
+      <div>Google Maps: {window.google?.maps ? '✅ Loaded' : '❌ Not Loaded'}</div>
+      <div>Places API: {window.google?.maps?.places ? '✅ Available' : '❌ Unavailable'}</div>
+      <div>Services: {placesService && autocompleteService ? '✅ Ready' : '❌ Not Initialized'}</div>
+      <div>Location: {userLocation ? `✅ ${userLocation.lat.toFixed(3)}, ${userLocation.lng.toFixed(3)}` : '❌ Not Available'}</div>
+      {error && <div className="text-red-600">Error: {error}</div>}
+    </div>
+  </details>
+)}
+```
 
-1. **Add Debugging Logs**:
-   - Log sessionStorage data before/after transformation
-   - Track data completeness through the pipeline
+## Implementation Feasibility & Limitations
 
-2. **Fallback Improvements**:
-   - Better error messages when hours unavailable
-   - Graceful degradation for missing coordinates
+### ✅ What Can Be Fixed
+1. **Error visibility** - Currently silent failures can be exposed
+2. **Fallback mechanisms** - Server-side search proxy is fully implementable  
+3. **User experience** - Clear error messages and manual alternatives
+4. **API configuration guidance** - Detailed steps for Google Cloud Console setup
 
-## Expected Results After Fix
+### ⚠️ What Requires External Action
+1. **Google Cloud Console configuration** - Must be done by user with account access
+2. **Billing setup** - Google Cloud billing must be properly configured
+3. **API key restrictions** - Need correct domain/referrer settings
 
-### Hours Display:
-- ✅ **Complete Schedule**: "Monday: 11:00 AM – 10:00 PM, Tuesday: 11:00 AM – 10:00 PM..."
-- ✅ **Today's Hours**: "Monday: 11:00 AM – 10:00 PM" 
-- ✅ **Open Status**: "Currently Open" with full schedule
+### ❌ What Cannot Be Resolved Through Code
+1. **Expired API keys** - Require renewal in Google Cloud Console
+2. **Quota exhaustion** - Need billing or quota increases
+3. **Geographic restrictions** - Some regions have limited Google API access
 
-### Map Display:
-- ✅ **Location Pin**: Accurate restaurant location marker
-- ✅ **Interactive Map**: Proper zoom and navigation
-- ✅ **Address Display**: Full restaurant address
+## Next Steps Priority
 
-## Implementation Priority
+### Immediate (High Priority)
+1. Implement enhanced error reporting and diagnostics
+2. Add server-side search fallback endpoint
+3. Update RestaurantSearch component with better error handling
 
-1. 🔥 **CRITICAL**: Fix sessionStorage data transformation (1-2 hours)
-2. 🔧 **HIGH**: Update interface typing (30 minutes)
-3. 🗺️ **MEDIUM**: Validate map integration (1 hour)
-4. 🛡️ **LOW**: Enhance error handling (30 minutes)
+### Short-term (Medium Priority) 
+1. Create API key validation and testing endpoints
+2. Implement modern Google Maps loading patterns
+3. Add comprehensive user feedback system
 
-## Risk Assessment
+### Long-term (Low Priority)
+1. Migrate to Google Places API v1 on client-side
+2. Implement caching for search results
+3. Add analytics for search success/failure rates
 
-**Low Risk Changes:**
-- Adding fields to sessionStorage data
-- Interface type updates
-- Display formatting improvements
+## Conclusion
 
-**Medium Risk Areas:**
-- sessionStorage format changes may clear existing cached data
-- Users may need to refresh and re-search
+The Google search functionality issues stem primarily from **Google Maps JavaScript API authentication failures** rather than code problems. The current architecture is well-designed with proper fallbacks, but the client-side authentication issue prevents the Google search toggle from working.
 
-**Mitigation Strategy:**
-- Clear sessionStorage cache after deployment
-- Test with fresh searches to validate data flow
+**The most effective immediate solution is implementing the server-side search proxy** which bypasses client-side API authentication issues entirely while maintaining the same user experience. This approach leverages the already-working server-side Google Places integration.
 
-## Technical Validation Steps
-
-1. **Data Integrity Check**: Verify complete openingHours in sessionStorage
-2. **Display Validation**: Confirm full weekly schedule appears
-3. **Map Functionality**: Test location display with coordinates
-4. **Cross-Component Testing**: Verify fix applies to all search components
-
----
-
-## Summary
-
-**The hours data IS available** - it's being lost during frontend data transformation to sessionStorage. This is a **completely solvable** frontend data handling issue, not an API limitation. The fix involves adding missing field mappings in 3-4 frontend components that handle restaurant data storage.
-
-**Estimated Fix Time**: 2-3 hours total
-**Confidence Level**: Very High (95%+)
-**Complexity**: Low - Simple field mapping additions
+The longer-term solution requires **proper Google Cloud Console API key configuration** with correct restrictions and billing setup. This document provides the complete roadmap to resolve both immediate functionality and underlying configuration issues.
