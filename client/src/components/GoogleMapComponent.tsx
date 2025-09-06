@@ -26,6 +26,18 @@ export default function GoogleMapComponent({
   const infoWindowRef = useRef<any>(null);
   const isInitializedRef = useRef(false);
   const { isLoaded, error } = useGoogleMaps();
+  
+  // Check for Google Maps API key expiration error
+  useEffect(() => {
+    const handleGoogleMapsError = (event: any) => {
+      if (event.error && event.error.includes('ExpiredKeyMapError')) {
+        console.error('Google Maps API key has expired');
+      }
+    };
+    
+    window.addEventListener('error', handleGoogleMapsError);
+    return () => window.removeEventListener('error', handleGoogleMapsError);
+  }, []);
 
   // Initialize map only once
   useEffect(() => {
@@ -190,11 +202,14 @@ export default function GoogleMapComponent({
   if (error) {
     console.error('Google Maps error:', error);
     return (
-      <div className={`${className} bg-muted rounded-lg flex items-center justify-center`}>
+      <div className={`${className} bg-muted rounded-lg flex items-center justify-center p-8`}>
         <div className="text-center text-muted-foreground">
-          <i className="fas fa-map-marker-alt text-2xl mb-2"></i>
-          <p className="text-sm">Map unavailable</p>
-          <p className="text-xs mt-1">Please check your internet connection</p>
+          <div className="text-4xl mb-2">🗺️</div>
+          <p className="text-sm font-medium">Map Temporarily Unavailable</p>
+          <p className="text-xs mt-1 opacity-75">
+            The map service is currently experiencing issues.<br/>
+            Restaurant location and details are still available above.
+          </p>
         </div>
       </div>
     );
