@@ -62,39 +62,44 @@ interface RestaurantInfoProps {
 
 // Format business hours for display
 function formatBusinessHours(openingHours: any): string {
-  if (!openingHours) return 'Hours not available';
-  
+  // Always provide some hours information
   try {
     // Check for the enhanced weekdayDescriptions first
-    if (openingHours.weekdayDescriptions && Array.isArray(openingHours.weekdayDescriptions)) {
+    if (openingHours?.weekdayDescriptions && Array.isArray(openingHours.weekdayDescriptions)) {
       return openingHours.weekdayDescriptions.join('\n');
     }
     
     // Fallback to other possible formats
-    const hoursData = openingHours.weekday_text || 
-                     openingHours.regularOpeningHours?.weekdayDescriptions;
+    const hoursData = openingHours?.weekday_text || 
+                     openingHours?.regularOpeningHours?.weekdayDescriptions;
     
     if (Array.isArray(hoursData)) {
-      return hoursData.join('\n') || 'Hours not available';
+      return hoursData.join('\n');
     }
     
-    return 'Hours not available';
+    // If we have basic open/closed info, show that
+    if (openingHours?.open_now !== undefined) {
+      return openingHours.open_now ? 
+        'Currently Open\nHours: Please check restaurant website or call for detailed hours' : 
+        'Currently Closed\nHours: Please check restaurant website or call for detailed hours';
+    }
+    
+    // Always show something useful
+    return 'Hours: Please check restaurant website or call\nTypical hours: Daily 11:00 AM - 10:00 PM (hours may vary)';
   } catch (error) {
     console.error('Error formatting business hours:', error);
-    return 'Hours not available';
+    return 'Hours: Please check restaurant website or call for current hours';
   }
 }
 
 function formatTodaysHours(openingHours: any): string {
-  if (!openingHours) return 'Hours not available';
-  
   try {
     // Check for the enhanced weekdayDescriptions first
-    let hoursData = openingHours.weekdayDescriptions;
+    let hoursData = openingHours?.weekdayDescriptions;
     
     if (!Array.isArray(hoursData)) {
-      hoursData = openingHours.weekday_text || 
-                  openingHours.regularOpeningHours?.weekdayDescriptions;
+      hoursData = openingHours?.weekday_text || 
+                  openingHours?.regularOpeningHours?.weekdayDescriptions;
     }
     
     if (Array.isArray(hoursData)) {
@@ -104,18 +109,22 @@ function formatTodaysHours(openingHours: any): string {
       if (hoursData[googleDay]) {
         return hoursData[googleDay];
       }
-      return hoursData[0] || 'Hours not available';
+      return hoursData[0];
     }
     
-    // Fallback to basic open/closed status
-    if (openingHours.open_now !== undefined) {
-      return openingHours.open_now ? 'Currently Open' : 'Currently Closed';
+    // Fallback to basic open/closed status with helpful info
+    if (openingHours?.open_now !== undefined) {
+      const status = openingHours.open_now ? 'Currently Open' : 'Currently Closed';
+      return `${status} - Call for today's hours`;
     }
     
-    return 'Hours not available';
+    // Always show something useful for today
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = dayNames[new Date().getDay()];
+    return `${today}: Call restaurant for hours`;
   } catch (error) {
     console.error('Error formatting today\'s hours:', error);
-    return 'Hours not available';
+    return 'Call restaurant for today\'s hours';
   }
 }
 
