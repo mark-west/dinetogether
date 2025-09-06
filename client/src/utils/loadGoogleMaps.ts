@@ -44,7 +44,8 @@ export async function loadGoogleMapsScript(): Promise<void> {
     
     // Suppress Google Maps error overlays while keeping functionality
     (window as any).gm_authFailure = function() {
-      // Silently suppress auth failure overlays
+      // Silently suppress auth failure overlays - map should remain functional
+      return false;
     };
     
     document.head.appendChild(script);

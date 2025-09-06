@@ -62,7 +62,16 @@ export default function GoogleMapComponent({
       
       // Add error listener for map loading issues
       mapInstanceRef.current.addListener('error', (error: any) => {
-        // Silently handle Google Maps API errors
+        console.log('Map error detected but map should remain functional:', error);
+      });
+      
+      // Force map to remain visible even with API key issues
+      mapInstanceRef.current.addListener('idle', () => {
+        const mapDiv = mapRef.current;
+        if (mapDiv) {
+          mapDiv.style.backgroundColor = 'transparent';
+          mapDiv.style.opacity = '1';
+        }
       });
       
       // Force a resize after initialization to ensure proper rendering

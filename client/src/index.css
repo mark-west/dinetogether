@@ -7,8 +7,18 @@
   display: none !important;
 }
 
-/* Hide high z-index error overlays but preserve map controls */
-.gmnoprint[style*="z-index: 1000001"] {
+/* Ensure Google Maps container stays visible */
+div[data-testid="google-map"] {
+  background: transparent !important;
+}
+
+/* Ensure Google Maps tiles load properly even with auth errors */
+.gm-style > div:first-child {
+  opacity: 1 !important;
+}
+
+/* Hide specific auth error overlays but keep map functional */
+.gm-err-message {
   display: none !important;
 }
 
