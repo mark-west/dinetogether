@@ -18,9 +18,7 @@ export async function loadGoogleMapsScript(): Promise<void> {
     // Fetch API key from environment variable
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     
-    console.log('🗺️ Loading Google Maps JavaScript API...');
-    console.log('API Key present:', apiKey ? 'YES' : 'NO');
-    console.log('Key preview:', apiKey ? `${apiKey.substring(0, 12)}...` : 'N/A');
+    // Loading Google Maps JavaScript API
     
     if (!apiKey) {
       console.error('Google Maps API key not configured. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.');
@@ -44,27 +42,12 @@ export async function loadGoogleMapsScript(): Promise<void> {
       window.googleMapsLoaded = false;
     };
     
-    script.onload = function() {
-      console.log('✅ Google Maps script loaded successfully');
-    };
-    
-    // Suppress Google Maps error overlays while keeping console logging
+    // Suppress Google Maps error overlays while keeping functionality
     (window as any).gm_authFailure = function() {
-      console.log('🔇 Suppressing Google Maps auth failure overlay - map still functional');
-    };
-    
-    // Add global error handler for Google Maps API errors
-    const originalConsoleError = console.error;
-    console.error = function(...args) {
-      if (args[0] && args[0].includes && args[0].includes('Google Maps JavaScript API error')) {
-        console.log('🔍 Detected Google Maps API Error (suppressing overlay):', args[0]);
-        return; // Don't show the error in console, just log our custom message
-      }
-      originalConsoleError.apply(console, args);
+      // Silently suppress auth failure overlays
     };
     
     document.head.appendChild(script);
-    console.log('📝 Google Maps script tag added to document');
   } catch (error) {
     console.warn('Error loading Google Maps script:', error);
   }
