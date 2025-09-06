@@ -488,9 +488,27 @@ export function RestaurantInfo({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="text-sm whitespace-pre-line text-muted-foreground">
-                {businessHours}
-              </pre>
+              <div className="text-sm text-foreground space-y-2">
+                {businessHours.split('\n').filter(line => line.trim()).map((line, index) => {
+                  // Parse day and hours if it's a standard format
+                  const dayHoursMatch = line.match(/^(\w+):\s*(.+)$/);
+                  if (dayHoursMatch) {
+                    const [, day, hours] = dayHoursMatch;
+                    return (
+                      <div key={index} className="flex justify-between items-center py-1">
+                        <span className="font-medium text-foreground">{day}</span>
+                        <span className="text-muted-foreground">{hours}</span>
+                      </div>
+                    );
+                  }
+                  // For non-standard format, just display as is
+                  return (
+                    <div key={index} className="text-muted-foreground">
+                      {line}
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
