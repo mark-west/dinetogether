@@ -31,6 +31,8 @@ interface RestaurantResult {
   phone?: string;
   website?: string;
   placeId?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export function NaturalLanguageSearch({ variant, groupId, className = "" }: NaturalLanguageSearchProps) {
@@ -156,6 +158,8 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       website: restaurant.website || '',
       hours: '',
       openingHours: restaurant.openingHours || null,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude,
       rating: restaurant.rating,
       reviewCount: 0,
       menuHighlights: [],

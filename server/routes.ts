@@ -1430,7 +1430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isNaN(latitude) || isNaN(longitude)) {
         return res.status(400).json({ message: "User location is required" });
       }
-      const recommendations = await generateRestaurantRecommendations(userPreferences, location as string);
+      const recommendations = await generateRestaurantRecommendations();
       
       // Enrich with external reviews
       const enrichedRecommendations = await enrichWithExternalReviews(recommendations);

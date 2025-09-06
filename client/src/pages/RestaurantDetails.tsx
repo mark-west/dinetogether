@@ -18,7 +18,16 @@ interface Restaurant {
   confidence?: number;
   phoneNumber?: string;
   website?: string;
-  openingHours?: any;
+  openingHours?: {
+    open_now?: boolean;
+    weekdayDescriptions?: string[];
+    periods?: Array<{
+      open: { day: number; hour: number; minute: number };
+      close: { day: number; hour: number; minute: number };
+    }>;
+  };
+  latitude?: number;
+  longitude?: number;
   menuHighlights?: string[];
   features?: string[];
   reviews?: any[];

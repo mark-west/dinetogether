@@ -317,7 +317,7 @@ export function RestaurantInfo({
                 {websiteText}
               </Button>
 
-              {showEventCreation && user && (
+              {showEventCreation && user ? (
                 <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
                   <DialogTrigger asChild>
                     <Button data-testid="button-create-event">
@@ -406,9 +406,9 @@ export function RestaurantInfo({
                     </div>
                   </DialogContent>
                 </Dialog>
-              )}
+              ) : null}
 
-              {additionalActions as React.ReactNode}
+              {additionalActions}
             </div>
           </CardContent>
         </Card>

@@ -32,6 +32,8 @@ interface Recommendation {
   userRatingsTotal?: number;
   businessStatus?: string;
   placeId?: string;
+  latitude?: number;
+  longitude?: number;
   externalRating?: {
     google?: number;
     yelp?: number;
@@ -76,7 +78,7 @@ export function AIRecommendations() {
     enabled: true,
   });
   
-  const recommendations = apiResponse?.recommendations || apiResponse;
+  const recommendations = (apiResponse as any)?.recommendations || apiResponse;
 
   const { data: analysis, isLoading: loadingAnalysis } = useQuery<DiningAnalysis>({
     queryKey: ["/api/dining-analysis"],
@@ -93,17 +95,17 @@ export function AIRecommendations() {
     const restaurantId = `${restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`;
     
     const restaurantData = {
+      ...restaurant,
       id: restaurantId,
       name: restaurant.name,
       type: restaurant.type || restaurant.cuisine || 'Restaurant',
       priceRange: restaurant.priceRange,
       description: restaurant.description || restaurant.reasonForRecommendation || '',
-      ...restaurant,
       rating: restaurant.rating || restaurant.estimatedRating || 0,
       estimatedRating: restaurant.rating || restaurant.estimatedRating || 0,
       reviewCount: restaurant.userRatingsTotal || 0,
       userRatingsTotal: restaurant.userRatingsTotal || 0,
-      menuHighlights: extractMenuHighlights(restaurant.reviews),
+      menuHighlights: extractMenuHighlights(restaurant.reviews || []),
       features: [
         'AI-generated recommendation', 
         'Google Maps verified',
@@ -113,7 +115,9 @@ export function AIRecommendations() {
       ],
       reviews: restaurant.reviews || [],
       businessStatus: restaurant.businessStatus,
-      placeId: restaurant.placeId
+      placeId: restaurant.placeId,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude
     };
     
     sessionStorage.removeItem(`restaurant_${restaurantId}`);

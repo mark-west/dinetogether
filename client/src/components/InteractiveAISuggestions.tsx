@@ -33,6 +33,8 @@ interface Recommendation {
   address?: string;
   location?: string;
   openingHours?: any;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface InteractiveAISuggestionsProps {
@@ -160,6 +162,8 @@ export function InteractiveAISuggestions({
       phone: '',
       hours: '',
       openingHours: recommendation.openingHours || null,
+      latitude: recommendation.latitude,
+      longitude: recommendation.longitude,
       rating: recommendation.rating,
       reviewCount: 0,
       menuHighlights: [],
