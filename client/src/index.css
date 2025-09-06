@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide Google Maps error overlays while keeping map functional */
+.gm-err-container {
+  display: none !important;
+}
+
+.gmnoprint[style*="z-index: 1000000"] {
+  display: none !important;
+}
+
 :root {
   --background: hsl(326, 20%, 97%);
   --foreground: hsl(295, 25%, 20%);

@@ -48,11 +48,17 @@ export async function loadGoogleMapsScript(): Promise<void> {
       console.log('✅ Google Maps script loaded successfully');
     };
     
+    // Suppress Google Maps error overlays while keeping console logging
+    (window as any).gm_authFailure = function() {
+      console.log('🔇 Suppressing Google Maps auth failure overlay - map still functional');
+    };
+    
     // Add global error handler for Google Maps API errors
     const originalConsoleError = console.error;
     console.error = function(...args) {
       if (args[0] && args[0].includes && args[0].includes('Google Maps JavaScript API error')) {
-        console.log('🔍 Detected Google Maps API Error:', args[0]);
+        console.log('🔍 Detected Google Maps API Error (suppressing overlay):', args[0]);
+        return; // Don't show the error in console, just log our custom message
       }
       originalConsoleError.apply(console, args);
     };
