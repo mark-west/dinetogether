@@ -70,12 +70,10 @@ export default function GoogleMapComponent({
           });
         });
       }
-
-      isInitializedRef.current = true;
     } catch (error) {
-      // Silently handle map initialization errors
+      console.error('Error initializing Google Map:', error);
     }
-  }, [isLoaded]);
+  }, [isLoaded, center, zoom]);
 
   // Update map center and zoom when props change
   useEffect(() => {
