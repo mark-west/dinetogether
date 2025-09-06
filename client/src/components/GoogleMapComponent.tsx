@@ -199,21 +199,7 @@ export default function GoogleMapComponent({
     }
   }, [markers]);
 
-  if (error) {
-    console.error('Google Maps error:', error);
-    return (
-      <div className={`${className} bg-muted rounded-lg flex items-center justify-center p-8`}>
-        <div className="text-center text-muted-foreground">
-          <div className="text-4xl mb-2">🗺️</div>
-          <p className="text-sm font-medium">Map Temporarily Unavailable</p>
-          <p className="text-xs mt-1 opacity-75">
-            The map service is currently experiencing issues.<br/>
-            Restaurant location and details are still available above.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Don't block map rendering even if there are errors - let Google Maps handle it
 
   if (!isLoaded) {
     return (

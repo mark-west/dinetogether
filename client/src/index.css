@@ -2,9 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hide Google Maps error overlays while keeping map functional */
-.gm-err-container,
-.gmnoprint[style*="z-index: 1000000"] {
+/* Hide only specific Google Maps error overlays, not the entire map */
+.gm-err-container {
+  display: none !important;
+}
+
+/* Hide high z-index error overlays but preserve map controls */
+.gmnoprint[style*="z-index: 1000001"] {
   display: none !important;
 }
 
