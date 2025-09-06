@@ -31,6 +31,8 @@ export default function GoogleMapComponent({
   const isInitializedRef = useRef(false);
   const { isLoaded, error } = useGoogleMaps();
   
+  console.log('GoogleMapComponent render - isLoaded:', isLoaded, 'error:', error, 'center:', center);
+  
   // Monitor for Google Maps API errors
   useEffect(() => {
     const handleGoogleMapsError = (event: any) => {
@@ -45,9 +47,12 @@ export default function GoogleMapComponent({
 
   // Initialize map only once
   useEffect(() => {
+    console.log('Map initialization check - isLoaded:', isLoaded, 'mapRef.current:', !!mapRef.current, 'window.google:', !!window.google, 'already initialized:', isInitializedRef.current);
     if (!isLoaded || !mapRef.current || !window.google || isInitializedRef.current) return;
 
     try {
+      console.log('🗺️ Starting map initialization...');
+      
       // Initialize map with proper configuration for tile loading
       const mapConfig: any = {
         center,
@@ -62,7 +67,13 @@ export default function GoogleMapComponent({
         gestureHandling: 'cooperative'
       };
       
+      console.log('Creating Map instance...');
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapConfig);
+      console.log('✅ Map instance created successfully:', !!mapInstanceRef.current);
+      
+      // Mark as initialized IMMEDIATELY after creation
+      isInitializedRef.current = true;
+      console.log('Map marked as initialized');
       
       // Add error listener for map loading issues
       mapInstanceRef.current.addListener('error', (error: any) => {
@@ -96,8 +107,10 @@ export default function GoogleMapComponent({
         mapHealthTimer = setTimeout(checkMapHealth, 1000);
       });
       
-      // Initial health check
-      setTimeout(checkMapHealth, 2000);
+      // Initial health check - but give Google more time to load tiles
+      setTimeout(checkMapHealth, 5000);
+      
+      console.log('Map setup complete, waiting for tiles to load...');
       
       // Force a resize after initialization to ensure proper rendering
       setTimeout(() => {
