@@ -381,9 +381,6 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                       </div>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {restaurant.description}
-                    </p>
                     
                     {/* Address & Hours */}
                     <div className="space-y-2 mb-3">
