@@ -157,6 +157,10 @@ Respond with only valid JSON, no additional text.`;
           const details = await this.googlePlacesService.getPlaceDetails(place.id);
           
           if (details) {
+            console.log(`=== BELAIR CANTINA HOURS DEBUG ===`);
+            console.log(`Restaurant: ${details.displayName.text}`);
+            console.log('Raw details.regularOpeningHours:', JSON.stringify(details.regularOpeningHours, null, 2));
+            
             const enrichedRestaurant: RestaurantRecommendation = {
               id: place.id,
               name: details.displayName.text,
@@ -180,6 +184,7 @@ Respond with only valid JSON, no additional text.`;
               placeId: place.id
             };
 
+            console.log('Final enrichedRestaurant.openingHours:', JSON.stringify(enrichedRestaurant.openingHours, null, 2));
             enrichedRestaurants.push(enrichedRestaurant);
             console.log(`Successfully enriched: ${enrichedRestaurant.name}`);
           }
