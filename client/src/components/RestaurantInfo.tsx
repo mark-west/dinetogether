@@ -398,7 +398,7 @@ export function RestaurantInfo({
                 </Dialog>
               )}
 
-              {additionalActions}
+              {additionalActions as React.ReactNode}
             </div>
           </CardContent>
         </Card>
