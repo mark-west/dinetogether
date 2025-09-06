@@ -97,7 +97,7 @@ function formatBusinessHours(openingHours: any, restaurantPhone?: string): strin
     }
     
     // Always show something useful
-    return 'Hours information not available\nPlease check restaurant website or call for current hours\n\nTypical restaurant hours: Daily 11:00 AM - 10:00 PM\n(Hours may vary)';
+    return 'Hours information not available\nPlease check restaurant website or call for current hours';
   } catch (error) {
     console.error('Error formatting business hours:', error);
     return 'Hours: Please check restaurant website or call for current hours';
@@ -243,8 +243,8 @@ export function RestaurantInfo({
   const displayRating = restaurant.rating || restaurant.estimatedRating || 0;
   const displayAddress = restaurant.address || restaurant.location || '';
   
-  const businessHours = formatBusinessHours(restaurant.openingHours, restaurant.phone || restaurant.phoneNumber);
-  const todaysHours = formatTodaysHours(restaurant.openingHours, restaurant.phone || restaurant.phoneNumber);
+  const businessHours = formatBusinessHours(restaurant.openingHours, restaurant.phoneNumber);
+  const todaysHours = formatTodaysHours(restaurant.openingHours, restaurant.phoneNumber);
   const websiteText = getWebsiteLinkText();
 
   return (

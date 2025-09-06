@@ -177,6 +177,10 @@ Respond with only valid JSON, no additional text.`;
                 open_now: details.regularOpeningHours.openNow,
                 weekdayDescriptions: details.regularOpeningHours.weekdayDescriptions,
                 periods: details.regularOpeningHours.periods
+              } : (details as any).currentOpeningHours ? {
+                open_now: (details as any).currentOpeningHours.openNow,
+                weekdayDescriptions: (details as any).currentOpeningHours.weekdayDescriptions,
+                periods: (details as any).currentOpeningHours.periods
               } : null,
               placeId: place.id
             };

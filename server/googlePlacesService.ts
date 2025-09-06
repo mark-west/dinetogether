@@ -94,6 +94,7 @@ export class GooglePlacesService {
         'internationalPhoneNumber',
         'websiteUri',
         'regularOpeningHours',
+        'currentOpeningHours',
         'rating',
         'userRatingCount',
         'businessStatus',
@@ -122,6 +123,13 @@ export class GooglePlacesService {
       }
 
       const data = await response.json() as PlaceDetails;
+      console.log('=== GOOGLE PLACES API RESPONSE (NEW) ===');
+      console.log('Place ID:', data.id);
+      console.log('Name:', data.displayName?.text);
+      console.log('Regular Opening Hours:', JSON.stringify(data.regularOpeningHours, null, 2));
+      console.log('Current Opening Hours:', JSON.stringify((data as any).currentOpeningHours, null, 2));
+      console.log('Location:', JSON.stringify(data.location, null, 2));
+      console.log('========================================');
       return data;
     } catch (error) {
       console.error('Error fetching place details:', error);
@@ -331,6 +339,12 @@ export class GooglePlacesService {
       }
 
       const place = data.result;
+      console.log('=== GOOGLE PLACES API RESPONSE (LEGACY) ===');
+      console.log('Place ID:', placeId);
+      console.log('Name:', place.name);
+      console.log('Opening Hours:', JSON.stringify(place.opening_hours, null, 2));
+      console.log('Geometry:', JSON.stringify(place.geometry, null, 2));
+      console.log('=========================================');
       
       // Convert legacy format to new format
       return {
