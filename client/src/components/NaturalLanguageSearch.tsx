@@ -325,16 +325,68 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           )}
 
           {searchMutation.isPending && (
-            <div className="space-y-4">
-              <div className="text-center py-6">
-                <div className="inline-flex items-center gap-3 text-primary-foreground">
-                  <div className="animate-spin h-5 w-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full"></div>
-                  <span className="font-medium">AI is finding perfect restaurants for you...</span>
+            <div className="space-y-6 py-8">
+              {/* Main Progress Indicator */}
+              <div className="text-center">
+                <div className="inline-flex items-center gap-3 mb-4">
+                  <div className="animate-spin h-6 w-6 border-3 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
+                  <span className="text-lg font-semibold text-primary-foreground">AI is searching for you...</span>
+                </div>
+                <div className="w-full bg-primary-foreground/20 rounded-full h-2 mb-4">
+                  <div className="bg-primary-foreground h-2 rounded-full animate-pulse" style={{width: '65%'}}></div>
                 </div>
               </div>
-              {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full bg-primary-foreground/10" />
-              ))}
+
+              {/* Process Steps */}
+              <div className="space-y-4 max-w-md mx-auto">
+                <div className="flex items-center gap-3 text-primary-foreground">
+                  <div className="w-6 h-6 bg-primary-foreground rounded-full flex items-center justify-center text-primary text-xs font-bold">✓</div>
+                  <span className="text-sm">Understanding your dining preferences</span>
+                </div>
+                <div className="flex items-center gap-3 text-primary-foreground">
+                  <div className="w-6 h-6 bg-primary-foreground rounded-full flex items-center justify-center text-primary text-xs font-bold">✓</div>
+                  <span className="text-sm">Analyzing location and nearby options</span>
+                </div>
+                <div className="flex items-center gap-3 text-primary-foreground">
+                  <div className="w-6 h-6 border-2 border-primary-foreground rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
+                  </div>
+                  <span className="text-sm">Evaluating restaurant reviews and ratings</span>
+                </div>
+                <div className="flex items-center gap-3 text-primary-foreground/60">
+                  <div className="w-6 h-6 border-2 border-primary-foreground/30 rounded-full"></div>
+                  <span className="text-sm">Personalizing recommendations for you</span>
+                </div>
+              </div>
+
+              {/* Tips Section */}
+              <div className="bg-primary-foreground/10 rounded-lg p-4 border border-primary-foreground/20">
+                <div className="text-center">
+                  <h4 className="font-medium text-primary-foreground mb-2">💡 While you wait...</h4>
+                  <p className="text-sm text-primary-foreground/90">
+                    Our AI is analyzing hundreds of restaurants, reading reviews, checking hours, 
+                    and matching them to your specific preferences. This ensures you get the best 
+                    personalized recommendations!
+                  </p>
+                </div>
+              </div>
+
+              {/* Loading Placeholders */}
+              <div className="space-y-3">
+                <div className="text-xs text-primary-foreground/70 text-center mb-2">Preview of your upcoming results...</div>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-primary-foreground/5 border border-primary-foreground/20 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-4 w-4 rounded bg-primary-foreground/20" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4 bg-primary-foreground/20" />
+                        <Skeleton className="h-3 w-1/2 bg-primary-foreground/15" />
+                      </div>
+                      <Skeleton className="h-3 w-16 bg-primary-foreground/15" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
