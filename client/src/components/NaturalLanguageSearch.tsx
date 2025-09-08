@@ -227,6 +227,12 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       console.error('AI Concierge: Search failed with error:', error);
       setCurrentAbortController(null);
       setResults([]);
+      
+      // Don't show error UI for user-cancelled requests
+      if (error.name === 'AbortError' || error.message?.includes('cancelled')) {
+        console.log('Search was cancelled by user - no error shown');
+        return;
+      }
     }
   });
 
@@ -244,6 +250,8 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       console.log('AI Concierge: User cancelled search');
       currentAbortController.abort();
       setCurrentAbortController(null);
+      // Reset the mutation to clear any pending state
+      searchMutation.reset();
     }
   };
 
@@ -394,7 +402,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
               {/* Simple Honest Loading Indicator */}
               <div className="text-center">
                 <div className="inline-flex items-center gap-3 mb-6">
-                  <div className="animate-spin h-6 w-6 border-3 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
+                  <div className="animate-spin h-6 w-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
                   <span className="text-lg font-semibold text-primary-foreground">AI is searching for you...</span>
                 </div>
               </div>
