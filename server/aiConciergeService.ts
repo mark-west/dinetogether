@@ -90,33 +90,32 @@ export class AIConciergeService {
   }
 
   private async interpretRequest(prompt: string, latitude: number, longitude: number): Promise<any> {
-    const systemPrompt = `You are a restaurant recommendation AI assistant. The user is located at coordinates ${latitude}, ${longitude}. 
+    const systemPrompt = `You are a restaurant recommendation AI assistant. Based on the user's request, suggest restaurants that match their needs.
 
-Based on their natural language request, provide restaurant recommendations in the following JSON format:
+User location coordinates: ${latitude}, ${longitude} (approximately Milwaukee/Brookfield, Wisconsin area)
+User request: ${prompt}
+
+Provide restaurant recommendations in this JSON format:
 
 {
   "restaurants": [
     {
       "name": "Restaurant Name",
-      "address": "Full Address",
-      "type": "Cuisine Type",
+      "address": "General area or city",
+      "type": "Cuisine Type", 
       "reasoning": "Why this matches their request"
     }
   ]
 }
 
-Requirements:
-1. Only recommend restaurants that exist near the provided coordinates
-2. Provide REAL restaurant names and addresses, not fictional ones
-3. Include complete street addresses when possible
-4. Focus on restaurants that match the user's specific request
-5. Limit to 6 restaurants maximum
-6. Prioritize highly-rated, well-known establishments
+Guidelines:
+- Suggest 4-6 restaurants that match the request type (Italian, sushi, casual, etc.)
+- Include well-known restaurant names from the Milwaukee/Wisconsin area when possible
+- If you don't know specific local restaurants, suggest restaurant TYPES or popular chain names that would fit
+- Focus on matching the dining style: romantic, casual, quick, family-friendly, etc.
+- Include the type of cuisine and atmosphere that fits the request
 
-User location: ${latitude}, ${longitude}
-User request: ${prompt}
-
-Respond with only valid JSON, no additional text.`;
+Always return valid JSON with at least 3-4 restaurant suggestions.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-5",
@@ -127,7 +126,7 @@ Respond with only valid JSON, no additional text.`;
         },
         {
           role: "user", 
-          content: `near ${latitude}, ${longitude}, restaurant results only, and add google Places API data: ${prompt}`
+          content: prompt
         }
       ],
       response_format: { type: "json_object" },
