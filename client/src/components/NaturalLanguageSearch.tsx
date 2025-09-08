@@ -317,7 +317,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
               }}
               variant="ghost"
               size="sm"
-              className="text-primary-foreground hover:bg-primary-foreground/10 text-xs"
+              className="text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary text-xs"
               data-testid="button-new-search-header"
             >
               New Search
