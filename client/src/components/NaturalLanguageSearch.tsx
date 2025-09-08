@@ -225,16 +225,16 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
   };
 
   return (
-    <Card className={`ai-concierge-card ${className}`}>
+    <Card className={`ai-concierge-card bg-primary text-primary-foreground border-primary/20 shadow-lg ${className}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center">
-              <AISparklesIcon size={24} className="text-white" />
+            <div className="w-12 h-12 bg-primary-foreground/10 border border-primary-foreground/20 rounded-lg flex items-center justify-center">
+              <AISparklesIcon size={24} className="text-primary-foreground" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold text-foreground">AI Dining Concierge</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <CardTitle className="text-xl font-semibold text-primary-foreground">AI Dining Concierge</CardTitle>
+              <p className="text-sm text-primary-foreground/70">
                 Tell us what you're craving in plain English
               </p>
             </div>
@@ -244,7 +244,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="shrink-0"
+            className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
             data-testid="button-toggle-concierge"
           >
             {isExpanded ? (
@@ -267,7 +267,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           {!results.length && !searchMutation.isPending && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="search-prompt" className="text-sm font-medium text-foreground">
+                <label htmlFor="search-prompt" className="text-sm font-medium text-primary-foreground">
                   What are you looking for?
                 </label>
                 <Textarea
@@ -281,13 +281,13 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                     }
                   }}
                   placeholder="Describe what kind of dining experience you're looking for..."
-                  className="min-h-[80px] resize-none"
+                  className="min-h-[80px] resize-none bg-primary-foreground/5 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 focus:border-primary-foreground/40"
                   data-testid="textarea-search-prompt"
                 />
                 
                 {/* Example Prompts */}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Or try these examples:</p>
+                  <p className="text-xs font-medium text-primary-foreground">Or try these examples:</p>
                   <div className="flex flex-wrap gap-2">
                     {[
                       "Romantic Italian dinner for two",
@@ -301,7 +301,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                       <button
                         key={index}
                         onClick={() => setPrompt(example)}
-                        className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        className="text-xs px-2 py-1 bg-primary-foreground/10 hover:bg-primary-foreground/20 border border-primary-foreground/20 rounded-md text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer"
                         data-testid={`button-example-${index}`}
                       >
                         {example}
@@ -310,7 +310,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   </div>
                 </div>
                 
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-primary-foreground/60">
                   {userLocation ? 
                     "Press Enter to search, or Shift+Enter for new line. We'll search near your current location." :
                     "Please allow location access to get personalized restaurant recommendations."
@@ -322,7 +322,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                 <Button
                   onClick={handleSearch}
                   disabled={!prompt.trim() || !userLocation || searchMutation.isPending}
-                  className="gradient-bg"
+                  className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                   data-testid="button-search-restaurants"
                 >
                   <AISparklesIcon size={16} className="mr-2" />
@@ -335,13 +335,13 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           {searchMutation.isPending && (
             <div className="space-y-4">
               <div className="text-center py-6">
-                <div className="inline-flex items-center gap-3 text-muted-foreground">
-                  <div className="animate-spin h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full"></div>
+                <div className="inline-flex items-center gap-3 text-primary-foreground/80">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
                   <span className="font-medium">AI is finding perfect restaurants for you...</span>
                 </div>
               </div>
               {[...Array(3)].map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full" />
+                <Skeleton key={i} className="h-24 w-full bg-primary-foreground/10" />
               ))}
             </div>
           )}
@@ -349,14 +349,14 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           {searchMutation.isError && (
             <div className="text-center py-8">
               <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                  <i className="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+                <div className="w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <i className="fas fa-exclamation-triangle text-2xl text-red-400"></i>
                 </div>
-                <h3 className="font-medium text-foreground mb-2">Search Failed</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <h3 className="font-medium text-primary-foreground mb-2">Search Failed</h3>
+                <p className="text-sm text-primary-foreground/70 mb-4">
                   We couldn't process your request right now. This might be due to:
                 </p>
-                <ul className="text-xs text-muted-foreground text-left mb-4 space-y-1">
+                <ul className="text-xs text-primary-foreground/60 text-left mb-4 space-y-1">
                   <li>• Location access required</li>
                   <li>• AI service temporarily unavailable</li>
                   <li>• Network connectivity issues</li>
@@ -368,6 +368,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   }}
                   variant="outline"
                   size="sm"
+                  className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
                 >
                   Try Again
                 </Button>
