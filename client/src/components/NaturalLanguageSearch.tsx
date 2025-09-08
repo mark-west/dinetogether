@@ -497,12 +497,13 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-foreground">Your AI-Powered Recommendations</h4>
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   size="sm" 
                   onClick={resetSearch}
+                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   data-testid="button-new-search"
                 >
-                  New Search
+                  🔄 New Search
                 </Button>
               </div>
               
@@ -596,6 +597,19 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   </CardContent>
                 </Card>
               ))}
+              
+              {/* Prominent Reset Button at Bottom */}
+              <div className="flex justify-center pt-6 pb-2 border-t border-border">
+                <Button 
+                  onClick={resetSearch}
+                  variant="outline"
+                  size="lg"
+                  className="w-full max-w-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground font-medium"
+                  data-testid="button-reset-search"
+                >
+                  🔄 Start New Search
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
