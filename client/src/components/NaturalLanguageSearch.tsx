@@ -203,7 +203,8 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
         
         if (error.name === 'AbortError') {
           console.log('AI Concierge: Request was cancelled or timed out');
-          throw new Error('Search request was cancelled or timed out after 3 minutes');
+          // Don't throw for user cancellations to avoid unhandled promise rejection
+          return { restaurants: [] };
         }
         
         console.error('AI Concierge: Request failed:', error);
