@@ -236,7 +236,6 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
                 🔧 Google Search Diagnostics
               </summary>
               <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border">
-                <div>Client API Key: {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? '✅ Present' : '❌ Missing'}</div>
                 <div>Google Maps: {window.google?.maps ? '✅ Loaded' : '❌ Not Loaded'}</div>
                 <div>Places Library: {window.google?.maps?.places ? '✅ Available' : '❌ Unavailable'}</div>
                 <div>AutocompleteService: {autocompleteService ? '✅ Ready' : '❌ Failed'}</div>

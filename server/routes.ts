@@ -1980,38 +1980,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Debug endpoint for Google Maps API key testing
-  app.get('/api/debug/google-maps-status', async (req, res) => {
-    try {
-      const clientKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-      const serverKey = process.env.GOOGLE_MAPS_API_KEY;
-      
-      // Test server-side access
-      const testUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=${serverKey}`;
-      const response = await fetch(testUrl);
-      const data = await response.json();
-      
-      res.json({
-        timestamp: new Date().toISOString(),
-        clientKeyPresent: !!clientKey,
-        serverKeyPresent: !!serverKey,
-        keysMatch: clientKey === serverKey,
-        clientKeyLength: clientKey ? clientKey.length : 0,
-        serverKeyLength: serverKey ? serverKey.length : 0,
-        serverSideTest: {
-          status: response.status,
-          geocodingWorking: data.status === 'OK',
-          apiStatus: data.status,
-          errorMessage: data.error_message
-        }
-      });
-    } catch (error: any) {
-      res.status(500).json({ 
-        error: error.message,
-        timestamp: new Date().toISOString() 
-      });
-    }
-  });
+  // Debug endpoint for Google Maps API key testing (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.get('/api/debug/google-maps-status', async (req, res) => {
+      try {
+        const clientKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+        const serverKey = process.env.GOOGLE_MAPS_API_KEY;
+        
+        res.json({
+          environment: 'development',
+          clientKeyPresent: !!clientKey,
+          serverKeyPresent: !!serverKey
+        });
+      } catch (error: any) {
+        res.status(500).json({ error: 'Debug test failed' });
+      }
+    });
+  }
 
   const httpServer = createServer(app);
   return httpServer;
