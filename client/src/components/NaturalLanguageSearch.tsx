@@ -369,9 +369,9 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           )}
 
           {results.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 bg-background p-4 rounded-lg border border-border">
               <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-primary-foreground">Your AI-Powered Recommendations</h4>
+                <h4 className="font-semibold text-foreground">Your AI-Powered Recommendations</h4>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -392,7 +392,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h5 className="font-medium text-gray-900">{restaurant.name}</h5>
+                        <h5 className="font-medium text-foreground">{restaurant.name}</h5>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="secondary">{restaurant.type}</Badge>
                           <Badge variant="outline">{restaurant.priceRange}</Badge>
