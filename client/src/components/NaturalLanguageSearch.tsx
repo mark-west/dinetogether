@@ -226,7 +226,11 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
 
   return (
     <Card className={`ai-concierge-card bg-primary text-primary-foreground border-primary/20 shadow-lg ${className}`}>
-      <CardHeader>
+      <CardHeader 
+        className="cursor-pointer hover:bg-primary-foreground/5 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+        data-testid="header-toggle-concierge"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary-foreground/10 border border-primary-foreground/20 rounded-lg flex items-center justify-center">
@@ -240,25 +244,13 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
             </div>
           </div>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="shrink-0 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-            data-testid="button-toggle-concierge"
-          >
+          <div className="shrink-0 text-primary-foreground p-2">
             {isExpanded ? (
-              <>
-                <ChevronUp className="w-4 h-4 mr-1" />
-                Collapse
-              </>
+              <ChevronUp className="w-5 h-5" />
             ) : (
-              <>
-                <ChevronDown className="w-4 h-4 mr-1" />
-                AI Dining Concierge
-              </>
+              <ChevronDown className="w-5 h-5" />
             )}
-          </Button>
+          </div>
         </div>
       </CardHeader>
 
