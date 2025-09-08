@@ -42,6 +42,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [location, navigate] = useLocation();
   const [allowedNavigation, setAllowedNavigation] = useState(false);
+  const [currentAbortController, setCurrentAbortController] = useState<AbortController | null>(null);
 
   // Get user's location and restore search state on component mount
   useEffect(() => {
@@ -146,6 +147,9 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
         throw new Error('Location not available');
       }
       
+      console.log('AI Concierge: Starting search request...');
+      const startTime = Date.now();
+      
       const endpoint = variant === 'group' && groupId 
         ? `/api/ai-concierge/group/${groupId}`
         : '/api/ai-concierge';
@@ -154,22 +158,74 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       params.set('lat', userLocation.lat.toString());
       params.set('lng', userLocation.lng.toString());
       
-      const response = await apiRequest('POST', `${endpoint}?${params}`, { prompt: searchPrompt });
+      // Create AbortController for request cancellation
+      const controller = new AbortController();
+      setCurrentAbortController(controller);
       
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('Search error:', error);
-        throw new Error(`Search failed: ${response.status}`);
+      // Set up 3-minute timeout (180 seconds)
+      const timeoutId = setTimeout(() => {
+        console.log('AI Concierge: Request timeout after 3 minutes, aborting...');
+        controller.abort();
+      }, 180000);
+      
+      try {
+        console.log('AI Concierge: Making API request to:', `${endpoint}?${params}`);
+        
+        const response = await fetch(`${endpoint}?${params}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: searchPrompt }),
+          credentials: 'include',
+          signal: controller.signal
+        });
+        
+        // Clear timeout on successful response
+        clearTimeout(timeoutId);
+        
+        const elapsedTime = Date.now() - startTime;
+        console.log(`AI Concierge: Request completed in ${elapsedTime}ms (${Math.round(elapsedTime/1000)}s)`);
+        
+        if (!response.ok) {
+          const error = await response.text();
+          console.error('AI Concierge: Search error:', error);
+          throw new Error(`Search failed: ${response.status} - ${error}`);
+        }
+        
+        const data = await response.json();
+        console.log('AI Concierge: Successfully parsed response data');
+        return data;
+        
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        setCurrentAbortController(null);
+        
+        if (error.name === 'AbortError') {
+          console.log('AI Concierge: Request was cancelled or timed out');
+          throw new Error('Search request was cancelled or timed out after 3 minutes');
+        }
+        
+        console.error('AI Concierge: Request failed:', error);
+        throw error;
       }
-      
-      return await response.json();
     },
     onSuccess: (data: any) => {
-      console.log('AI Dining Concierge results:', data);
-      setResults(data.restaurants || []);
+      console.log('AI Concierge: Search completed successfully!');
+      console.log('AI Concierge: Restaurant results:', data);
+      setCurrentAbortController(null);
+      
+      if (data.restaurants && Array.isArray(data.restaurants)) {
+        console.log(`AI Concierge: Setting ${data.restaurants.length} restaurant results`);
+        setResults(data.restaurants);
+      } else {
+        console.log('AI Concierge: No restaurants found in response');
+        setResults([]);
+      }
     },
     onError: (error: any) => {
-      console.error('Search error:', error);
+      console.error('AI Concierge: Search failed with error:', error);
+      setCurrentAbortController(null);
       setResults([]);
     }
   });
@@ -181,6 +237,14 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       return;
     }
     searchMutation.mutate(prompt.trim());
+  };
+
+  const handleCancelSearch = () => {
+    if (currentAbortController) {
+      console.log('AI Concierge: User cancelled search');
+      currentAbortController.abort();
+      setCurrentAbortController(null);
+    }
   };
 
   const handleRestaurantClick = (restaurant: RestaurantResult, index: number) => {
