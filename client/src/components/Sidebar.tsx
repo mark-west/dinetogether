@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { memo, useCallback, useMemo } from "react";
 import type { Group } from "@shared/schema";
-// Logo removed - using text-based logo instead
+import logoImage from "@assets/fulllogo_1757366411712.png";
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 
 export default function Sidebar() {
@@ -36,16 +36,14 @@ export default function Sidebar() {
     <div className="hidden md:block bg-card border-r border-border h-screen sticky top-0 w-80">
       {/* Header */}
       <div className="p-6 border-b border-border">
-        <div 
-          className="mb-4 w-full aspect-square bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:from-purple-700 hover:via-pink-600 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-          data-testid="img-sidebar-logo"
-          onClick={() => navigateWithLoading('/')}
-        >
-          <div className="text-white text-4xl mb-2 filter drop-shadow-lg">🍽️</div>
-          <div className="text-white text-sm font-bold text-center leading-tight tracking-wide">
-            <div className="font-extrabold">DINE</div>
-            <div className="font-light -mt-1">Together</div>
-          </div>
+        <div className="mb-4 w-full aspect-square">
+          <img 
+            src={logoImage} 
+            alt="Dine Together" 
+            className="w-full h-full rounded-xl object-cover cursor-pointer hover:scale-105 transition-transform shadow-lg hover:shadow-xl"
+            data-testid="img-sidebar-logo"
+            onClick={() => navigateWithLoading('/')}
+          />
         </div>
         
         {/* User Profile */}

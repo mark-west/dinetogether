@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EventCard } from "@/components/ui/event-card";
 import { GroupCard } from "@/components/ui/group-card";
 import { CheckCircleIcon, StarIcon, CalendarIcon, UsersIcon, PlusIcon } from "@/components/ui/app-icons";
-// Logo removed - using text-based logo instead
+import logoImage from "@assets/fulllogo_1757366411712.png";
 
 export default function Dashboard() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -93,12 +93,12 @@ export default function Dashboard() {
       <div className="md:hidden bg-card border-b border-border p-4 sticky top-0 z-40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 flex items-center justify-center text-white text-lg shadow-md"
+            <img 
+              src={logoImage} 
+              alt="Dine Together" 
+              className="w-10 h-10 rounded-lg object-cover shadow-md"
               data-testid="img-logo"
-            >
-              🍽️
-            </div>
+            />
             <h1 className="font-semibold text-xl text-gradient">Dine Together</h1>
           </div>
           
