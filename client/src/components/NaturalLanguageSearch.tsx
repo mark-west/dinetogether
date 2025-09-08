@@ -238,7 +238,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
             </div>
             <div>
               <CardTitle className="text-xl font-semibold text-primary-foreground">AI Dining Concierge</CardTitle>
-              <p className="text-sm text-primary-foreground/70">
+              <p className="text-sm text-primary-foreground">
                 Tell us what you're craving in plain English
               </p>
             </div>
@@ -273,7 +273,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                     }
                   }}
                   placeholder="Describe what kind of dining experience you're looking for..."
-                  className="min-h-[80px] resize-none bg-primary-foreground/5 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 focus:border-primary-foreground/40"
+                  className="min-h-[80px] resize-none bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/80 focus:border-primary-foreground/60"
                   data-testid="textarea-search-prompt"
                 />
                 
@@ -293,7 +293,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                       <button
                         key={index}
                         onClick={() => setPrompt(example)}
-                        className="text-xs px-2 py-1 bg-primary-foreground/10 hover:bg-primary-foreground/20 border border-primary-foreground/20 rounded-md text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer"
+                        className="text-xs px-2 py-1 bg-primary-foreground/15 hover:bg-primary-foreground/25 border border-primary-foreground/30 rounded-md text-primary-foreground hover:text-primary-foreground transition-colors cursor-pointer"
                         data-testid={`button-example-${index}`}
                       >
                         {example}
@@ -302,7 +302,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   </div>
                 </div>
                 
-                <p className="text-xs text-primary-foreground/60">
+                <p className="text-xs text-primary-foreground/90">
                   {userLocation ? 
                     "Press Enter to search, or Shift+Enter for new line. We'll search near your current location." :
                     "Please allow location access to get personalized restaurant recommendations."
@@ -327,8 +327,8 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           {searchMutation.isPending && (
             <div className="space-y-4">
               <div className="text-center py-6">
-                <div className="inline-flex items-center gap-3 text-primary-foreground/80">
-                  <div className="animate-spin h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
+                <div className="inline-flex items-center gap-3 text-primary-foreground">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full"></div>
                   <span className="font-medium">AI is finding perfect restaurants for you...</span>
                 </div>
               </div>
@@ -345,10 +345,10 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   <i className="fas fa-exclamation-triangle text-2xl text-red-400"></i>
                 </div>
                 <h3 className="font-medium text-primary-foreground mb-2">Search Failed</h3>
-                <p className="text-sm text-primary-foreground/70 mb-4">
+                <p className="text-sm text-primary-foreground mb-4">
                   We couldn't process your request right now. This might be due to:
                 </p>
-                <ul className="text-xs text-primary-foreground/60 text-left mb-4 space-y-1">
+                <ul className="text-xs text-primary-foreground/90 text-left mb-4 space-y-1">
                   <li>• Location access required</li>
                   <li>• AI service temporarily unavailable</li>
                   <li>• Network connectivity issues</li>
