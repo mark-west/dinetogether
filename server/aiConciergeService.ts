@@ -44,26 +44,43 @@ export class AIConciergeService {
 
   async processNaturalLanguageRequest(request: AIConciergeRequest): Promise<{ restaurants: RestaurantRecommendation[] }> {
     try {
+      const startTime = Date.now();
       console.log('AI Concierge Processing Request:', { 
         prompt: request.prompt, 
         coordinates: `${request.latitude},${request.longitude}` 
       });
 
       // Step 1: Use OpenAI to interpret the natural language request
+      const openaiStart = Date.now();
+      console.log('Step 1: Starting OpenAI interpretation...');
       const gptResponse = await this.interpretRequest(request.prompt, request.latitude, request.longitude);
+      const openaiTime = Date.now() - openaiStart;
+      console.log(`Step 1 Complete: OpenAI interpretation took ${openaiTime}ms (${Math.round(openaiTime/1000)}s)`);
       console.log('OpenAI Response:', gptResponse);
 
       // Step 2: Extract restaurant names/addresses from GPT response
+      const extractStart = Date.now();
+      console.log('Step 2: Extracting restaurant names...');
       const restaurantNames = this.extractRestaurantNames(gptResponse.restaurants);
+      const extractTime = Date.now() - extractStart;
+      console.log(`Step 2 Complete: Extraction took ${extractTime}ms`);
       console.log('Extracted restaurant names for Google Places search:', restaurantNames);
 
       // Step 3: Search Google Places API for each restaurant
+      const placesStart = Date.now();
+      console.log(`Step 3: Starting Google Places API enrichment for ${restaurantNames.length} restaurants...`);
       const detailedRestaurants = await this.enrichWithGooglePlacesData(
         restaurantNames, 
         request.latitude, 
         request.longitude
       );
+      const placesTime = Date.now() - placesStart;
+      console.log(`Step 3 Complete: Google Places enrichment took ${placesTime}ms (${Math.round(placesTime/1000)}s)`);
       console.log('Google Places API enriched data:', detailedRestaurants);
+
+      const totalTime = Date.now() - startTime;
+      console.log(`AI Concierge Complete: Total processing time ${totalTime}ms (${Math.round(totalTime/1000)}s)`);
+      console.log(`Timing breakdown: OpenAI ${Math.round(openaiTime/1000)}s, Places API ${Math.round(placesTime/1000)}s`);
 
       return { restaurants: detailedRestaurants };
     } catch (error) {
@@ -113,7 +130,10 @@ Respond with only valid JSON, no additional text.`;
           content: `near ${latitude}, ${longitude}, restaurant results only, and add google Places API data: ${prompt}`
         }
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      max_tokens: 2000 // Limit response length to speed up processing
+    }, {
+      timeout: 30000 // 30 second timeout for OpenAI
     });
 
     return JSON.parse(response.choices[0].message.content || '{"restaurants": []}');
