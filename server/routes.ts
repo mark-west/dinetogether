@@ -2075,9 +2075,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { signed_url: uploadURL } = await response.json();
       
-      console.log('Generated upload URL for bucket:', bucketName, 'object:', objectName);
-      console.log('Upload URL preview:', uploadURL.substring(0, 100) + '...');
-      
       res.json({ uploadURL });
     } catch (error: any) {
       console.error('Error generating upload URL:', error);

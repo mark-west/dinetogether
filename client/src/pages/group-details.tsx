@@ -110,7 +110,9 @@ export default function GroupDetails() {
         title: "Success",
         description: "Group photo updated successfully",
       });
+      // Invalidate both the specific group and the groups list
       queryClient.invalidateQueries({ queryKey: ["/api/groups", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {

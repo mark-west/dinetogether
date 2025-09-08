@@ -80,7 +80,6 @@ export default function PhotoUploader({
       }
 
       const { uploadURL } = await uploadResponse.json();
-      console.log('Received upload URL:', uploadURL.substring(0, 100) + '...');
 
       // Upload file directly to object storage
       const fileUploadResponse = await fetch(uploadURL, {
