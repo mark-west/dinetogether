@@ -1905,6 +1905,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Server-side restaurant autocomplete proxy (fallback when client-side Google API fails)
+  app.post('/api/restaurant-autocomplete', async (req, res) => {
+    try {
+      const { query, location } = req.body;
+      
+      if (!query || query.length < 3) {
+        return res.json({ suggestions: [] });
+      }
+      
+      // Use existing working server-side Google Places integration
+      const { GooglePlacesService } = await import('./googlePlacesService');
+      const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY!);
+      const results = await googlePlaces.searchByText(
+        query, 
+        location?.lat || 37.7749, // Default to SF coordinates if no location
+        location?.lng || -122.4194, 
+        15000
+      );
+      
+      // Transform to client-expected autocomplete format
+      const suggestions = results.map(place => ({
+        place_id: place.id,
+        description: place.displayName.text,
+        structured_formatting: {
+          main_text: place.displayName.text,
+          secondary_text: place.formattedAddress
+        },
+        geometry: {
+          location: {
+            lat: place.location?.latitude,
+            lng: place.location?.longitude
+          }
+        }
+      }));
+      
+      console.log(`✅ Server-side autocomplete returned ${suggestions.length} results for: "${query}"`);
+      res.json({ suggestions });
+    } catch (error: any) {
+      console.error('Server-side autocomplete failed:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Debug endpoint for Google Maps API key testing
   app.get('/api/debug/google-maps-status', async (req, res) => {
     try {

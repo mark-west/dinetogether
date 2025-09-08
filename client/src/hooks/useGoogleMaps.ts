@@ -184,39 +184,60 @@ export function useGooglePlaces() {
     });
   }, [placesService]);
 
-  const autocompleteRestaurants = useCallback((input: string, location?: { lat: number; lng: number }) => {
-    return new Promise((resolve, reject) => {
-      if (!autocompleteService) {
-        reject(new Error('Autocomplete service not available'));
-        return;
-      }
-      
-      const request: any = {
-        input,
-        types: ['restaurant'], // More specific type to reduce irrelevant results
-      };
+  const autocompleteRestaurants = useCallback(async (input: string, location?: { lat: number; lng: number }) => {
+    // Try client-side Google API first
+    if (autocompleteService) {
+      try {
+        return await new Promise((resolve, reject) => {
+          const request: any = {
+            input,
+            types: ['restaurant'], // More specific type to reduce irrelevant results
+          };
 
-      if (location) {
-        // Use new locationBias instead of deprecated location/radius
-        request.locationBias = {
-          center: { lat: location.lat, lng: location.lng },
-          radius: 15000 // 15km radius
-        };
-      }
-
-      autocompleteService.getPlacePredictions(
-        request,
-        (predictions: any[], status: any) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            resolve(predictions || []);
-          } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-            resolve([]);
-          } else {
-            reject(new Error(`Autocomplete failed: ${status}`));
+          if (location) {
+            // Use new locationBias instead of deprecated location/radius
+            request.locationBias = {
+              center: { lat: location.lat, lng: location.lng },
+              radius: 15000 // 15km radius
+            };
           }
-        }
-      );
-    });
+
+          autocompleteService.getPlacePredictions(
+            request,
+            (predictions: any[], status: any) => {
+              if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+                console.log('✅ Using client-side Google autocomplete');
+                resolve(predictions || []);
+              } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                resolve([]);
+              } else {
+                reject(new Error(`Autocomplete failed: ${status}`));
+              }
+            }
+          );
+        });
+      } catch (error) {
+        console.log('Client-side autocomplete failed, trying server fallback...', error);
+      }
+    }
+    
+    // Fallback to server-side proxy
+    try {
+      const response = await fetch('/api/restaurant-autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: input, location })
+      });
+      
+      if (!response.ok) throw new Error('Server autocomplete failed');
+      
+      const data = await response.json();
+      console.log('✅ Using server-side autocomplete fallback');
+      return data.suggestions || [];
+    } catch (error: any) {
+      console.error('All autocomplete methods failed:', error);
+      throw new Error('Restaurant search temporarily unavailable');
+    }
   }, [autocompleteService]);
 
   const getUserLocation = useCallback(() => {
