@@ -446,10 +446,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/events/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const event = await storage.getEvent(req.params.id);
+      let event = await storage.getEvent(req.params.id);
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
+      
+      // If we have a Google Place ID but missing hours, try to fetch fresh data
+      if (event.restaurantPlaceId && !event.restaurantHours) {
+        try {
+          const { GooglePlacesService } = await import('./googlePlacesService');
+          const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY!);
+          const details = await googlePlaces.getPlaceDetails(event.restaurantPlaceId);
+          
+          if (details?.regularOpeningHours) {
+            // Update the event object with fresh restaurant data (but don't save to DB)
+            event = {
+              ...event,
+              restaurantHours: {
+                open_now: details.regularOpeningHours.openNow,
+                weekdayDescriptions: details.regularOpeningHours.weekdayDescriptions,
+                periods: details.regularOpeningHours.periods
+              },
+              // Also update other details if they're missing
+              restaurantPhone: event.restaurantPhone || details.nationalPhoneNumber || '',
+              restaurantWebsite: event.restaurantWebsite || details.websiteUri || '',
+              restaurantRating: event.restaurantRating || details.rating || null,
+            };
+          }
+        } catch (error) {
+          console.warn("Failed to fetch fresh restaurant details:", error);
+          // Continue with stored data - don't fail the whole request
+        }
+      }
+      
       res.json(event);
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -475,8 +504,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let updateData = insertEventSchema.partial().parse(req.body);
       
-      // Auto-geocode restaurant location if name/address changed but no new coordinates
-      if ((updateData.restaurantName || updateData.restaurantAddress) && 
+      // Only auto-geocode if we don't have a Google Place ID and need coordinates  
+      if (!updateData.restaurantPlaceId && 
+          (updateData.restaurantName || updateData.restaurantAddress) && 
           (!updateData.restaurantLat || !updateData.restaurantLng)) {
         
         const searchQuery = updateData.restaurantName || updateData.restaurantAddress;
