@@ -19,7 +19,7 @@ interface RestaurantSearchProps {
 }
 
 export default function RestaurantSearch({ onSelect, placeholder = "Enter restaurant name...", initialValue = "" }: RestaurantSearchProps) {
-  const [useGoogleSearch, setUseGoogleSearch] = useState(false);
+  const [useGoogleSearch, setUseGoogleSearch] = useState(true);
   const [inputValue, setInputValue] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -122,8 +122,18 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
 
   return (
     <div className="space-y-3">
-      {/* Toggle between manual and Google search */}
+      {/* Toggle between Google search and manual */}
       <div className="flex gap-2">
+        <Button
+          type="button"
+          variant={useGoogleSearch ? "default" : "outline"}
+          size="sm"
+          onClick={() => setUseGoogleSearch(true)}
+          data-testid="button-google-search"
+        >
+          Search Google
+          {userLocation && <span className="ml-1">📍</span>}
+        </Button>
         <Button
           type="button"
           variant={!useGoogleSearch ? "default" : "outline"}
@@ -136,16 +146,6 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
           data-testid="button-manual-mode"
         >
           Manual Entry
-        </Button>
-        <Button
-          type="button"
-          variant={useGoogleSearch ? "default" : "outline"}
-          size="sm"
-          onClick={() => setUseGoogleSearch(true)}
-          data-testid="button-google-search"
-        >
-          Search Google
-          {userLocation && <span className="ml-1">📍</span>}
         </Button>
       </div>
 
