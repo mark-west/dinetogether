@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
 import { memo, useCallback, useMemo } from "react";
 import type { Group } from "@shared/schema";
-import logoImage from "@assets/fulllogo_1756644214427.jpg";
+// Logo removed - using text-based logo instead
 import { useLoadingNavigation } from "@/hooks/useLoadingNavigation";
 
 export default function Sidebar() {
@@ -36,14 +36,15 @@ export default function Sidebar() {
     <div className="hidden md:block bg-card border-r border-border h-screen sticky top-0 w-80">
       {/* Header */}
       <div className="p-6 border-b border-border">
-        <div className="mb-4 w-full aspect-square">
-          <img 
-            src={logoImage} 
-            alt="Dine Together" 
-            className="w-full h-full rounded-lg object-cover cursor-pointer"
-            data-testid="img-sidebar-logo"
-            onClick={() => navigateWithLoading('/')}
-          />
+        <div 
+          className="mb-4 w-full aspect-square bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:from-purple-700 hover:to-pink-700 transition-all"
+          data-testid="img-sidebar-logo"
+          onClick={() => navigateWithLoading('/')}
+        >
+          <div className="text-white text-3xl mb-1">🍽️</div>
+          <div className="text-white text-xs font-bold text-center leading-tight">
+            Dine<br/>Together
+          </div>
         </div>
         
         {/* User Profile */}

@@ -40,7 +40,8 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
   const [prompt, setPrompt] = useState('');
   const [results, setResults] = useState<RestaurantResult[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+  const [allowedNavigation, setAllowedNavigation] = useState(false);
 
   // Get user's location and restore search state on component mount
   useEffect(() => {
@@ -99,6 +100,44 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [results, prompt, isExpanded]);
+
+  // Auto-reset AI Concierge when navigating away (except for allowed navigation)
+  useEffect(() => {
+    const currentPath = location;
+    const hasResults = results.length > 0;
+    
+    if (!hasResults) {
+      // No results to reset
+      return;
+    }
+
+    // Check if this is a navigation back from restaurant details
+    const urlParams = new URLSearchParams(window.location.search);
+    const backParam = urlParams.get('back');
+    const isNavigatingBack = backParam && currentPath.includes(backParam);
+    
+    // Check if this is a restaurant details page
+    const isRestaurantDetailsPage = currentPath.startsWith('/restaurant/');
+    
+    // Check if this is an allowed navigation we explicitly marked
+    if (allowedNavigation) {
+      setAllowedNavigation(false); // Reset the flag
+      return;
+    }
+    
+    // If navigating back from restaurant details or staying on restaurant details, don't reset
+    if (isNavigatingBack || isRestaurantDetailsPage) {
+      return;
+    }
+    
+    // Check if we have AI Concierge results and we're not on an allowed page
+    if (hasResults && !isRestaurantDetailsPage) {
+      // This is navigation away from AI results to a different page - reset the concierge
+      console.log('AI Concierge: Auto-resetting due to navigation away from results');
+      resetSearch();
+    }
+    
+  }, [location, results.length, allowedNavigation]);
 
   const searchMutation = useMutation({
     mutationFn: async (searchPrompt: string) => {
@@ -170,6 +209,9 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
     
     sessionStorage.setItem(`restaurant_${restaurantId}`, JSON.stringify(restaurantData));
     const currentPath = window.location.pathname;
+    
+    // Mark this as allowed navigation to prevent AI Concierge reset
+    setAllowedNavigation(true);
     navigate(`/restaurant/${restaurantId}?back=${currentPath}`);
   };
 
@@ -421,6 +463,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
+                            // Website clicks open in new tab, so no navigation reset needed
                             window.open(restaurant.website, '_blank', 'noopener,noreferrer');
                           }}
                           variant="outline"

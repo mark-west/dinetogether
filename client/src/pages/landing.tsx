@@ -1,17 +1,16 @@
 import { Button } from "@/components/ui/button";
-import logoImage from "@assets/fulllogo_1756675026225.png";
 
 export default function Landing() {
   return (
     <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
       <div className="w-full max-w-sm mx-auto flex flex-col items-center space-y-8 text-center">
         {/* Logo */}
-        <div className="w-full bg-white rounded-2xl p-4 shadow-lg">
-          <img 
-            src={logoImage} 
-            alt="DineTogether Logo" 
-            className="w-full h-auto"
-          />
+        <div className="w-full bg-white rounded-2xl p-6 shadow-lg">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-purple-600 mb-2">🍽️</h1>
+            <h2 className="text-xl font-bold text-gray-800">DineTogether</h2>
+            <p className="text-sm text-gray-600">Restaurant Coordination</p>
+          </div>
         </div>
         
         {/* Title & Description */}
