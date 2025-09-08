@@ -470,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Also update other details if they're missing
               restaurantPhone: event.restaurantPhone || details.nationalPhoneNumber || '',
               restaurantWebsite: event.restaurantWebsite || details.websiteUri || '',
-              restaurantRating: event.restaurantRating || details.rating || null,
+              restaurantRating: event.restaurantRating || (details.rating ? details.rating.toString() : null),
             };
           }
         } catch (error) {
