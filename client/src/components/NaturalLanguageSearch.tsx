@@ -309,12 +309,26 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
             </div>
           </div>
           
-          <div className="shrink-0 text-primary-foreground p-2">
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
-            )}
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent header click
+                resetSearch();
+              }}
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/10 text-xs"
+              data-testid="button-new-search-header"
+            >
+              New Search
+            </Button>
+            <div className="shrink-0 text-primary-foreground p-2">
+              {isExpanded ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
