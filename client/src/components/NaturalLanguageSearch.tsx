@@ -227,12 +227,6 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       console.error('AI Concierge: Search failed with error:', error);
       setCurrentAbortController(null);
       setResults([]);
-      
-      // Don't show error UI for user-cancelled requests
-      if (error.name === 'AbortError' || error.message?.includes('cancelled')) {
-        console.log('Search was cancelled by user - no error shown');
-        return;
-      }
     }
   });
 
@@ -250,8 +244,6 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       console.log('AI Concierge: User cancelled search');
       currentAbortController.abort();
       setCurrentAbortController(null);
-      // Reset the mutation to clear any pending state
-      searchMutation.reset();
     }
   };
 
@@ -399,55 +391,75 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
 
           {searchMutation.isPending && (
             <div className="space-y-6 py-8">
-              {/* Prominent Animated Loading Indicator */}
+              {/* Main Progress Indicator */}
               <div className="text-center">
-                <div className="relative mb-6">
-                  {/* Main spinning loader */}
-                  <div className="w-16 h-16 mx-auto mb-4">
-                    <div className="animate-spin w-full h-full border-4 border-primary-foreground/20 border-t-primary-foreground rounded-full"></div>
-                  </div>
-                  
-                  {/* Pulsing dots */}
-                  <div className="flex justify-center space-x-2 mb-4">
-                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-                  </div>
-                  
+                <div className="inline-flex items-center gap-3 mb-4">
+                  <div className="animate-spin h-6 w-6 border-3 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
                   <span className="text-lg font-semibold text-primary-foreground">AI is searching for you...</span>
+                </div>
+                <div className="w-full bg-primary-foreground/20 rounded-full h-2 mb-4">
+                  <div className="bg-primary-foreground h-2 rounded-full animate-pulse" style={{width: '65%'}}></div>
                 </div>
               </div>
 
-              {/* Honest Time Expectation */}
-              <div className="bg-primary-foreground/10 rounded-lg p-6 border border-primary-foreground/20 max-w-md mx-auto">
-                <div className="text-center">
-                  <h4 className="font-medium text-primary-foreground mb-3">⏱️ Processing Your Request</h4>
-                  <div className="space-y-2 text-sm text-primary-foreground/90">
-                    <p>This usually takes <strong>60-90 seconds</strong></p>
-                    <p className="text-xs text-primary-foreground/70">
-                      We're using AI to find real restaurants, reading reviews, and getting current hours & details
-                    </p>
+              {/* Process Steps */}
+              <div className="space-y-4 max-w-md mx-auto">
+                <div className="flex items-center gap-3 text-primary-foreground">
+                  <div className="w-6 h-6 bg-primary-foreground rounded-full flex items-center justify-center text-primary text-xs font-bold">✓</div>
+                  <span className="text-sm">Understanding your dining preferences</span>
+                </div>
+                <div className="flex items-center gap-3 text-primary-foreground">
+                  <div className="w-6 h-6 bg-primary-foreground rounded-full flex items-center justify-center text-primary text-xs font-bold">✓</div>
+                  <span className="text-sm">Analyzing location and nearby options</span>
+                </div>
+                <div className="flex items-center gap-3 text-primary-foreground">
+                  <div className="w-6 h-6 border-2 border-primary-foreground rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
                   </div>
-                  
-                  {/* Animated progress bar */}
-                  <div className="mt-4 mb-4">
-                    <div className="w-full bg-primary-foreground/20 rounded-full h-2">
-                      <div className="bg-primary-foreground h-2 rounded-full animate-pulse opacity-75" style={{width: '100%'}}></div>
+                  <span className="text-sm">Evaluating restaurant reviews and ratings</span>
+                </div>
+                <div className="flex items-center gap-3 text-primary-foreground/60">
+                  <div className="w-6 h-6 border-2 border-primary-foreground/30 rounded-full"></div>
+                  <span className="text-sm">Personalizing recommendations for you</span>
+                </div>
+              </div>
+
+              {/* Tips Section and Cancel Button */}
+              <div className="bg-primary-foreground/10 rounded-lg p-4 border border-primary-foreground/20">
+                <div className="text-center">
+                  <h4 className="font-medium text-primary-foreground mb-2">💡 While you wait...</h4>
+                  <p className="text-sm text-primary-foreground/90 mb-4">
+                    Our AI is analyzing hundreds of restaurants, reading reviews, checking hours, 
+                    and matching them to your specific preferences. This ensures you get the best 
+                    personalized recommendations!
+                  </p>
+                  <Button 
+                    onClick={handleCancelSearch}
+                    variant="outline"
+                    size="sm"
+                    className="bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
+                    data-testid="button-cancel-search"
+                  >
+                    Cancel Search
+                  </Button>
+                </div>
+              </div>
+
+              {/* Loading Placeholders */}
+              <div className="space-y-3">
+                <div className="text-xs text-primary-foreground/70 text-center mb-2">Preview of your upcoming results...</div>
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-primary-foreground/5 border border-primary-foreground/20 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-4 w-4 rounded bg-primary-foreground/20" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4 bg-primary-foreground/20" />
+                        <Skeleton className="h-3 w-1/2 bg-primary-foreground/15" />
+                      </div>
+                      <Skeleton className="h-3 w-16 bg-primary-foreground/15" />
                     </div>
                   </div>
-                  
-                  <div className="pt-2 border-t border-primary-foreground/20">
-                    <Button 
-                      onClick={handleCancelSearch}
-                      variant="outline"
-                      size="sm"
-                      className="bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
-                      data-testid="button-cancel-search"
-                    >
-                      Cancel Search
-                    </Button>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           )}
@@ -487,13 +499,12 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-foreground">Your AI-Powered Recommendations</h4>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
                   size="sm" 
                   onClick={resetSearch}
-                  className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   data-testid="button-new-search"
                 >
-                  🔄 New Search
+                  New Search
                 </Button>
               </div>
               
@@ -587,19 +598,6 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                   </CardContent>
                 </Card>
               ))}
-              
-              {/* Prominent Reset Button at Bottom */}
-              <div className="flex justify-center pt-6 pb-2 border-t border-border">
-                <Button 
-                  onClick={resetSearch}
-                  variant="outline"
-                  size="lg"
-                  className="w-full max-w-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground font-medium"
-                  data-testid="button-reset-search"
-                >
-                  🔄 Start New Search
-                </Button>
-              </div>
             </div>
           )}
         </CardContent>

@@ -44,43 +44,26 @@ export class AIConciergeService {
 
   async processNaturalLanguageRequest(request: AIConciergeRequest): Promise<{ restaurants: RestaurantRecommendation[] }> {
     try {
-      const startTime = Date.now();
       console.log('AI Concierge Processing Request:', { 
         prompt: request.prompt, 
         coordinates: `${request.latitude},${request.longitude}` 
       });
 
       // Step 1: Use OpenAI to interpret the natural language request
-      const openaiStart = Date.now();
-      console.log('Step 1: Starting OpenAI interpretation...');
       const gptResponse = await this.interpretRequest(request.prompt, request.latitude, request.longitude);
-      const openaiTime = Date.now() - openaiStart;
-      console.log(`Step 1 Complete: OpenAI interpretation took ${openaiTime}ms (${Math.round(openaiTime/1000)}s)`);
       console.log('OpenAI Response:', gptResponse);
 
       // Step 2: Extract restaurant names/addresses from GPT response
-      const extractStart = Date.now();
-      console.log('Step 2: Extracting restaurant names...');
       const restaurantNames = this.extractRestaurantNames(gptResponse.restaurants);
-      const extractTime = Date.now() - extractStart;
-      console.log(`Step 2 Complete: Extraction took ${extractTime}ms`);
       console.log('Extracted restaurant names for Google Places search:', restaurantNames);
 
       // Step 3: Search Google Places API for each restaurant
-      const placesStart = Date.now();
-      console.log(`Step 3: Starting Google Places API enrichment for ${restaurantNames.length} restaurants...`);
       const detailedRestaurants = await this.enrichWithGooglePlacesData(
         restaurantNames, 
         request.latitude, 
         request.longitude
       );
-      const placesTime = Date.now() - placesStart;
-      console.log(`Step 3 Complete: Google Places enrichment took ${placesTime}ms (${Math.round(placesTime/1000)}s)`);
       console.log('Google Places API enriched data:', detailedRestaurants);
-
-      const totalTime = Date.now() - startTime;
-      console.log(`AI Concierge Complete: Total processing time ${totalTime}ms (${Math.round(totalTime/1000)}s)`);
-      console.log(`Timing breakdown: OpenAI ${Math.round(openaiTime/1000)}s, Places API ${Math.round(placesTime/1000)}s`);
 
       return { restaurants: detailedRestaurants };
     } catch (error) {
@@ -90,37 +73,33 @@ export class AIConciergeService {
   }
 
   private async interpretRequest(prompt: string, latitude: number, longitude: number): Promise<any> {
-    const systemPrompt = `You are a restaurant recommendation AI. The user wants: "${prompt}"
+    const systemPrompt = `You are a restaurant recommendation AI assistant. The user is located at coordinates ${latitude}, ${longitude}. 
 
-Location: Milwaukee/Brookfield, Wisconsin area (${latitude}, ${longitude})
-
-You MUST provide restaurant suggestions. Return JSON in this exact format:
+Based on their natural language request, provide restaurant recommendations in the following JSON format:
 
 {
   "restaurants": [
     {
       "name": "Restaurant Name",
-      "address": "Milwaukee area",
-      "type": "Italian Restaurant", 
-      "reasoning": "Great for romantic dining"
+      "address": "Full Address",
+      "type": "Cuisine Type",
+      "reasoning": "Why this matches their request"
     }
   ]
 }
 
-REQUIRED: Always suggest at least 4 restaurants. If you don't know specific local restaurants, suggest:
-- Popular chain restaurants (Olive Garden, Carrabba's, etc.)
-- Common restaurant types that would exist in Milwaukee
-- Well-known brands that match the request
+Requirements:
+1. Only recommend restaurants that exist near the provided coordinates
+2. Provide REAL restaurant names and addresses, not fictional ones
+3. Include complete street addresses when possible
+4. Focus on restaurants that match the user's specific request
+5. Limit to 6 restaurants maximum
+6. Prioritize highly-rated, well-known establishments
 
-For "${prompt}", suggest restaurants that fit this criteria. DO NOT return an empty array.
+User location: ${latitude}, ${longitude}
+User request: ${prompt}
 
-Example for "Romantic Italian dinner":
-- Olive Garden (chain option)
-- Local Italian restaurants 
-- Upscale dining establishments
-- Restaurants with romantic atmosphere
-
-ALWAYS include suggestions - never return empty results.`;
+Respond with only valid JSON, no additional text.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-5",
@@ -131,13 +110,10 @@ ALWAYS include suggestions - never return empty results.`;
         },
         {
           role: "user", 
-          content: prompt
+          content: `near ${latitude}, ${longitude}, restaurant results only, and add google Places API data: ${prompt}`
         }
       ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 2000 // Limit response length to speed up processing
-    }, {
-      timeout: 30000 // 30 second timeout for OpenAI
+      response_format: { type: "json_object" }
     });
 
     return JSON.parse(response.choices[0].message.content || '{"restaurants": []}');
