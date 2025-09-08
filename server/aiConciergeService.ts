@@ -131,7 +131,7 @@ Respond with only valid JSON, no additional text.`;
         }
       ],
       response_format: { type: "json_object" },
-      max_tokens: 2000 // Limit response length to speed up processing
+      max_completion_tokens: 2000 // Limit response length to speed up processing
     }, {
       timeout: 30000 // 30 second timeout for OpenAI
     });
