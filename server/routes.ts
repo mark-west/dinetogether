@@ -395,8 +395,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: userId,
       });
       
-      // Auto-geocode restaurant location if name/address provided but no coordinates
-      if ((eventData.restaurantName || eventData.restaurantAddress) && 
+      // Only auto-geocode if we don't have a Google Place ID and we need coordinates
+      // If we have a restaurantPlaceId, it means we have accurate Google Place data already
+      if (!eventData.restaurantPlaceId && 
+          (eventData.restaurantName || eventData.restaurantAddress) && 
           (!eventData.restaurantLat || !eventData.restaurantLng)) {
         
         const searchQuery = eventData.restaurantName || eventData.restaurantAddress;
