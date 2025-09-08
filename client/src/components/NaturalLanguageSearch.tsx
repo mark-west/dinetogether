@@ -138,7 +138,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       resetSearch();
     }
     
-  }, [location, results.length, allowedNavigation]);
+  }, [location, allowedNavigation]);
 
   const searchMutation = useMutation({
     mutationFn: async (searchPrompt: string) => {
