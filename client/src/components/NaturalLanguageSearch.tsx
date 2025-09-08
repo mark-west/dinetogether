@@ -390,15 +390,28 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
           )}
 
           {searchMutation.isPending && (
-            <div className="space-y-4 py-8">
+            <div className="space-y-6 py-8">
               <div className="text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
                   <div className="animate-spin h-6 w-6 border-3 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
                   <span className="text-lg font-semibold text-primary-foreground">Searching restaurants...</span>
                 </div>
-                <p className="text-sm text-primary-foreground/90 mb-4">
+                
+                {/* Animated dots */}
+                <div className="flex justify-center items-center gap-1 mb-4">
+                  <div className="w-2 h-2 bg-primary-foreground rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                  <div className="w-2 h-2 bg-primary-foreground rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                  <div className="w-2 h-2 bg-primary-foreground rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+                
+                <p className="text-sm text-primary-foreground/90 mb-2">
                   Processing your request through OpenAI and searching Google Places for real restaurant data.
                 </p>
+                
+                <p className="text-xs text-primary-foreground/70 mb-4">
+                  This usually takes 60-90 seconds to ensure we find the best matches.
+                </p>
+                
                 <Button 
                   onClick={handleCancelSearch}
                   variant="outline"
