@@ -80,6 +80,7 @@ export default function PhotoUploader({
       }
 
       const { uploadURL } = await uploadResponse.json();
+      console.log('Received upload URL:', uploadURL.substring(0, 100) + '...');
 
       // Upload file directly to object storage
       const fileUploadResponse = await fetch(uploadURL, {
@@ -91,7 +92,10 @@ export default function PhotoUploader({
       });
 
       if (!fileUploadResponse.ok) {
-        throw new Error('Failed to upload file');
+        const errorText = await fileUploadResponse.text();
+        console.error('Upload failed with status:', fileUploadResponse.status);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to upload file: ${fileUploadResponse.status}`);
       }
 
       // Convert the upload URL to a serving URL format

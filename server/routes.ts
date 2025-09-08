@@ -1990,13 +1990,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Object storage not configured' });
       }
       
-      // Construct full object path in private directory
-      const fullObjectPath = `${privateDir}/${objectPath}`;
-      
-      // Parse bucket name and object name from path
-      const pathParts = fullObjectPath.split('/');
+      // Parse bucket name from private directory path
+      const pathParts = privateDir.split('/');
       const bucketName = pathParts[1];
-      const objectName = pathParts.slice(2).join('/');
+      const objectName = objectPath;
       
       // Generate presigned URL for download
       const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
@@ -2047,13 +2044,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: 'Object storage not configured' });
       }
       
-      // Generate object path in private directory
-      const objectPath = `${privateDir}/uploads/${filename}`;
-      
-      // Parse bucket name and object name from path
-      const pathParts = objectPath.split('/');
+      // Parse bucket name from private directory path
+      const pathParts = privateDir.split('/');
       const bucketName = pathParts[1];
-      const objectName = pathParts.slice(2).join('/');
+      const objectName = `uploads/${filename}`;
       
       // Generate presigned URL
       const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
@@ -2080,6 +2074,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { signed_url: uploadURL } = await response.json();
+      
+      console.log('Generated upload URL for bucket:', bucketName, 'object:', objectName);
+      console.log('Upload URL preview:', uploadURL.substring(0, 100) + '...');
       
       res.json({ uploadURL });
     } catch (error: any) {
