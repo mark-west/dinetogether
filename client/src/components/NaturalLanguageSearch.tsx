@@ -273,7 +273,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                     }
                   }}
                   placeholder="Describe what kind of dining experience you're looking for..."
-                  className="min-h-[80px] resize-none bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/80 focus:border-primary-foreground/60"
+                  className="min-h-[80px] resize-none bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground placeholder:text-gray-500 focus:border-primary-foreground/60"
                   data-testid="textarea-search-prompt"
                 />
                 
