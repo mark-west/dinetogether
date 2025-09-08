@@ -185,37 +185,43 @@ export function useGooglePlaces() {
   }, [placesService]);
 
   const autocompleteRestaurants = useCallback(async (input: string, location?: { lat: number; lng: number }) => {
-    // Try client-side Google API first
+    // Try client-side Google API first with timeout
     if (autocompleteService) {
       try {
-        return await new Promise((resolve, reject) => {
-          const request: any = {
-            input,
-            types: ['restaurant'], // More specific type to reduce irrelevant results
-          };
-
-          if (location) {
-            // Use new locationBias instead of deprecated location/radius
-            request.locationBias = {
-              center: { lat: location.lat, lng: location.lng },
-              radius: 15000 // 15km radius
+        return await Promise.race([
+          new Promise((resolve, reject) => {
+            const request: any = {
+              input,
+              types: ['restaurant'], // More specific type to reduce irrelevant results
             };
-          }
 
-          autocompleteService.getPlacePredictions(
-            request,
-            (predictions: any[], status: any) => {
-              if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-                console.log('✅ Using client-side Google autocomplete');
-                resolve(predictions || []);
-              } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-                resolve([]);
-              } else {
-                reject(new Error(`Autocomplete failed: ${status}`));
-              }
+            if (location) {
+              // Use new locationBias instead of deprecated location/radius
+              request.locationBias = {
+                center: { lat: location.lat, lng: location.lng },
+                radius: 15000 // 15km radius
+              };
             }
-          );
-        });
+
+            autocompleteService.getPlacePredictions(
+              request,
+              (predictions: any[], status: any) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+                  console.log('✅ Using client-side Google autocomplete');
+                  resolve(predictions || []);
+                } else if (status === window.google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                  resolve([]);
+                } else {
+                  reject(new Error(`Autocomplete failed: ${status}`));
+                }
+              }
+            );
+          }),
+          // Timeout after 3 seconds if Google API doesn't respond
+          new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Google API timeout')), 3000);
+          })
+        ]);
       } catch (error) {
         console.log('Client-side autocomplete failed, trying server fallback...', error);
       }
