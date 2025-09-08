@@ -44,11 +44,25 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     }
   }, [useGoogleSearch, isLoaded, userLocation, locationStatus, getUserLocation]);
 
-  // Simple debounced search
+  // Simple debounced search with enhanced debugging
   useEffect(() => {
+    console.log('🔍 Search effect triggered:', { 
+      useGoogleSearch, 
+      isLoaded, 
+      error, 
+      inputLength: inputValue.length,
+      inputValue: inputValue.substring(0, 10) + '...'
+    });
+    
     if (!useGoogleSearch || !isLoaded || error || inputValue.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
+      console.log('❌ Search skipped because:', {
+        notUsingGoogle: !useGoogleSearch,
+        notLoaded: !isLoaded,
+        hasError: !!error,
+        tooShort: inputValue.length < 3
+      });
       return;
     }
 
