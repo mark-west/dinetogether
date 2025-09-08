@@ -175,7 +175,20 @@ export function useGooglePlaces() {
         },
         (place: any, status: any) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            resolve(place);
+            // Transform Google Places API response to match our Restaurant interface
+            const restaurant = {
+              placeId: placeId, // Use the original placeId passed in
+              name: place.name || '',
+              address: place.formatted_address || '',
+              rating: place.rating || undefined,
+              priceLevel: place.price_level || undefined,
+              photoUrl: place.photos?.[0]?.getUrl?.() || undefined,
+              location: place.geometry?.location ? {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              } : undefined
+            };
+            resolve(restaurant);
           } else {
             reject(new Error(`Place details failed: ${status}`));
           }
