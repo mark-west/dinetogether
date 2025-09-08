@@ -71,13 +71,17 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     }
 
     setIsSearching(true);
+    console.log('🚀 Starting search timeout for:', inputValue);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('🔄 Calling autocompleteRestaurants with:', { inputValue, userLocation });
         // Pass location if available for better results
         const results = await autocompleteRestaurants(inputValue, userLocation || undefined);
+        console.log('✅ Got results:', results);
         setSuggestions(results as any[]);
         setShowSuggestions(true);
       } catch (error) {
+        console.error('❌ Search failed:', error);
         setSuggestions([]);
         setShowSuggestions(false);
       }
