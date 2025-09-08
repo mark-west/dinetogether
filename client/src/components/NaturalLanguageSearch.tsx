@@ -399,10 +399,21 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
 
           {searchMutation.isPending && (
             <div className="space-y-6 py-8">
-              {/* Simple Honest Loading Indicator */}
+              {/* Prominent Animated Loading Indicator */}
               <div className="text-center">
-                <div className="inline-flex items-center gap-3 mb-6">
-                  <div className="animate-spin h-6 w-6 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"></div>
+                <div className="relative mb-6">
+                  {/* Main spinning loader */}
+                  <div className="w-16 h-16 mx-auto mb-4">
+                    <div className="animate-spin w-full h-full border-4 border-primary-foreground/20 border-t-primary-foreground rounded-full"></div>
+                  </div>
+                  
+                  {/* Pulsing dots */}
+                  <div className="flex justify-center space-x-2 mb-4">
+                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                  </div>
+                  
                   <span className="text-lg font-semibold text-primary-foreground">AI is searching for you...</span>
                 </div>
               </div>
@@ -418,7 +429,14 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                     </p>
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t border-primary-foreground/20">
+                  {/* Animated progress bar */}
+                  <div className="mt-4 mb-4">
+                    <div className="w-full bg-primary-foreground/20 rounded-full h-2">
+                      <div className="bg-primary-foreground h-2 rounded-full animate-pulse opacity-75" style={{width: '100%'}}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2 border-t border-primary-foreground/20">
                     <Button 
                       onClick={handleCancelSearch}
                       variant="outline"
