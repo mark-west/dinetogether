@@ -94,7 +94,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div 
-              className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white text-lg"
+              className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 via-pink-500 to-purple-700 flex items-center justify-center text-white text-lg shadow-md"
               data-testid="img-logo"
             >
               🍽️
