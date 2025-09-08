@@ -92,7 +92,12 @@ function PhotosTab({ eventId }: { eventId: string }) {
       return apiRequest("POST", `/api/events/${eventId}/photos`, data);
     },
     onSuccess: () => {
+      // Invalidate this event's photos
       queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}/photos`] });
+      
+      // Invalidate event details since photo count may have changed
+      queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
+      
       setNewPhotoUrl("");
       setNewPhotoCaption("");
       setIsAddingPhoto(false);

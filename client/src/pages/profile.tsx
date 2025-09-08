@@ -107,7 +107,37 @@ export default function Profile() {
         title: "Success",
         description: "Profile photo updated successfully",
       });
+      // Invalidate user auth cache (for sidebar, dashboard, profile pages)
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Invalidate all event photos since they show uploader profile images
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key.length >= 3 && 
+                 typeof key[0] === "string" && key[0].startsWith("/api/events/") && 
+                 key[2] === "photos";
+        }
+      });
+      
+      // Invalidate group member lists since they show profile images
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key.length >= 3 && 
+                 typeof key[0] === "string" && key[0].startsWith("/api/groups/") && 
+                 key[2] === "members";
+        }
+      });
+      
+      // Invalidate message queries since chat shows profile images
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey;
+          return Array.isArray(key) && key.length >= 1 && 
+                 typeof key[0] === "string" && key[0].includes("/messages");
+        }
+      });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
