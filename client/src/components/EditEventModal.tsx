@@ -101,28 +101,28 @@ export default function EditEventModal({ event, isOpen, onClose }: EditEventModa
     mutationFn: async () => {
       return apiRequest('DELETE', `/api/events/${event.id}`);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "Event Cancelled",
         description: "Event has been cancelled and participants notified.",
       });
-      // Comprehensive cache invalidation to prevent stale data
-      queryClient.invalidateQueries({ queryKey: ['/api/events'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/events/upcoming'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/events', event.id] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rsvps`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/messages`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rating`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/average-rating`] });
       
-      // Invalidate group events if the event belongs to a group
-      if (event.groupId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/groups', event.groupId, 'events'] });
-      }
-      
-      // Remove the specific event from cache completely
+      // Remove the specific event from cache first
       queryClient.removeQueries({ queryKey: ['/api/events', event.id] });
+      queryClient.removeQueries({ queryKey: [`/api/events/${event.id}`] });
+      
+      // Comprehensive cache invalidation to prevent stale data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['/api/events'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/events/upcoming'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rsvps`] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/messages`] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/rating`] }),
+        queryClient.invalidateQueries({ queryKey: [`/api/events/${event.id}/average-rating`] }),
+        // Invalidate group events if the event belongs to a group
+        event.groupId ? queryClient.invalidateQueries({ queryKey: ['/api/groups', event.groupId, 'events'] }) : Promise.resolve()
+      ]);
       
       onClose();
       navigate('/events');
