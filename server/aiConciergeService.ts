@@ -90,32 +90,37 @@ export class AIConciergeService {
   }
 
   private async interpretRequest(prompt: string, latitude: number, longitude: number): Promise<any> {
-    const systemPrompt = `You are a restaurant recommendation AI assistant. Based on the user's request, suggest restaurants that match their needs.
+    const systemPrompt = `You are a restaurant recommendation AI. The user wants: "${prompt}"
 
-User location coordinates: ${latitude}, ${longitude} (approximately Milwaukee/Brookfield, Wisconsin area)
-User request: ${prompt}
+Location: Milwaukee/Brookfield, Wisconsin area (${latitude}, ${longitude})
 
-Provide restaurant recommendations in this JSON format:
+You MUST provide restaurant suggestions. Return JSON in this exact format:
 
 {
   "restaurants": [
     {
       "name": "Restaurant Name",
-      "address": "General area or city",
-      "type": "Cuisine Type", 
-      "reasoning": "Why this matches their request"
+      "address": "Milwaukee area",
+      "type": "Italian Restaurant", 
+      "reasoning": "Great for romantic dining"
     }
   ]
 }
 
-Guidelines:
-- Suggest 4-6 restaurants that match the request type (Italian, sushi, casual, etc.)
-- Include well-known restaurant names from the Milwaukee/Wisconsin area when possible
-- If you don't know specific local restaurants, suggest restaurant TYPES or popular chain names that would fit
-- Focus on matching the dining style: romantic, casual, quick, family-friendly, etc.
-- Include the type of cuisine and atmosphere that fits the request
+REQUIRED: Always suggest at least 4 restaurants. If you don't know specific local restaurants, suggest:
+- Popular chain restaurants (Olive Garden, Carrabba's, etc.)
+- Common restaurant types that would exist in Milwaukee
+- Well-known brands that match the request
 
-Always return valid JSON with at least 3-4 restaurant suggestions.`;
+For "${prompt}", suggest restaurants that fit this criteria. DO NOT return an empty array.
+
+Example for "Romantic Italian dinner":
+- Olive Garden (chain option)
+- Local Italian restaurants 
+- Upscale dining establishments
+- Restaurants with romantic atmosphere
+
+ALWAYS include suggestions - never return empty results.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-5",
