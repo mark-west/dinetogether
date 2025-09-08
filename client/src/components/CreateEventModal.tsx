@@ -42,8 +42,8 @@ const createEventSchema = z.object({
   restaurantAddress: z.string().optional(),
   restaurantImageUrl: z.string().optional(),
   restaurantPlaceId: z.string().optional(),
-  restaurantLat: z.number().optional(),
-  restaurantLng: z.number().optional(),
+  restaurantLat: z.string().optional(),
+  restaurantLng: z.string().optional(),
   dateTime: z.string().min(1, "Date and time are required"),
   description: z.string().optional(),
 });
@@ -107,8 +107,8 @@ export default function CreateEventModal({ onClose, groups, preSelectedGroupId }
       await apiRequest("POST", "/api/events", {
         ...data,
         dateTime,
-        restaurantLat: selectedRestaurant?.location?.lat,
-        restaurantLng: selectedRestaurant?.location?.lng,
+        restaurantLat: selectedRestaurant?.location?.lat?.toString(),
+        restaurantLng: selectedRestaurant?.location?.lng?.toString(),
         restaurantImageUrl: selectedRestaurant?.photoUrl,
         restaurantPlaceId: selectedRestaurant?.placeId,
       });
@@ -229,8 +229,8 @@ export default function CreateEventModal({ onClose, groups, preSelectedGroupId }
                       form.setValue('restaurantAddress', restaurant.address);
                       form.setValue('restaurantImageUrl', restaurant.photoUrl || '');
                       form.setValue('restaurantPlaceId', restaurant.placeId);
-                      form.setValue('restaurantLat', restaurant.location?.lat);
-                      form.setValue('restaurantLng', restaurant.location?.lng);
+                      form.setValue('restaurantLat', restaurant.location?.lat?.toString());
+                      form.setValue('restaurantLng', restaurant.location?.lng?.toString());
                       setShowMap(true);
                       
                       // Auto-update event name if not customized
