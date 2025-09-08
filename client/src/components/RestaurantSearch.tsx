@@ -26,7 +26,7 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
   const [isSearching, setIsSearching] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'granted' | 'denied'>('idle');
-  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation } = useGooglePlaces();
+  const { isLoaded, error, autocompleteRestaurants, getPlaceDetails, getUserLocation, placesService, autocompleteService } = useGooglePlaces();
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Request location when Google search is enabled
@@ -208,11 +208,13 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
         )}
       </div>
 
-      {/* Help text */}
+      {/* Enhanced error feedback */}
       {useGoogleSearch && error && (
-        <p className="text-sm text-yellow-600 dark:text-yellow-400">
-          Google search unavailable. Switch to manual entry to continue.
-        </p>
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200 font-medium">Google Search Unavailable</p>
+          <p className="text-xs text-red-600 dark:text-red-300 mt-1">{error}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">Please use manual entry or try refreshing the page.</p>
+        </div>
       )}
       
       {!useGoogleSearch && (
@@ -226,6 +228,24 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Type at least 3 characters to search for restaurants
           </p>
+          
+          {/* Development diagnostics panel */}
+          {process.env.NODE_ENV === 'development' && (
+            <details className="mt-2 text-xs">
+              <summary className="cursor-pointer text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                🔧 Google Search Diagnostics
+              </summary>
+              <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border">
+                <div>Client API Key: {import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? '✅ Present' : '❌ Missing'}</div>
+                <div>Google Maps: {window.google?.maps ? '✅ Loaded' : '❌ Not Loaded'}</div>
+                <div>Places Library: {window.google?.maps?.places ? '✅ Available' : '❌ Unavailable'}</div>
+                <div>AutocompleteService: {autocompleteService ? '✅ Ready' : '❌ Failed'}</div>
+                <div>PlacesService: {placesService ? '✅ Ready' : '❌ Failed'}</div>
+                <div>Location: {userLocation ? `✅ ${userLocation.lat.toFixed(3)}, ${userLocation.lng.toFixed(3)}` : '❌ Not Available'}</div>
+                {error && <div className="text-red-600 dark:text-red-400 font-medium">Error: {error}</div>}
+              </div>
+            </details>
+          )}
           {locationStatus === 'requesting' && (
             <p className="text-sm text-blue-600 dark:text-blue-400">
               🔄 Requesting your location for better results...
@@ -241,6 +261,18 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
               ⚠️ Location access denied. Results may be less accurate.
             </p>
           )}
+        </div>
+      )}
+      
+      {/* Search mode status indicator */}
+      {useGoogleSearch && (
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          Status: {(() => {
+            if (error) return 'Google search unavailable - use manual entry';
+            if (!isLoaded) return 'Loading Google search...';
+            if (!autocompleteService) return 'Google search unavailable - using server fallback';
+            return 'Google search ready';
+          })()}
         </div>
       )}
     </div>

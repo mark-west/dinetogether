@@ -61,9 +61,10 @@ export function useGoogleMaps() {
 }
 
 export function useGooglePlaces() {
-  const { isLoaded, error } = useGoogleMaps();
+  const { isLoaded, error: mapsError } = useGoogleMaps();
   const [placesService, setPlacesService] = useState<any>(null);
   const [autocompleteService, setAutocompleteService] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -81,10 +82,54 @@ export function useGooglePlaces() {
       
       setPlacesService(placesServiceInstance);
       setAutocompleteService(autocompleteServiceInstance);
-    } catch (error) {
-      // Silently handle Places service initialization errors
+    } catch (error: any) {
+      console.error('Google Places service initialization failed:', error);
+      console.error('Full error details:', {
+        hasGoogleMaps: !!window.google?.maps,
+        hasPlacesLibrary: !!window.google?.maps?.places,
+        errorMessage: error.message,
+        errorStack: error.stack
+      });
+      setError(`Google Places initialization failed: ${error.message}`);
     }
   }, [isLoaded, placesService, autocompleteService]); // Added services to dependencies to prevent re-initialization
+
+  // Service health checking
+  const testServices = useCallback(async () => {
+    if (!placesService || !autocompleteService) {
+      console.warn('Services not initialized');
+      return false;
+    }
+    
+    try {
+      // Test autocomplete with minimal request
+      await new Promise((resolve, reject) => {
+        autocompleteService.getPlacePredictions(
+          { input: 'test', types: ['restaurant'] },
+          (predictions: any[], status: any) => {
+            if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+              console.log('✅ Autocomplete service working');
+              resolve(predictions);
+            } else {
+              console.error('❌ Autocomplete service failed:', status);
+              reject(new Error(`Status: ${status}`));
+            }
+          }
+        );
+      });
+      return true;
+    } catch (error) {
+      console.error('Service test failed:', error);
+      return false;
+    }
+  }, [placesService, autocompleteService]);
+
+  // Auto-test services when they're initialized
+  useEffect(() => {
+    if (placesService && autocompleteService && !error) {
+      testServices();
+    }
+  }, [placesService, autocompleteService, error, testServices]);
 
   const searchPlaces = useCallback((query: string, location?: { lat: number; lng: number }) => {
     return new Promise((resolve, reject) => {
@@ -204,10 +249,13 @@ export function useGooglePlaces() {
 
   return {
     isLoaded,
-    error,
+    error: error || mapsError,
     searchPlaces,
     getPlaceDetails,
     autocompleteRestaurants,
     getUserLocation,
+    placesService,
+    autocompleteService,
+    testServices,
   };
 }
