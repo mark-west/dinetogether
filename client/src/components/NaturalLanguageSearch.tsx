@@ -424,15 +424,24 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
                 </div>
               </div>
 
-              {/* Tips Section */}
+              {/* Tips Section and Cancel Button */}
               <div className="bg-primary-foreground/10 rounded-lg p-4 border border-primary-foreground/20">
                 <div className="text-center">
                   <h4 className="font-medium text-primary-foreground mb-2">💡 While you wait...</h4>
-                  <p className="text-sm text-primary-foreground/90">
+                  <p className="text-sm text-primary-foreground/90 mb-4">
                     Our AI is analyzing hundreds of restaurants, reading reviews, checking hours, 
                     and matching them to your specific preferences. This ensures you get the best 
                     personalized recommendations!
                   </p>
+                  <Button 
+                    onClick={handleCancelSearch}
+                    variant="outline"
+                    size="sm"
+                    className="bg-primary-foreground/20 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/30"
+                    data-testid="button-cancel-search"
+                  >
+                    Cancel Search
+                  </Button>
                 </div>
               </div>
 
