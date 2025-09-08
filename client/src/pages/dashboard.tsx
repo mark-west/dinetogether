@@ -126,11 +126,6 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Here's what's happening with your restaurant groups</p>
             </div>
             
-            {/* AI Dining Concierge */}
-          <NaturalLanguageSearch
-            variant="user"
-          />
-
           {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
@@ -198,6 +193,11 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
+
+          {/* AI Dining Concierge */}
+          <NaturalLanguageSearch
+            variant="user"
+          />
 
           {/* Upcoming Events */}
           <div className="space-y-4">
