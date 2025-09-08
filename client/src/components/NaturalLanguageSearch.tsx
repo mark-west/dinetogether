@@ -96,6 +96,7 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       sessionStorage.setItem('aiConciergeExpanded', isExpanded.toString());
     }
     
+    // Cleanup function to prevent memory leaks and async response conflicts
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
