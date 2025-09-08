@@ -203,7 +203,8 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
         
         if (error.name === 'AbortError') {
           console.log('AI Concierge: Request was cancelled or timed out');
-          throw error; // Let the mutation error handler deal with it
+          // Return a special cancelled state instead of throwing
+          return { cancelled: true, restaurants: [] };
         }
         
         console.error('AI Concierge: Request failed:', error);
@@ -211,9 +212,17 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
       }
     },
     onSuccess: (data: any) => {
+      setCurrentAbortController(null);
+      
+      // Handle cancelled requests silently
+      if (data.cancelled) {
+        console.log('AI Concierge: Search was cancelled by user');
+        setResults([]);
+        return;
+      }
+      
       console.log('AI Concierge: Search completed successfully!');
       console.log('AI Concierge: Restaurant results:', data);
-      setCurrentAbortController(null);
       
       if (data.restaurants && Array.isArray(data.restaurants)) {
         console.log(`AI Concierge: Setting ${data.restaurants.length} restaurant results`);
@@ -225,14 +234,6 @@ export function NaturalLanguageSearch({ variant, groupId, className = "" }: Natu
     },
     onError: (error: any) => {
       setCurrentAbortController(null);
-      
-      // Handle cancellation silently
-      if (error.name === 'AbortError' || error.message?.includes('cancelled')) {
-        console.log('AI Concierge: Search was cancelled by user');
-        setResults([]);
-        return;
-      }
-      
       console.error('AI Concierge: Search failed with error:', error);
       setResults([]);
     }
