@@ -44,25 +44,11 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     }
   }, [useGoogleSearch, isLoaded, userLocation, locationStatus, getUserLocation]);
 
-  // Simple debounced search with enhanced debugging
+  // Simple debounced search
   useEffect(() => {
-    console.log('🔍 Search effect triggered:', { 
-      useGoogleSearch, 
-      isLoaded, 
-      error, 
-      inputLength: inputValue.length,
-      inputValue: inputValue.substring(0, 10) + '...'
-    });
-    
     if (!useGoogleSearch || !isLoaded || error || inputValue.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
-      console.log('❌ Search skipped because:', {
-        notUsingGoogle: !useGoogleSearch,
-        notLoaded: !isLoaded,
-        hasError: !!error,
-        tooShort: inputValue.length < 3
-      });
       return;
     }
 
@@ -71,17 +57,13 @@ export default function RestaurantSearch({ onSelect, placeholder = "Enter restau
     }
 
     setIsSearching(true);
-    console.log('🚀 Starting search timeout for:', inputValue);
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        console.log('🔄 Calling autocompleteRestaurants with:', { inputValue, userLocation });
         // Pass location if available for better results
         const results = await autocompleteRestaurants(inputValue, userLocation || undefined);
-        console.log('✅ Got results:', results);
         setSuggestions(results as any[]);
         setShowSuggestions(true);
       } catch (error) {
-        console.error('❌ Search failed:', error);
         setSuggestions([]);
         setShowSuggestions(false);
       }
