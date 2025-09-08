@@ -67,14 +67,46 @@ export default function PhotoUploader({
     setIsUploading(true);
     
     try {
-      // REMOVED: No mock photo uploads allowed
-      toast({
-        title: "Photo upload not available",
-        description: "Photo upload feature is not configured yet.",
-        variant: "destructive",
+      // Get presigned upload URL
+      const uploadResponse = await fetch('/api/objects/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const { uploadURL } = await uploadResponse.json();
+
+      // Upload file directly to object storage
+      const fileUploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: selectedFile,
+        headers: {
+          'Content-Type': selectedFile.type,
+        },
+      });
+
+      if (!fileUploadResponse.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      // Convert the upload URL to a serving URL format
+      const urlParts = uploadURL.split('/');
+      const bucketName = urlParts[3]; // Extract bucket name from URL
+      const objectPath = urlParts.slice(4).join('/').split('?')[0]; // Extract object path
+      const photoUrl = `/objects/${objectPath}`;
       
-      // Do not call onPhotoSelect with fake data
+      toast({
+        title: "Photo uploaded successfully",
+        description: "Your photo has been uploaded.",
+        variant: "default",
+      });
+
+      onPhotoSelect(photoUrl);
       onClose();
       
     } catch (error) {

@@ -1980,6 +1980,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Object storage serving endpoint
+  app.get('/objects/:objectPath(*)', async (req, res) => {
+    try {
+      const objectPath = req.params.objectPath;
+      const privateDir = process.env.PRIVATE_OBJECT_DIR;
+      
+      if (!privateDir) {
+        return res.status(500).json({ error: 'Object storage not configured' });
+      }
+      
+      // Construct full object path in private directory
+      const fullObjectPath = `${privateDir}/${objectPath}`;
+      
+      // Parse bucket name and object name from path
+      const pathParts = fullObjectPath.split('/');
+      const bucketName = pathParts[1];
+      const objectName = pathParts.slice(2).join('/');
+      
+      // Generate presigned URL for download
+      const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+      const request = {
+        bucket_name: bucketName,
+        object_name: objectName,
+        method: 'GET',
+        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
+      };
+      
+      const response = await fetch(
+        `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(request),
+        }
+      );
+      
+      if (!response.ok) {
+        return res.status(404).json({ error: 'Object not found' });
+      }
+      
+      const { signed_url: downloadURL } = await response.json();
+      
+      // Redirect to the signed URL for direct serving
+      res.redirect(downloadURL);
+      
+    } catch (error: any) {
+      console.error('Error serving object:', error);
+      res.status(500).json({ error: 'Failed to serve object' });
+    }
+  });
+
+  // Object storage upload endpoint
+  app.post('/api/objects/upload', isAuthenticated, async (req, res) => {
+    try {
+      // Generate unique filename with timestamp and random suffix
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const filename = `upload_${timestamp}_${randomSuffix}`;
+      
+      // Create presigned URL for private object storage
+      const privateDir = process.env.PRIVATE_OBJECT_DIR;
+      if (!privateDir) {
+        return res.status(500).json({ error: 'Object storage not configured' });
+      }
+      
+      // Generate object path in private directory
+      const objectPath = `${privateDir}/uploads/${filename}`;
+      
+      // Parse bucket name and object name from path
+      const pathParts = objectPath.split('/');
+      const bucketName = pathParts[1];
+      const objectName = pathParts.slice(2).join('/');
+      
+      // Generate presigned URL
+      const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+      const request = {
+        bucket_name: bucketName,
+        object_name: objectName,
+        method: 'PUT',
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+      };
+      
+      const response = await fetch(
+        `${REPLIT_SIDECAR_ENDPOINT}/object-storage/signed-object-url`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(request),
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Failed to generate upload URL: ${response.status}`);
+      }
+      
+      const { signed_url: uploadURL } = await response.json();
+      
+      res.json({ uploadURL });
+    } catch (error: any) {
+      console.error('Error generating upload URL:', error);
+      res.status(500).json({ error: 'Failed to generate upload URL' });
+    }
+  });
+
   // Debug endpoint for Google Maps API key testing (development only)
   if (process.env.NODE_ENV === 'development') {
     app.get('/api/debug/google-maps-status', async (req, res) => {
