@@ -95,7 +95,7 @@ Requirements:
 4. Focus on restaurants that match the user's specific request
 5. Limit to 6 restaurants maximum
 6. Prioritize highly-rated, well-known establishments
-7. Provide feedback in 30 seconds or less.
+7. RESPOND WITHIN 30 SECONDS - Do not spend excessive time analyzing. Provide quick, accurate recommendations based on your knowledge.
 
 User location: ${latitude}, ${longitude}
 User request: ${prompt}
