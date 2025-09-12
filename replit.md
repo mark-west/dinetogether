@@ -1,6 +1,11 @@
 # Overview
 
-DineTogether is a restaurant dining coordination web application built with React and Express. The app allows users to create groups, plan dining events, and chat with friends about restaurant visits. It features a modern responsive design using Tailwind CSS and ShadCN UI components, with PostgreSQL database storage and Replit-based authentication.
+DineTogether is a restaurant dining coordination web application built with React and Express, now available as native iOS and Android mobile apps. The app allows users to create groups, plan dining events, and chat with friends about restaurant visits. It features a modern responsive design using Tailwind CSS and ShadCN UI components, with PostgreSQL database storage and Replit-based authentication.
+
+## Recent Changes (September 12, 2025)
+- **Mobile App Packaging**: Successfully implemented Capacitor to wrap the existing webapp into native iOS and Android apps while maintaining a single codebase
+- **API Connectivity**: Fixed mobile API client to support environment variables for absolute backend URLs in mobile builds
+- **Production Ready**: Complete mobile deployment guide created for App Store and Google Play submission
 
 # User Preferences
 
@@ -51,6 +56,8 @@ Preferred communication style: Simple, everyday language.
 - **Restaurant Discovery**: User suggestions and recommendations
 - **Dashboard**: Overview of upcoming events and group activity
 - **Mobile Responsive**: Full mobile experience with bottom navigation
+- **Native Mobile Apps**: iOS and Android apps using Capacitor with single codebase
+- **AI Dining Concierge**: OpenAI-powered restaurant search with Google Places integration
 
 # External Dependencies
 
@@ -58,6 +65,9 @@ Preferred communication style: Simple, everyday language.
 - **Database**: Neon PostgreSQL serverless database
 - **Authentication**: Replit OIDC provider for user authentication
 - **Deployment**: Replit hosting environment with development tooling
+- **Mobile Packaging**: Capacitor for iOS and Android native app containers
+- **AI Integration**: OpenAI API for natural language restaurant search
+- **Location Services**: Google Places API for restaurant data and reviews
 
 ## Development Tools
 - **Build System**: Vite with React plugin and TypeScript support
