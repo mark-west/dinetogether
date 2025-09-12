@@ -451,27 +451,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
-      // If we have a Google Place ID but missing hours, try to fetch fresh data
-      if (event.restaurantPlaceId && !event.restaurantHours) {
+      // If we have a Google Place ID, try to fetch fresh data to refresh photos and missing details
+      if (event.restaurantPlaceId && (!event.restaurantHours || !event.restaurantImageUrl || event.restaurantImageUrl.includes('PhotoService.GetPhoto'))) {
         try {
           const { GooglePlacesService } = await import('./googlePlacesService');
           const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY2!);
           const details = await googlePlaces.getPlaceDetails(event.restaurantPlaceId);
           
+          console.log("=== REFRESHING RESTAURANT DATA ===");
+          console.log("Restaurant:", details?.displayName?.text);
+          console.log("Photos available:", details?.photos?.length || 0);
+          
+          // Prepare update data
+          const updateData: any = {};
+          
           if (details?.regularOpeningHours) {
-            // Update the event object with fresh restaurant data (but don't save to DB)
-            event = {
-              ...event,
-              restaurantHours: {
-                open_now: details.regularOpeningHours.openNow,
-                weekdayDescriptions: details.regularOpeningHours.weekdayDescriptions,
-                periods: details.regularOpeningHours.periods
-              },
-              // Also update other details if they're missing
-              restaurantPhone: event.restaurantPhone || details.nationalPhoneNumber || '',
-              restaurantWebsite: event.restaurantWebsite || details.websiteUri || '',
-              restaurantRating: event.restaurantRating || (details.rating ? details.rating.toString() : null),
+            updateData.restaurantHours = {
+              open_now: details.regularOpeningHours.openNow,
+              weekdayDescriptions: details.regularOpeningHours.weekdayDescriptions,
+              periods: details.regularOpeningHours.periods
             };
+          }
+          
+          // Update other details if they're missing
+          if (!event.restaurantPhone && details?.nationalPhoneNumber) {
+            updateData.restaurantPhone = details.nationalPhoneNumber;
+          }
+          if (!event.restaurantWebsite && details?.websiteUri) {
+            updateData.restaurantWebsite = details.websiteUri;
+          }
+          if (!event.restaurantRating && details?.rating) {
+            updateData.restaurantRating = details.rating.toString();
+          }
+          
+          // Get fresh photo URL
+          if (details?.photos && details.photos.length > 0) {
+            const photo = details.photos[0];
+            if (photo.name) {
+              const freshPhotoUrl = `https://places.googleapis.com/v1/${photo.name}/media?key=${process.env.GOOGLE_MAPS_API_KEY2}&maxHeightPx=600&maxWidthPx=600`;
+              updateData.restaurantImageUrl = freshPhotoUrl;
+              console.log("=== FRESH PHOTO URL ===");
+              console.log(freshPhotoUrl);
+            }
+          }
+          
+          // Update the database with fresh data
+          if (Object.keys(updateData).length > 0) {
+            await storage.updateEvent(event.id, updateData);
+            console.log("=== DATABASE UPDATED ===");
+            console.log("Updated fields:", Object.keys(updateData));
+            
+            // Update the event object for response
+            event = { ...event, ...updateData };
           }
         } catch (error) {
           console.warn("Failed to fetch fresh restaurant details:", error);
