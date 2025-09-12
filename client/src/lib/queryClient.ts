@@ -44,6 +44,11 @@ export const getQueryFn: <T>(options: {
 
     await throwIfResNotOk(res);
     
+    // Handle responses without bodies (204, 304) 
+    if (res.status === 204 || res.status === 304) {
+      return null;
+    }
+    
     // Check if response has content and is JSON
     const contentType = res.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {

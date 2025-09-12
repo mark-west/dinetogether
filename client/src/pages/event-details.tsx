@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { format, isToday, isTomorrow } from "date-fns";
@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { InteractiveStarRating } from "@/components/InteractiveStarRating";
 import { getRestaurantWebsiteUrl } from '@/lib/restaurantUtils';
 import { RestaurantInfo } from '@/components/RestaurantInfo';
+import type { Event, EventPhoto, EventDiary, EventRating } from '@shared/schema';
 
 // Helper function to format today's restaurant hours
 const formatTodaysHours = (restaurantHours: any): string => {
@@ -81,8 +82,9 @@ function PhotosTab({ eventId }: { eventId: string }) {
   const [newPhotoCaption, setNewPhotoCaption] = useState("");
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const { toast } = useToast();
+  const { navigateWithLoading } = useLoadingNavigation();
 
-  const { data: photos = [], isLoading } = useQuery({
+  const { data: photos = [], isLoading, error } = useQuery<EventPhoto[]>({
     queryKey: [`/api/events/${eventId}/photos`],
     retry: false,
     enabled: !!eventId,
@@ -138,10 +140,13 @@ function PhotosTab({ eventId }: { eventId: string }) {
     );
   }
 
-  if (error && error.message.includes('404')) {
-    // Event not found, redirect to events page
-    navigateWithLoading('/events');
-    return null;
+  if (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('404')) {
+      // Event not found, redirect to events page  
+      navigateWithLoading('/events');
+      return null;
+    }
   }
 
   return (
@@ -671,7 +676,7 @@ export default function EventDetails() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: event, isLoading: eventLoading, error: eventError } = useQuery({
+  const { data: event, isLoading: eventLoading, error: eventError } = useQuery<Event>({
     queryKey: ["/api/events", eventId],
     retry: false,
     enabled: isAuthenticated && !!eventId,
@@ -828,46 +833,68 @@ export default function EventDetails() {
   }, [rsvps, user]);
 
 
+  // Price level normalization function
+  const normalizePriceLevel = (priceLevel: number | string | undefined): string => {
+    if (typeof priceLevel === 'number') {
+      return '$'.repeat(Math.min(4, Math.max(1, priceLevel)));
+    }
+    if (typeof priceLevel === 'string') {
+      // Handle string formats like "PRICE_LEVEL_MODERATE" or "moderate"
+      const num = parseInt(priceLevel.replace(/\D/g, '')) || 2;
+      return '$'.repeat(Math.min(4, Math.max(1, num)));
+    }
+    return '$$'; // Default moderate pricing
+  };
+
   // Create restaurant object for RestaurantInfo component
-  const restaurant = freshRestaurantData ? {
-    id: freshRestaurantData.placeId || event?.restaurantPlaceId || 'unknown',
-    name: freshRestaurantData.name || event?.restaurantName || 'Unknown Restaurant',
-    type: 'Restaurant',
-    priceRange: freshRestaurantData.priceLevel ? `${'$'.repeat(Math.min(4, freshRestaurantData.priceLevel))}` : '$$',
-    description: `${freshRestaurantData.name || event?.restaurantName || 'Restaurant'} details`,
-    address: freshRestaurantData.address || event?.restaurantAddress,
-    location: freshRestaurantData.address || event?.restaurantAddress,
-    rating: freshRestaurantData.rating || 0,
-    reviewCount: freshRestaurantData.userRatingsTotal || 0,
-    phoneNumber: freshRestaurantData.phone || event?.restaurantPhone,
-    website: freshRestaurantData.website || event?.restaurantWebsite,
-    openingHours: freshRestaurantData.openingHours || event?.restaurantHours,
-    latitude: freshRestaurantData.location?.lat || (event?.restaurantLat ? parseFloat(event.restaurantLat) : undefined),
-    longitude: freshRestaurantData.location?.lng || (event?.restaurantLng ? parseFloat(event.restaurantLng) : undefined),
-    menuHighlights: [],
-    features: ['Google Places verified'],
-    reviews: freshRestaurantData.reviews || [],
-    placeId: freshRestaurantData.placeId || event?.restaurantPlaceId
-  } : event && (event.restaurantName || event.restaurantAddress) ? {
-    id: event.restaurantPlaceId || 'event-restaurant',
-    name: event.restaurantName || 'Unknown Restaurant',
-    type: 'Restaurant',
-    priceRange: '$$',
-    description: `${event.restaurantName || 'Restaurant'} details`,
-    address: event.restaurantAddress,
-    location: event.restaurantAddress,
-    rating: event.restaurantRating ? parseFloat(event.restaurantRating.toString()) : 0,
-    reviewCount: 0,
-    phoneNumber: event.restaurantPhone,
-    website: event.restaurantWebsite,
-    openingHours: event.restaurantHours,
-    latitude: event.restaurantLat ? parseFloat(event.restaurantLat) : undefined,
-    longitude: event.restaurantLng ? parseFloat(event.restaurantLng) : undefined,
-    menuHighlights: [],
-    features: ['Event restaurant'],
-    reviews: [],
-    placeId: event.restaurantPlaceId
-  } : null;
+  const restaurant = useMemo(() => {
+    if (freshRestaurantData) {
+      // Use fresh Google Places data as primary source
+      return {
+        id: freshRestaurantData.placeId || 'unknown',
+        name: freshRestaurantData.name || 'Unknown Restaurant',
+        type: 'Restaurant' as const,
+        priceRange: normalizePriceLevel(freshRestaurantData.priceLevel),
+        description: `${freshRestaurantData.name} details from Google Places`,
+        address: freshRestaurantData.address,
+        location: freshRestaurantData.address,
+        rating: freshRestaurantData.rating || 0,
+        reviewCount: freshRestaurantData.userRatingsTotal || 0,
+        phoneNumber: freshRestaurantData.phone,
+        website: freshRestaurantData.website,
+        openingHours: freshRestaurantData.openingHours,
+        latitude: freshRestaurantData.location?.lat,
+        longitude: freshRestaurantData.location?.lng,
+        menuHighlights: [],
+        features: ['Google Places verified', 'Fresh data'],
+        reviews: freshRestaurantData.reviews || [],
+        placeId: freshRestaurantData.placeId
+      };
+    } else if (event && (event.restaurantName || event.restaurantAddress)) {
+      // Fall back to event data
+      return {
+        id: event.restaurantPlaceId || 'event-restaurant',
+        name: event.restaurantName || 'Unknown Restaurant',
+        type: 'Restaurant' as const,
+        priceRange: '$$',
+        description: `${event.restaurantName || 'Restaurant'} details from event`,
+        address: event.restaurantAddress,
+        location: event.restaurantAddress,
+        rating: event.restaurantRating ? parseFloat(event.restaurantRating.toString()) : 0,
+        reviewCount: 0,
+        phoneNumber: event.restaurantPhone,
+        website: event.restaurantWebsite,
+        openingHours: event.restaurantHours,
+        latitude: event.restaurantLat ? parseFloat(event.restaurantLat) : undefined,
+        longitude: event.restaurantLng ? parseFloat(event.restaurantLng) : undefined,
+        menuHighlights: [],
+        features: ['Event restaurant'],
+        reviews: [],
+        placeId: event.restaurantPlaceId
+      };
+    }
+    return null;
+  }, [freshRestaurantData, event]);
 
   if (isLoading || eventLoading) {
     return (
@@ -1066,8 +1093,17 @@ export default function EventDetails() {
             </CardContent>
           </Card>
 
-          {/* Location */}
-          {(event.restaurantName || event.restaurantAddress) && (
+          {/* Restaurant Information */}
+          {restaurant && (
+            <RestaurantInfo 
+              restaurant={restaurant}
+              showEventCreation={false}
+              className="mb-6"
+            />
+          )}
+
+          {/* Legacy Location Display (fallback) */}
+          {!restaurant && (event.restaurantName || event.restaurantAddress) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
