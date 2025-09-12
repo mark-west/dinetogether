@@ -182,7 +182,14 @@ export function useGooglePlaces() {
               address: place.formatted_address || '',
               rating: place.rating || undefined,
               priceLevel: place.price_level || undefined,
-              photoUrl: place.photos?.[0]?.getUrl?.() || undefined,
+              photoUrl: (() => {
+                try {
+                  return place.photos?.[0]?.getUrl?.() || undefined;
+                } catch (error) {
+                  console.warn('Google Places photo access failed:', error);
+                  return undefined;
+                }
+              })(),
               location: place.geometry?.location ? {
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng()
