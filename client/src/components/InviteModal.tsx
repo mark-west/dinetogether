@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -73,6 +73,9 @@ export default function InviteModal({ groupId, groupName, onClose }: InviteModal
           <DialogTitle className="text-xl font-bold">
             INVITE MEMBERS
           </DialogTitle>
+          <DialogDescription>
+            Share this invite link to add new members to your group.
+          </DialogDescription>
           <p className="text-sm text-muted-foreground mt-2">
             Share this link or QR code to invite people to "{groupName}"
           </p>

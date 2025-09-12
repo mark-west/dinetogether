@@ -145,27 +145,56 @@ export default function GoogleMapComponent({
         infoWindowRef.current.close();
       }
 
-      // Add new markers using standard Marker API
+      // Add new markers using AdvancedMarkerElement API (replacement for deprecated Marker)
       markers.forEach(markerData => {
-        const marker = new window.google.maps.Marker({
-          position: markerData.position,
-          map: mapInstanceRef.current,
-          title: markerData.title,
-        });
+        try {
+          const marker = new window.google.maps.marker.AdvancedMarkerElement({
+            position: markerData.position,
+            map: mapInstanceRef.current,
+            title: markerData.title,
+          });
 
-        if (markerData.info && marker) {
-          if (!infoWindowRef.current) {
-            infoWindowRef.current = new window.google.maps.InfoWindow();
+          if (markerData.info && marker) {
+            if (!infoWindowRef.current) {
+              infoWindowRef.current = new window.google.maps.InfoWindow();
+            }
+
+            // AdvancedMarkerElement uses 'gmp-click' event
+            marker.addListener('gmp-click', () => {
+              infoWindowRef.current.setContent(markerData.info);
+              infoWindowRef.current.open({
+                map: mapInstanceRef.current,
+                anchor: marker,
+              });
+            });
           }
 
-          marker.addListener('click', () => {
-            infoWindowRef.current.setContent(markerData.info);
-            infoWindowRef.current.open(mapInstanceRef.current, marker);
+          if (marker) {
+            markersRef.current.push(marker);
+          }
+        } catch (error) {
+          console.warn('AdvancedMarkerElement not available, falling back to legacy Marker:', error);
+          // Fallback to legacy Marker if AdvancedMarkerElement is not available
+          const marker = new window.google.maps.Marker({
+            position: markerData.position,
+            map: mapInstanceRef.current,
+            title: markerData.title,
           });
-        }
 
-        if (marker) {
-          markersRef.current.push(marker);
+          if (markerData.info && marker) {
+            if (!infoWindowRef.current) {
+              infoWindowRef.current = new window.google.maps.InfoWindow();
+            }
+
+            marker.addListener('click', () => {
+              infoWindowRef.current.setContent(markerData.info);
+              infoWindowRef.current.open(mapInstanceRef.current, marker);
+            });
+          }
+
+          if (marker) {
+            markersRef.current.push(marker);
+          }
         }
       });
 

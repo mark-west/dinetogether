@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -95,6 +96,9 @@ export default function CreateGroupModal({ onClose }: CreateGroupModalProps) {
       <DialogContent className="w-full max-w-md" data-testid="modal-create-group">
         <DialogHeader>
           <DialogTitle>Create New Group</DialogTitle>
+          <DialogDescription>
+            Create a new dining group to organize events with friends and family.
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>

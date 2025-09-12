@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -161,6 +162,9 @@ export default function CreateEventModal({ onClose, groups, preSelectedGroupId }
       <DialogContent className="w-full max-w-md max-h-[90vh] overflow-y-auto" data-testid="modal-create-event">
         <DialogHeader>
           <DialogTitle>Create New Event</DialogTitle>
+          <DialogDescription>
+            Fill out the details below to create a new dining event for your group.
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>

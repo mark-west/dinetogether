@@ -43,6 +43,18 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
+    
+    // Check if response has content and is JSON
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      // If it's not JSON, check if it's empty (204 No Content, etc.)
+      const text = await res.text();
+      if (!text.trim()) {
+        return null;
+      }
+      throw new Error(`Expected JSON response but received ${contentType || 'unknown content type'}`);
+    }
+    
     try {
       return await res.json();
     } catch (parseError) {
