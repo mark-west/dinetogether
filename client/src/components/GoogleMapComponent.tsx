@@ -39,6 +39,7 @@ export default function GoogleMapComponent({
       const mapConfig: any = {
         center,
         zoom,
+        mapId: "DEMO_MAP_ID", // Required for Advanced Markers
         mapTypeId: window.google.maps.MapTypeId.ROADMAP,
         zoomControl: true,
         mapTypeControl: false,

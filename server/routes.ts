@@ -1428,6 +1428,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Fresh restaurant details from Google Places API
+  app.get("/api/restaurant-details/:placeId", async (req, res) => {
+    try {
+      const { placeId } = req.params;
+      
+      if (!placeId || typeof placeId !== 'string') {
+        return res.status(400).json({ error: 'Place ID is required' });
+      }
+      
+      const { GooglePlacesService } = await import('./googlePlacesService');
+      const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY2!);
+      const details = await googlePlaces.getPlaceDetails(placeId);
+      
+      if (!details) {
+        return res.status(404).json({ error: 'Restaurant not found' });
+      }
+
+      // Transform to match frontend expectations
+      const restaurantData = {
+        id: details.id,
+        name: details.displayName?.text || '',
+        address: details.formattedAddress || '',
+        phone: details.nationalPhoneNumber || details.internationalPhoneNumber || '',
+        website: details.websiteUri || '',
+        rating: details.rating || 0,
+        userRatingsTotal: details.userRatingCount || 0,
+        priceLevel: details.priceLevel ? details.priceLevel.replace('PRICE_LEVEL_', '').toLowerCase() : '',
+        openingHours: details.regularOpeningHours || null,
+        businessStatus: details.businessStatus || '',
+        location: details.location ? {
+          lat: details.location.latitude,
+          lng: details.location.longitude
+        } : null,
+        photos: details.photos || [],
+        reviews: details.reviews || [],
+        placeId: details.id
+      };
+
+      res.json(restaurantData);
+    } catch (error) {
+      console.error('Error getting restaurant details:', error);
+      res.status(500).json({ error: 'Failed to get restaurant details' });
+    }
+  });
+
   // Web search endpoint for finding restaurant websites
   app.post("/api/web-search", async (req, res) => {
     try {

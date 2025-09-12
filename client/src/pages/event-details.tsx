@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { InteractiveStarRating } from "@/components/InteractiveStarRating";
 import { getRestaurantWebsiteUrl } from '@/lib/restaurantUtils';
+import { RestaurantInfo } from '@/components/RestaurantInfo';
 
 // Helper function to format today's restaurant hours
 const formatTodaysHours = (restaurantHours: any): string => {
@@ -716,6 +717,13 @@ export default function EventDetails() {
     enabled: isAuthenticated && !!eventId,
   });
 
+  // Fetch fresh restaurant data from Google Places if we have a place ID
+  const { data: freshRestaurantData, isLoading: restaurantDataLoading } = useQuery({
+    queryKey: [`/api/restaurant-details`, event?.restaurantPlaceId],
+    retry: false,
+    enabled: !!event?.restaurantPlaceId,
+  });
+
   const saveRatingMutation = useMutation({
     mutationFn: async (rating: number) => {
       return apiRequest("PUT", `/api/events/${eventId}/rating`, {
@@ -819,6 +827,47 @@ export default function EventDetails() {
     }
   }, [rsvps, user]);
 
+
+  // Create restaurant object for RestaurantInfo component
+  const restaurant = freshRestaurantData ? {
+    id: freshRestaurantData.placeId || event?.restaurantPlaceId || 'unknown',
+    name: freshRestaurantData.name || event?.restaurantName || 'Unknown Restaurant',
+    type: 'Restaurant',
+    priceRange: freshRestaurantData.priceLevel ? `${'$'.repeat(Math.min(4, freshRestaurantData.priceLevel))}` : '$$',
+    description: `${freshRestaurantData.name || event?.restaurantName || 'Restaurant'} details`,
+    address: freshRestaurantData.address || event?.restaurantAddress,
+    location: freshRestaurantData.address || event?.restaurantAddress,
+    rating: freshRestaurantData.rating || 0,
+    reviewCount: freshRestaurantData.userRatingsTotal || 0,
+    phoneNumber: freshRestaurantData.phone || event?.restaurantPhone,
+    website: freshRestaurantData.website || event?.restaurantWebsite,
+    openingHours: freshRestaurantData.openingHours || event?.restaurantHours,
+    latitude: freshRestaurantData.location?.lat || (event?.restaurantLat ? parseFloat(event.restaurantLat) : undefined),
+    longitude: freshRestaurantData.location?.lng || (event?.restaurantLng ? parseFloat(event.restaurantLng) : undefined),
+    menuHighlights: [],
+    features: ['Google Places verified'],
+    reviews: freshRestaurantData.reviews || [],
+    placeId: freshRestaurantData.placeId || event?.restaurantPlaceId
+  } : event && (event.restaurantName || event.restaurantAddress) ? {
+    id: event.restaurantPlaceId || 'event-restaurant',
+    name: event.restaurantName || 'Unknown Restaurant',
+    type: 'Restaurant',
+    priceRange: '$$',
+    description: `${event.restaurantName || 'Restaurant'} details`,
+    address: event.restaurantAddress,
+    location: event.restaurantAddress,
+    rating: event.restaurantRating ? parseFloat(event.restaurantRating.toString()) : 0,
+    reviewCount: 0,
+    phoneNumber: event.restaurantPhone,
+    website: event.restaurantWebsite,
+    openingHours: event.restaurantHours,
+    latitude: event.restaurantLat ? parseFloat(event.restaurantLat) : undefined,
+    longitude: event.restaurantLng ? parseFloat(event.restaurantLng) : undefined,
+    menuHighlights: [],
+    features: ['Event restaurant'],
+    reviews: [],
+    placeId: event.restaurantPlaceId
+  } : null;
 
   if (isLoading || eventLoading) {
     return (
