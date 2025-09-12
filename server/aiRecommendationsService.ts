@@ -5,7 +5,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 }) : null;
 
-const googlePlacesService = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY || '');
+const googlePlacesService = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY2 || '');
 
 export interface RestaurantRecommendation {
   id: string;

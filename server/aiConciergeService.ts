@@ -35,7 +35,7 @@ export class AIConciergeService {
   private googlePlacesService: GooglePlacesService;
 
   constructor() {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY2;
     if (!apiKey) {
       throw new Error('Google Maps API key not configured');
     }

@@ -1,6 +1,6 @@
 import { generatePreciseLocationDescription } from './utils/distanceCalculator';
 
-const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY2;
 
 // Type definitions
 export interface UserPreferences {

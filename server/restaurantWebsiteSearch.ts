@@ -7,7 +7,7 @@ interface RestaurantWebsiteResult {
 async function searchForRestaurantWebsite(restaurantName: string, address?: string): Promise<string | undefined> {
   try {
     // Use Google Places API to find the business profile with website
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY2;
     if (!apiKey) {
       console.log('Google Maps API key not found');
       return undefined;

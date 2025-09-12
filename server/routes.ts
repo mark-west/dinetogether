@@ -31,7 +31,7 @@ import {
 // Helper function to fetch nearby restaurants from Google Places API
 async function fetchNearbyRestaurants(latitude: number, longitude: number, radius: number) {
   // Fetching nearby restaurants
-  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY2;
   // Google Maps API key validation complete
   if (!API_KEY) {
     console.error('Server-side Google Maps API key not configured');
@@ -109,7 +109,7 @@ function getPriceRange(priceLevel: number | undefined): string {
 
 // Geocoding service using Google Places API
 async function geocodeAddress(query: string): Promise<{ lat: string; lng: string; address: string } | null> {
-  const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  const API_KEY = process.env.GOOGLE_MAPS_API_KEY2;
   if (!API_KEY) {
     console.error('Google Maps API key not configured');
     return null;
@@ -455,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (event.restaurantPlaceId && !event.restaurantHours) {
         try {
           const { GooglePlacesService } = await import('./googlePlacesService');
-          const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY!);
+          const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY2!);
           const details = await googlePlaces.getPlaceDetails(event.restaurantPlaceId);
           
           if (details?.regularOpeningHours) {
@@ -1948,7 +1948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Use existing working server-side Google Places integration
       const { GooglePlacesService } = await import('./googlePlacesService');
-      const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY!);
+      const googlePlaces = new GooglePlacesService(process.env.GOOGLE_MAPS_API_KEY2!);
       const results = await googlePlaces.searchByText(
         query, 
         location?.lat || 37.7749, // Default to SF coordinates if no location
@@ -2086,8 +2086,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.NODE_ENV === 'development') {
     app.get('/api/debug/google-maps-status', async (req, res) => {
       try {
-        const clientKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-        const serverKey = process.env.GOOGLE_MAPS_API_KEY;
+        const clientKey = process.env.GOOGLE_MAPS_API_KEY2;
+        const serverKey = process.env.GOOGLE_MAPS_API_KEY2;
         
         res.json({
           environment: 'development',
