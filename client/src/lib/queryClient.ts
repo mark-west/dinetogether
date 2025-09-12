@@ -1,5 +1,18 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Get API base URL - use environment variable for mobile apps, fallback to relative for web
+const getApiBaseUrl = () => {
+  // In production mobile builds, use the environment variable
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, ''); // Remove trailing slash
+  }
+  
+  // For web development/production, use relative URLs
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     try {
@@ -17,7 +30,10 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Prepend API base URL for mobile apps
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  
+  const res = await fetch(fullUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -34,7 +50,11 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    // Create full URL for mobile apps
+    const relativeUrl = queryKey.join("/") as string;
+    const fullUrl = relativeUrl.startsWith('http') ? relativeUrl : `${API_BASE_URL}${relativeUrl}`;
+    
+    const res = await fetch(fullUrl, {
       credentials: "include",
     });
 
