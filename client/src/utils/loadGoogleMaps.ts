@@ -1,9 +1,9 @@
 export async function loadGoogleMapsScript(): Promise<void> {
   try {
-    const apiKey = import.meta.env.GOOGLE_MAPS_API_KEY2;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY2;
     
     if (!apiKey) {
-      console.error('Google Maps API key not configured. Please set GOOGLE_MAPS_API_KEY2 environment variable.');
+      console.error('Google Maps API key not configured. Please set VITE_GOOGLE_MAPS_API_KEY2 environment variable.');
       return;
     }
 

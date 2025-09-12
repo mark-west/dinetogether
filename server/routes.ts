@@ -2086,7 +2086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (process.env.NODE_ENV === 'development') {
     app.get('/api/debug/google-maps-status', async (req, res) => {
       try {
-        const clientKey = process.env.GOOGLE_MAPS_API_KEY2;
+        const clientKey = process.env.VITE_GOOGLE_MAPS_API_KEY2;
         const serverKey = process.env.GOOGLE_MAPS_API_KEY2;
         
         res.json({
